@@ -1,0 +1,495 @@
+<title>Refonte Bricoloc — état des lots</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
+<style>
+  :root {
+    --primary: #ee2c24;
+    --navy: #16335c;
+    --navy-deep: #0b1d3a;
+    --ink: #16223c;
+    --muted: #5a6274;
+    --ground: #f6f5f1;
+    --surface: #ffffff;
+    --surface-2: #efece5;
+    --border: #e2ddd3;
+    --ok: #12833f;
+    --ok-bg: #e6f1e9;
+    --warn: #9a5b00;
+    --warn-bg: #f6ecdd;
+    --font-display: 'Bricolage Grotesque', 'Hanken Grotesk', system-ui, sans-serif;
+    --font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --primary: #ff5a50;
+      --navy: #9fb4d8;
+      --navy-deep: #cdd9ee;
+      --ink: #e7ebf3;
+      --muted: #9aa3b6;
+      --ground: #0c1420;
+      --surface: #131c2b;
+      --surface-2: #1a2436;
+      --border: #2a3547;
+      --ok: #57c47f;
+      --ok-bg: #14301f;
+      --warn: #e0a24a;
+      --warn-bg: #33260f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --primary: #ff5a50;
+    --navy: #9fb4d8;
+    --navy-deep: #cdd9ee;
+    --ink: #e7ebf3;
+    --muted: #9aa3b6;
+    --ground: #0c1420;
+    --surface: #131c2b;
+    --surface-2: #1a2436;
+    --border: #2a3547;
+    --ok: #57c47f;
+    --ok-bg: #14301f;
+    --warn: #e0a24a;
+    --warn-bg: #33260f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.62;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 40px 24px 96px; }
+
+  header.top {
+    border-left: 4px solid var(--primary);
+    padding: 4px 0 4px 20px;
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.72rem;
+    color: var(--primary);
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.9rem, 1.3rem + 2.6vw, 2.7rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0.15em 0 0.3em;
+    text-wrap: balance;
+    color: var(--navy-deep);
+  }
+  header.top p { color: var(--muted); margin: 0; max-width: 60ch; }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.01em;
+    color: var(--navy-deep);
+    margin: 48px 0 4px;
+  }
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 22px 0 6px;
+    color: var(--navy);
+  }
+  p { margin: 0 0 12px; }
+  a { color: var(--navy); text-underline-offset: 2px; }
+
+  .lede {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 8px;
+  }
+  .lede ul { margin: 8px 0 0; padding-left: 20px; }
+  .lede li { margin: 3px 0; }
+
+  .lot {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-top: 16px;
+  }
+  .lot__head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .lot__num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: var(--primary);
+    letter-spacing: 0.04em;
+  }
+  .lot__title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--navy-deep);
+    margin: 0;
+    flex: 1;
+  }
+  .pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .pill--ok { background: var(--ok-bg); color: var(--ok); }
+  .pill--partial { background: var(--warn-bg); color: var(--warn); }
+  .pill--blocked { background: var(--surface-2); color: var(--muted); }
+
+  .lot ul { margin: 8px 0 0; padding-left: 20px; }
+  .lot li { margin: 4px 0; }
+  .lot li b { color: var(--navy-deep); }
+
+  .review {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-left: 3px solid var(--primary);
+    background: var(--surface-2);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .review b { color: var(--navy-deep); }
+
+  code, .mono {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  pre {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    background: var(--navy-deep);
+    color: #e6ecf7;
+    padding: 14px 16px;
+    border-radius: 10px;
+    overflow-x: auto;
+    line-height: 1.7;
+  }
+  pre .c { color: #8ea6c8; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 10px 0; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 620px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .foot { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.86rem; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Bricoloc · refonte de la plateforme</span>
+    <h1>État des lots — build de nuit</h1>
+    <p>Travail autonome cette nuit sur la branche <code>refonte</code>. Les lots 0 à 6 sont livrés
+      et versionnés (un commit par lot). Le lot 7 (paiement Mollie + mise en production) reste en
+      attente de tes comptes. Tout est relisible : <code>git log</code> sur la branche
+      <code>refonte</code>, <code>main</code> = l'ancienne v1 intacte.</p>
+  </header>
+
+  <div class="lede">
+    <b>En bref — ce qui tourne maintenant</b>
+    <ul>
+      <li>Site public 3 langues (FR/NL/EN) avec accueil, catalogue et fiches produits refaits</li>
+      <li><b>Catalogue réel importé</b> : ~86 machines + 5 BricoPacks, vrais tarifs, 227 photos, 10 catégories</li>
+      <li>Livraison au tarif géolocalisé depuis le dépôt de Ruisbroek</li>
+      <li>Back-office entièrement repensé : tableau de bord, comptoir scan, éditeur de réservation, fiches clients, maintenance, contenus multilingues</li>
+      <li>Étiquettes QR + code-barres imprimables, mode Terminal pour l'inventaire</li>
+      <li>Appli mobile : scan caméra natif, avis clients, 3 langues</li>
+      <li>Traduction automatique DeepL branchée sur tous les contenus</li>
+    </ul>
+  </div>
+
+  <h2>Lot 0 — Fondations</h2>
+
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">0.1</span>
+      <p class="lot__title">Design system dans le code</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <ul>
+      <li>Polices <b>Bricolage Grotesque</b> (titres) + <b>Hanken Grotesk</b> (texte), auto-hébergées</li>
+      <li>Couleurs : rouge <code>#EE2C24</code> corrigé partout, navy adouci <code>#16335C</code> pour les aplats</li>
+      <li>Thème clair + sombre, animations au scroll qui respectent « réduire les animations »</li>
+    </ul>
+  </div>
+
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">0.2</span>
+      <p class="lot__title">3 langues FR / NL / EN</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <ul>
+      <li>URLs : FR à la racine, <code>/nl/…</code>, <code>/en/…</code> · détection auto de la langue du navigateur</li>
+      <li>SEO : balises <code>hreflang</code>, <code>canonical</code> et Open Graph par langue</li>
+      <li>Sélecteur de langue dans le header et le footer</li>
+    </ul>
+  </div>
+
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">0.3</span>
+      <p class="lot__title">Traduction automatique DeepL</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <ul>
+      <li>À chaque modification d'un contenu en français, le NL et l'EN sont regénérés</li>
+      <li>Dès qu'un humain corrige une version NL ou EN, elle est <b>figée</b> (plus de réécrasement)</li>
+      <li>Bouton « Retraduire » dans l'admin · cache pour ne pas re-payer les mêmes phrases</li>
+    </ul>
+    <div class="review"><b>À vérifier :</b> quelques traductions produits sont approximatives
+      (ex. « disc sander » pour disqueuse). Corrigeables une par une dans l'admin.</div>
+  </div>
+
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">0.4</span>
+      <p class="lot__title">Upload d'images</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <ul>
+      <li>Glisser-déposer dans l'admin, conversion automatique en WebP + vignette</li>
+      <li>Détection du format sur le contenu réel du fichier (pas l'extension)</li>
+    </ul>
+  </div>
+
+  <h2>Lot 1 — Page d'accueil</h2>
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">1</span>
+      <p class="lot__title">Accueil refondu sur la structure de kiloutou.fr</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <ul>
+      <li>Hero avec photo + carte de recherche de dates · bandeau « offre week-end »</li>
+      <li>« Comment pouvons-nous vous aider ? » — 8 tuiles-tâches en photo</li>
+      <li>Machines les plus louées · bento de catégories · « Réservez en 3 étapes »</li>
+      <li>BricoPacks · 3 colonnes de FAQ · Conseils &amp; SAV · points forts · bandeau de marques · CTA</li>
+      <li>Animations au scroll, 12 photos réelles optimisées, textes éditables en admin</li>
+    </ul>
+    <div class="review"><b>À valider :</b> le contenu des blocs (accroches, FAQ) — tout est
+      modifiable dans <b>Admin → Contenus</b>. Le compteur « les plus loués » utilise l'ordre
+      alphabétique pour l'instant (pas encore de vraies stats de location).</div>
+  </div>
+
+  <h2>Lot 2 — Fiche produit &amp; avis</h2>
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">2</span>
+      <p class="lot__title">Fiche produit + système d'avis clients</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <ul>
+      <li>Galerie photo, paliers de prix Jour / Semaine (4×) / Mois (12×), accordéons</li>
+      <li>« Complétez votre location » : accessoires et consommables liés, ajout en 1 clic</li>
+      <li>SEO : métadonnées + données structurées Google (avec la note moyenne)</li>
+      <li><b>Avis clients</b> : dépôt (publié direct si location vérifiée, sinon modération),
+        histogramme de notes, modération dans l'admin, réponse Bricoloc possible</li>
+      <li>41 avis de démonstration pour visualiser</li>
+    </ul>
+  </div>
+
+  <h2>Lot 3 — Catalogue réel &amp; livraison géolocalisée</h2>
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">3A</span>
+      <p class="lot__title">Import du vrai catalogue Bricoloc</p>
+      <span class="pill pill--partial">livré · à relire</span>
+    </div>
+    <ul>
+      <li>Croisement de 3 sources : produits WooCommerce live, tarif PDF 2024, liste machines (marques/prix d'achat)</li>
+      <li><b>~86 machines + 5 BricoPacks</b> · tarifs J/S/M réels trouvés pour 83/86</li>
+      <li><b>227 photos réelles</b> converties en WebP · 80/88 produits illustrés</li>
+      <li>10 catégories réelles · descriptions générées · noms traduits NL/EN</li>
+    </ul>
+    <div class="review"><b>À relire / compléter en admin :</b>
+      <ul style="margin-top:4px">
+        <li>3 machines sans tarif, laissées en brouillon (Harnais, Antichute, Pompe immergée)</li>
+        <li>8 sans photo (scies sur table, brouette)</li>
+        <li>Les <b>cautions</b> sont estimées (~10× le tarif jour) — la colonne « Garantie A/B/C »
+          du PDF était presque vide. À ajuster.</li>
+        <li>Quelques rangements de catégorie discutables (agrafeuses → « travail du bois »)</li>
+        <li>Descriptions volontairement génériques, à personnaliser</li>
+      </ul>
+      Ré-import possible à tout moment : <code>cd apps/api &amp;&amp; npx tsx scripts/import-catalogue.ts</code>
+    </div>
+  </div>
+
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">3B</span>
+      <p class="lot__title">Livraison au tarif géolocalisé</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <ul>
+      <li>Le client saisit son adresse → géocodage → distance routière depuis le dépôt → tarif automatique</li>
+      <li>Dépôt : <b>Gieterijstraat 49, 1601 Ruisbroek</b> (tu avais écrit « Giterij- », la vraie
+        rue OSM est « Gieterij- »). Coordonnées vérifiées.</li>
+      <li>Modèle par défaut : 0–15 km → 25 € · 15–30 → 40 € · 30–50 → 65 € · au-delà = hors zone.
+        Livraison offerte au-delà de 350 € de location.</li>
+      <li>Tout est réglable dans <b>Admin → Livraison</b> (tranches, mode « au km », franchise,
+        distance max) + un testeur d'adresse en direct</li>
+    </ul>
+    <div class="review"><b>Exemples réels testés :</b> Halle 9,7 km → 25 € · Overijse 22 km → 40 €
+      · Namur 80 km → hors zone.</div>
+  </div>
+
+  <h2>Lot 4 — Back-office</h2>
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">4</span>
+      <p class="lot__title">Refonte complète (les 10 points de ta liste)</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <table>
+      <tr><th>Point</th><th>Fait</th></tr>
+      <tr><td><b>Tableau de bord</b></td><td>KPI en tuiles avec mini-graphes (CA, réservations, taux d'occupation du parc), file du jour (retraits / retours / retards), alertes cliquables</td></tr>
+      <tr><td><b>Comptoir</b></td><td>Écran « scan d'abord » : grande barre de scan (douchette + caméra), tableau des commandes en cours par état. Scanner un exemplaire ouvre sa réservation.</td></tr>
+      <tr><td><b>Réservations modifiables</b></td><td>Éditeur : quantités, ajout/suppression de lignes, dates, frais/remise → totaux et devis recalculés automatiquement</td></tr>
+      <tr><td><b>Images produit</b></td><td>Glisser-déposer, réordonner, définir la principale, supprimer</td></tr>
+      <tr><td><b>Exemplaires &amp; maintenance</b></td><td>État changeable en un clic, clic droit pour les actions. <b>Bug corrigé :</b> un entretien avec période <i>immobilise</i> l'exemplaire et le retire des disponibilités (testé automatiquement).</td></tr>
+      <tr><td><b>Fiche client complète</b></td><td>Coordonnées éditables, adresses, remise négociée, note interne, historique, factures, tickets, montant dépensé</td></tr>
+      <tr><td><b>Zones de livraison</b></td><td>Voir Lot 3B — CRUD complet + tarif géo</td></tr>
+      <tr><td><b>Contenus du site</b></td><td>Onglets FR/NL/EN par bloc, badge « traduction manquante », bouton retraduire, file des avis à modérer au même endroit</td></tr>
+      <tr><td><b>Équipe</b></td><td>Édition du nom, e-mail, rôle, actif/inactif + réinitialisation du mot de passe</td></tr>
+      <tr><td><b>Navy trop foncé</b></td><td>Adouci à <code>#16335C</code> pour les grands aplats, navy exact gardé pour le logo</td></tr>
+    </table>
+  </div>
+
+  <h2>Lot 5 — Scan &amp; inventaire</h2>
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">5</span>
+      <p class="lot__title">Étiquettes QR + code-barres, mode Terminal</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <ul>
+      <li><b>Admin → Étiquettes</b> : créer N exemplaires d'un coup, planche imprimable
+        (QR + code-barres Code 128 + identifiant + nom machine + BRICOLOC)</li>
+      <li><b>Admin → Terminal</b> : plein écran, scan-first, pour l'inventaire et le in/out rapide
+        (Zebra TC51 en clavier-wedge, douchette USB, ou caméra). Un scan résout n'importe quel code.</li>
+      <li>Encodeur code-barres maison (aucune dépendance externe)</li>
+    </ul>
+    <div class="review"><b>À tester avec du vrai matériel :</b> je n'ai pas pu essayer sur une
+      Zebra TC51 ni une vraie douchette. La capture clavier-wedge est standard (rafale + Entrée),
+      la caméra utilise le lecteur natif du navigateur.</div>
+  </div>
+
+  <h2>Lot 6 — Application mobile</h2>
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">6</span>
+      <p class="lot__title">Alignement + scan caméra + avis + 3 langues</p>
+      <span class="pill pill--ok">livré</span>
+    </div>
+    <ul>
+      <li>3 langues FR/NL/EN (langue de l'appareil, changeable dans le compte)</li>
+      <li><b>Scan caméra natif</b> : bouton sur l'accueil → scanne le QR d'une réservation
+        (ouvre le détail) ou un produit (ouvre la fiche)</li>
+      <li>Avis clients sur la fiche produit (voir + déposer)</li>
+      <li>Espace client synchronisé : mêmes réservations, factures, notifications que le site</li>
+      <li>Couleurs alignées sur le design system</li>
+    </ul>
+    <div class="review"><b>À tester sur un vrai téléphone :</b> le code compile et se bundle
+      (Android OK), mais le scan caméra et les notifications push demandent un appareil réel via
+      Expo Go. Publication sur les stores = Lot 7.</div>
+  </div>
+
+  <h2>Lot 7 — Paiement &amp; mise en production</h2>
+  <div class="lot">
+    <div class="lot__head">
+      <span class="lot__num">7</span>
+      <p class="lot__title">Mollie + caution empreinte + déploiement VPS</p>
+      <span class="pill pill--blocked">en attente de toi</span>
+    </div>
+    <p>Le modèle de données est déjà prêt (caution, empreinte, statuts). Il reste à brancher les
+      vrais appels et à déployer. J'ai besoin de :</p>
+    <table>
+      <tr><th>Ce qu'il me faut</th><th>Pour</th></tr>
+      <tr><td>Accès compte <b>Mollie</b> + activer la « capture manuelle / autorisation »</td><td>Paiement du loyer + caution en empreinte bancaire (bloquée sans débit)</td></tr>
+      <tr><td>Le <b>VPS Combell</b> (je recommande le plan <b>Large</b>, 4 vCPU / 8 Go)</td><td>Docker Compose, nginx, HTTPS, PostgreSQL, domaine bricoloc.be</td></tr>
+      <tr><td>Comptes <b>Apple Developer</b> (99 €/an) + <b>Google Play</b> (25 €)</td><td>Publier l'appli sur les stores (je fais toute la config et les builds)</td></tr>
+      <tr><td>Décision <b>mail</b> : Microsoft 365 ou hébergement mail Combell</td><td>Tes 2 domaines · + un service SMTP pour les e-mails envoyés par l'app</td></tr>
+    </table>
+    <div class="review"><b>Rappel caution :</b> l'empreinte « comme les hôtels » exige une carte
+      Visa/Mastercard (Bancontact ne sait pas faire). 3 modes prévus : empreinte carte (défaut),
+      encaissé-puis-remboursé, ou espèces au comptoir pour le Click &amp; Collect. Le paiement à
+      l'enlèvement (espèces ou carte, uniquement en retrait) est aussi prévu.</div>
+  </div>
+
+  <h2>Comment lancer</h2>
+  <pre><span class="c"># à la racine du projet</span>
+npm install
+npm run build:shared
+npm run db:reset --workspace @bricoloc/api   <span class="c"># recrée la base + données démo</span>
+cd apps/api &amp;&amp; npx tsx scripts/import-catalogue.ts   <span class="c"># importe le vrai catalogue</span>
+cd .. &amp;&amp; npm run dev                          <span class="c"># API :4000 + site :3000</span>
+
+<span class="c"># appli mobile</span>
+cd apps/mobile &amp;&amp; npm install &amp;&amp; npm start</pre>
+    <div class="grid2" style="margin-top:14px">
+      <div class="lot" style="margin:0">
+        <h3 style="margin-top:0">Comptes de démo</h3>
+        <p style="font-size:0.9rem;margin:0">Mot de passe : <code>bricoloc</code><br>
+          Client : <code>client@bricoloc.example</code><br>
+          Pro : <code>pro@bricoloc.example</code><br>
+          Équipe : <code>admin@bricoloc.example</code> (+ responsable, comptoir, préparateur, livreur, technicien, compta)</p>
+      </div>
+      <div class="lot" style="margin:0">
+        <h3 style="margin-top:0">Écrans clés à revoir</h3>
+        <p style="font-size:0.9rem;margin:0">
+          Site : <code>/</code> · <code>/catalogue</code> · une fiche produit<br>
+          Admin : <code>/admin</code> · <code>/admin/comptoir</code> · <code>/admin/terminal</code> · <code>/admin/etiquettes</code> · <code>/admin/zones</code><br>
+          Une fiche client, l'éditeur d'une réservation</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>Décisions prises pendant la nuit</h2>
+  <div class="lot">
+    <ul>
+      <li><b>Base de données</b> : SQLite en dev, PostgreSQL au déploiement (ton choix B)</li>
+      <li><b>Livraison</b> : tranches de km par défaut (réglables), pas « au km » — mais l'option existe</li>
+      <li><b>Loiselet</b> : structure prête (fournisseur, dispo sur demande sous 1 h, marge 25 %),
+        mais le catalogue n'est pas encore scrapé — j'attends de savoir comment ils veulent recevoir
+        les demandes (adresse e-mail configurable en admin)</li>
+      <li><b>Consommables Cipac / Lecot / Sanimat / BMK</b> : le modèle de liens produit↔accessoire
+        est en place, le remplissage attend un accès à leurs catalogues</li>
+    </ul>
+  </div>
+
+  <p class="foot">
+    Généré automatiquement · branche <code>refonte</code> · lots 0–6 commités, un par un.
+    Rien n'est figé : contenus éditables en back-office, design en variables, tout versionné.
+  </p>
+</div>
