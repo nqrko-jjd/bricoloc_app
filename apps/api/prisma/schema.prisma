@@ -17,16 +17,96 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
-/// Contenus editoriaux du site (FAQ, conseils, pages legales...).
+/// Contenus editoriaux du site (FAQ, conseils, pages legales, blocs d'accueil...).
+/// Une ligne par (key, locale). Le FR est la source ; NL/EN sont creees par DeepL
+/// et marquees autoTranslated tant qu'un humain ne les a pas revues.
 model Content {
-  id        String   @id @default(cuid())
-  key       String
-  locale    String   @default("fr")
-  title     String?
-  body      String
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  key            String
+  locale         String    @default("fr")
+  title          String?
+  body           String
+  format         String    @default("markdown") // markdown | html
+  autoTranslated Boolean   @default(false)
+  reviewedAt     DateTime?
+  updatedAt      DateTime  @updatedAt
 
   @@unique([key, locale])
+}
+
+/// Cache de traduction DeepL : evite de re-traduire (et re-payer) les memes segments.
+model Translation {
+  id         String   @id @default(cuid())
+  sourceHash String
+  target     String // nl | en
+  source     String
+  text       String
+  createdAt  DateTime @default(now())
+
+  @@unique([sourceHash, target])
+}
+
+/// Cache de geocodage (Nominatim/OSM) : adresse -> lat/lng.
+model GeoCache {
+  id          String   @id @default(cuid())
+  query       String   @unique
+  lat         Float
+  lng         Float
+  displayName String?
+  provider    String   @default("nominatim")
+  createdAt   DateTime @default(now())
+}
+
+/// Fournisseurs : partenaire de sous-location (Loiselet) + consommables (Cipac, Lecot, Sanimat, BMK).
+model Supplier {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  kind      String   @default("CONSUMABLE") // PARTNER_RENTAL | CONSUMABLE | EQUIPMENT
+  email     String?
+  phone     String?
+  url       String?
+  notes     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  products Product[]
+}
+
+/// Avis clients sur un produit (Lot 2). Moderes avant publication.
+model Review {
+  id            String    @id @default(cuid())
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reservationId String?
+  authorName    String
+  rating        Int
+  title         String?
+  body          String
+  status        String    @default("PENDING") // PENDING | PUBLISHED | REJECTED
+  reply         String?
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+
+  @@index([productId, status])
+}
+
+/// Media televerse (image produit / contenu). Sert de bibliotheque reutilisable.
+model MediaAsset {
+  id        String   @id @default(cuid())
+  path      String   @unique // chemin relatif dans uploadsDir, ex "media/2026/09/ab12.webp"
+  url       String
+  kind      String   @default("image")
+  mime      String
+  bytes     Int      @default(0)
+  width     Int?
+  height    Int?
+  alt       Json? // I18nText
+  source    String   @default("upload") // upload | import
+  createdBy String?
+  createdAt DateTime @default(now())
 }
 
 model StaffUser {
@@ -38,31 +118,32 @@ model StaffUser {
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 
-  pickups       PickupRecord[]
-  returns       ReturnRecord[]
-  deliveries    Delivery[]
-  maintenances  Maintenance[]
+  pickups      PickupRecord[]
+  returns      ReturnRecord[]
+  deliveries   Delivery[]
+  maintenances Maintenance[]
 }
 
 model User {
-  id                  String   @id @default(cuid())
-  email               String   @unique
-  passwordHash        String
-  firstName           String
-  lastName            String
-  phone               String
-  customerType        String   @default("PARTICULIER") // PARTICULIER | PRO
-  companyName         String?
-  vatNumber           String?
+  id                    String   @id @default(cuid())
+  email                 String   @unique
+  passwordHash          String
+  firstName             String
+  lastName              String
+  phone                 String
+  customerType          String   @default("PARTICULIER") // PARTICULIER | PRO
+  companyName           String?
+  vatNumber             String?
   negotiatedDiscountPct Float?
-  createdAt           DateTime @default(now())
+  createdAt             DateTime @default(now())
 
-  addresses     Address[]
-  reservations  Reservation[]
-  carts         Cart[]
-  notifications Notification[]
-  pushTokens    PushToken[]
+  addresses      Address[]
+  reservations   Reservation[]
+  carts          Cart[]
+  notifications  Notification[]
+  pushTokens     PushToken[]
   supportTickets SupportTicket[]
+  reviews        Review[]
 }
 
 model Address {
@@ -82,30 +163,65 @@ model Address {
 }
 
 model Category {
-  id          String    @id @default(cuid())
-  slug        String    @unique
-  name        String
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String // source FR
   bolt        String?
   description String?
-  position    Int       @default(0)
+  position    Int        @default(0)
+  parentId    String?
+  parent      Category?  @relation("subcats", fields: [parentId], references: [id])
+  children    Category[] @relation("subcats")
+  image       String?
+  icon        String?
+  i18n        Json? // { name?: {nl,en}, description?: {nl,en} }
+  seo         Json? // { title?: I18nText, description?: I18nText }
   products    Product[]
 }
 
 model Product {
-  id               String   @id @default(cuid())
-  slug             String   @unique
-  name             String
-  kind             String   @default("MACHINE") // MACHINE | ACCESSORY | CONSUMABLE | PPE | PACK
-  categoryId       String?
-  category         Category? @relation(fields: [categoryId], references: [id])
-  shortDescription String?
-  description       String?
-  recommendedUses  Json?
-  specs            Json?
+  id                  String    @id @default(cuid())
+  slug                String    @unique
+  name                String // source FR
+  kind                String    @default("MACHINE") // MACHINE | ACCESSORY | CONSUMABLE | PPE | PACK
+  categoryId          String?
+  category            Category? @relation(fields: [categoryId], references: [id])
+  shortDescription    String?
+  description         String?
+  recommendedUses     Json?
+  specs               Json?
   includedAccessories Json?
-  images           Json?
-  manualUrl        String?
-  documents        Json?
+  images              Json?
+  manualUrl           String?
+  documents           Json?
+
+  /// Traductions NL/EN des champs texte : { name?: {nl,en}, shortDescription?: {...}, description?: {...} }
+  i18n Json?
+  /// SEO : { title?: I18nText, description?: I18nText, ogImage?: string }
+  seo  Json?
+
+  brand String?
+  model String?
+
+  /// Provenance : parc Bricoloc ou partenaire (Loiselet).
+  supplier            String    @default("BRICOLOC") // BRICOLOC | LOISELET
+  supplierId          String?
+  supplierRel         Supplier? @relation(fields: [supplierId], references: [id])
+  supplierRef         String?
+  supplierUrl         String?
+  supplierListPrice   Float? // prix affiche partenaire (= prix client)
+  supplierDiscountPct Float? // remise Bricoloc sur ce prix (ex 0.25)
+  /// STANDARD = livraison tarif geo normal ; QUOTE_ONLY = volumineux, sur devis.
+  deliveryPolicy      String    @default("STANDARD")
+  /// INSTANT = reservable en direct ; ON_REQUEST = confirmation partenaire sous 1 h.
+  availabilityMode    String    @default("INSTANT")
+
+  /// Interne (non affiche) : prix d'achat + benchmark concurrents (repris de la liste machines).
+  purchasePrice  Float?
+  competitorRefs Json?
+
+  weightKg Float?
+  bulky    Boolean @default(false)
 
   dailyPrice     Float
   weekendPrice   Float?
@@ -113,33 +229,34 @@ model Product {
   monthPrice     Float?
   tiers          Json? // [{minDays, perDay}]
   proDiscountPct Float?
-  deposit        Float   @default(0)
+  deposit        Float  @default(0)
 
   /// Stock pour les articles non suivis a l'exemplaire (consommables, petits accessoires).
   /// null => la capacite est calculee sur le nombre d'exemplaires (ProductUnit).
-  stockQty  Int?
+  stockQty     Int?
   /// true pour un consommable (vendu, non restitue -> pas de reservation de stock dans le temps).
   isConsumable Boolean @default(false)
 
-  isDemo    Boolean @default(true)
-  published Boolean @default(true)
+  isDemo    Boolean  @default(true)
+  published Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   units            ProductUnit[]
-  linksFrom        ProductLink[] @relation("linkFrom")
-  linksTo          ProductLink[] @relation("linkTo")
+  linksFrom        ProductLink[]     @relation("linkFrom")
+  linksTo          ProductLink[]     @relation("linkTo")
   cartItems        CartItem[]
   reservationItems ReservationItem[]
+  reviews          Review[]
 }
 
 /// Relations entre articles : accessoire recommande, consommable, EPI, complementaire, contenu de pack.
 model ProductLink {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   fromId   String
   toId     String
   type     String // ACCESSORY | CONSUMABLE | PPE | COMPLEMENTARY | PACK_ITEM
-  quantity Int    @default(1)
+  quantity Int     @default(1)
   from     Product @relation("linkFrom", fields: [fromId], references: [id], onDelete: Cascade)
   to       Product @relation("linkTo", fields: [toId], references: [id], onDelete: Cascade)
 
@@ -148,17 +265,21 @@ model ProductLink {
 
 /// Exemplaire physique d'une machine.
 model ProductUnit {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   productId         String
-  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  assetTag          String   @unique
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  assetTag          String    @unique
   serialNumber      String?
-  qrToken           String   @unique
-  state             String   @default("AVAILABLE") // UNIT_STATES
+  sku               String?
+  barcode           String?   @unique
+  qrToken           String    @unique
+  state             String    @default("AVAILABLE") // UNIT_STATES
+  /// Immobilise (maintenance/repar.) jusqu'a cette date -> retire des disponibilites.
+  immobilisedUntil  DateTime?
   notes             String?
   images            Json?
   nextMaintenanceAt DateTime?
-  createdAt         DateTime @default(now())
+  createdAt         DateTime  @default(now())
 
   reservationUnits ReservationUnit[]
   damages          Damage[]
@@ -166,18 +287,18 @@ model ProductUnit {
 }
 
 model Cart {
-  id            String   @id @default(cuid())
-  userId        String?
-  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  sessionKey    String   @unique
-  periodStart   DateTime?
-  periodEnd     DateTime?
+  id             String    @id @default(cuid())
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionKey     String    @unique
+  periodStart    DateTime?
+  periodEnd      DateTime?
   fulfilmentMode String? // PICKUP | DELIVERY
-  address       Json?
-  slot          String?
-  promoCode     String?
-  updatedAt     DateTime @updatedAt
-  createdAt     DateTime @default(now())
+  address        Json?
+  slot           String?
+  promoCode      String?
+  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime  @default(now())
 
   items CartItem[]
 }
@@ -210,8 +331,18 @@ model Reservation {
   promoCode      String?
   totals         Json // snapshot CartTotals
   note           String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+
+  /// Reglement : en ligne (Mollie) ou a l'enlevement (clic & collect uniquement).
+  paymentMethod String @default("ONLINE") // ONLINE | ON_SITE_CASH | ON_SITE_CARD
+  paymentStatus String @default("PENDING") // PENDING | ON_PICKUP | AUTHORIZED | PAID | PARTIALLY_REFUNDED | REFUNDED
+
+  /// Flux partenaire (Loiselet) : demande envoyee, en attente de confirmation.
+  supplierStatus        String? // NONE | REQUESTED | CONFIRMED | DECLINED
+  supplierRequestSentAt DateTime?
+  supplierConfirmedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   items      ReservationItem[]
   payments   Payment[]
@@ -225,178 +356,204 @@ model Reservation {
 }
 
 model ReservationItem {
-  id           String   @id @default(cuid())
+  id            String      @id @default(cuid())
   reservationId String
-  reservation  Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  productId    String
-  product      Product  @relation(fields: [productId], references: [id])
-  nameSnapshot String
-  kind         String
-  quantity     Int
-  unitPriceHT  Float
-  lineHT       Float
-  depositUnit  Float    @default(0)
-  billedDays   Int      @default(1)
-  appliedRule  String   @default("STANDARD")
-  periodStart  DateTime? // override exceptionnel (admin)
-  periodEnd    DateTime?
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+  nameSnapshot  String
+  kind          String
+  quantity      Int
+  unitPriceHT   Float
+  lineHT        Float
+  depositUnit   Float       @default(0)
+  billedDays    Int         @default(1)
+  appliedRule   String      @default("STANDARD")
+  periodStart   DateTime? // override exceptionnel (admin)
+  periodEnd     DateTime?
 
   units ReservationUnit[]
 }
 
 /// Affectation d'un exemplaire physique a une ligne de reservation (au retrait).
 model ReservationUnit {
-  id                String   @id @default(cuid())
+  id                String          @id @default(cuid())
   reservationItemId String
   reservationItem   ReservationItem @relation(fields: [reservationItemId], references: [id], onDelete: Cascade)
   unitId            String
-  unit              ProductUnit @relation(fields: [unitId], references: [id])
-  assignedAt        DateTime @default(now())
+  unit              ProductUnit     @relation(fields: [unitId], references: [id])
+  assignedAt        DateTime        @default(now())
   returnedAt        DateTime?
 
   @@unique([reservationItemId, unitId])
 }
 
 model Payment {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   reservationId String
   reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  provider      String   @default("mock")
-  status        String   @default("PENDING") // PAYMENT_STATUSES
-  kind          String   @default("RENTAL") // RENTAL | DEPOSIT | EXTRA | REFUND
+  provider      String      @default("mock")
+  status        String      @default("PENDING") // PAYMENT_STATUSES
+  kind          String      @default("RENTAL") // RENTAL | DEPOSIT | EXTRA | REFUND
   amount        Float
   externalRef   String?
   meta          Json?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime    @default(now())
 }
 
 model Deposit {
-  id             String   @id @default(cuid())
-  reservationId  String   @unique
+  id             String      @id @default(cuid())
+  reservationId  String      @unique
   reservation    Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   amount         Float
-  status         String   @default("HELD") // DEPOSIT_STATUSES
-  capturedAmount Float    @default(0)
-  updatedAt      DateTime @updatedAt
+  status         String      @default("HELD") // DEPOSIT_STATUSES
+  capturedAmount Float       @default(0)
+
+  /// CARD_HOLD = empreinte (bloquee, non debitee) ; CHARGE_REFUND = encaissee puis remboursee ;
+  /// CASH = liquide au comptoir (clic & collect).
+  method          String    @default("CARD_HOLD")
+  provider        String? // mollie | mock | cash
+  authorizationId String? // id d'autorisation carte
+  authExpiresAt   DateTime? // les empreintes expirent seules (~28 j Mollie)
+  heldAt          DateTime?
+  releasedAt      DateTime?
+  capturedAt      DateTime?
+  captureReason   String?
+
+  updatedAt DateTime @updatedAt
 }
 
 model Delivery {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   reservationId String
   reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  direction     String   @default("OUT") // OUT | RETURN
-  status        String   @default("REQUESTED") // DELIVERY_STATUSES
+  direction     String      @default("OUT") // OUT | RETURN
+  status        String      @default("REQUESTED") // DELIVERY_STATUSES
   driverId      String?
-  driver        StaffUser? @relation(fields: [driverId], references: [id])
+  driver        StaffUser?  @relation(fields: [driverId], references: [id])
   slot          String?
   address       Json?
-  distanceKm    Float    @default(0)
-  feeHT         Float    @default(0)
+  distanceKm    Float       @default(0)
+  feeHT         Float       @default(0)
   signature     String?
   photo         String?
-  updatedAt     DateTime @updatedAt
-  createdAt     DateTime @default(now())
+  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime    @default(now())
 }
 
 model PickupRecord {
-  id            String   @id @default(cuid())
-  reservationId String   @unique
+  id            String      @id @default(cuid())
+  reservationId String      @unique
   reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   staffId       String?
-  staff         StaffUser? @relation(fields: [staffId], references: [id])
+  staff         StaffUser?  @relation(fields: [staffId], references: [id])
   checklist     Json
   photos        Json?
   signature     String
   note          String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime    @default(now())
 }
 
 model ReturnRecord {
-  id             String   @id @default(cuid())
-  reservationId  String   @unique
+  id             String      @id @default(cuid())
+  reservationId  String      @unique
   reservation    Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   staffId        String?
-  staff          StaffUser? @relation(fields: [staffId], references: [id])
+  staff          StaffUser?  @relation(fields: [staffId], references: [id])
   actualReturnAt DateTime
   checklist      Json
   photos         Json?
-  cleaningFeeHT  Float    @default(0)
-  otherFeeHT     Float    @default(0)
+  cleaningFeeHT  Float       @default(0)
+  otherFeeHT     Float       @default(0)
   otherFeeReason String?
-  lateDays       Int      @default(0)
-  lateFeeHT      Float    @default(0)
+  lateDays       Int         @default(0)
+  lateFeeHT      Float       @default(0)
   note           String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime    @default(now())
 }
 
 model Damage {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   reservationId String?
   reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
   unitId        String
-  unit          ProductUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unit          ProductUnit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
   description   String
-  feeHT         Float    @default(0)
+  feeHT         Float        @default(0)
   photos        Json?
-  resolved      Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  resolved      Boolean      @default(false)
+  createdAt     DateTime     @default(now())
 }
 
 model Maintenance {
-  id          String   @id @default(cuid())
-  unitId      String
-  unit        ProductUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  type        String   @default("ENTRETIEN") // ENTRETIEN | REPARATION | CONTROLE
-  description String
-  cost        Float    @default(0)
-  performedAt DateTime @default(now())
-  nextAt      DateTime?
-  staffId     String?
-  staff       StaffUser? @relation(fields: [staffId], references: [id])
+  id                 String      @id @default(cuid())
+  unitId             String
+  unit               ProductUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  type               String      @default("ENTRETIEN") // ENTRETIEN | REPARATION | CONTROLE
+  status             String      @default("PLANNED") // PLANNED | IN_PROGRESS | DONE | CANCELLED
+  description        String
+  cost               Float       @default(0)
+  /// Periode d'immobilisation : l'exemplaire est retire des disponibilites entre startAt et endAt.
+  startAt            DateTime?
+  endAt              DateTime?
+  blocksAvailability Boolean     @default(true)
+  performedAt        DateTime    @default(now())
+  nextAt             DateTime?
+  staffId            String?
+  staff              StaffUser?  @relation(fields: [staffId], references: [id])
+
+  @@index([unitId, startAt, endAt])
 }
 
 model Invoice {
-  id            String   @id @default(cuid())
-  number        String   @unique
+  id            String      @id @default(cuid())
+  number        String      @unique
   reservationId String
   reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  kind          String   @default("FINAL") // RESERVATION | FINAL
+  kind          String      @default("FINAL") // RESERVATION | FINAL
   totals        Json
   lines         Json
   pdfPath       String?
-  issuedAt      DateTime @default(now())
+  issuedAt      DateTime    @default(now())
 }
 
 model Promotion {
-  id         String   @id @default(cuid())
-  code       String   @unique
+  id         String    @id @default(cuid())
+  code       String    @unique
   kind       String // PERCENT | AMOUNT
   value      Float
-  active     Boolean  @default(true)
-  minTotalHT Float    @default(0)
+  active     Boolean   @default(true)
+  minTotalHT Float     @default(0)
   expiresAt  DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 }
 
+/// Zones de livraison. Deux modes possibles (config globale `delivery.*` dans Setting) :
+/// - PREFIX : match sur prefixe de code postal (historique, secours).
+/// - RADIUS : distance depot->client (geocodage) comparee a maxDistanceKm.
+/// Le tarif geo par tranches de km vit dans Setting `delivery.brackets`.
 model DeliveryZone {
   id             String  @id @default(cuid())
   name           String
+  mode           String  @default("PREFIX") // PREFIX | RADIUS
   postalPrefixes Json // ["1000","10","2"]
+  maxDistanceKm  Float?
   baseFee        Float
   perKm          Float   @default(0)
+  position       Int     @default(0)
   active         Boolean @default(true)
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      String // NOTIFICATION_TYPES
   title     String
   body      String
   data      Json?
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model PushToken {
@@ -409,16 +566,16 @@ model PushToken {
 }
 
 model SupportTicket {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   userId        String?
-  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user          User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   reservationId String?
   reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
   subject       String
   message       String
-  status        String   @default("OPEN") // OPEN | IN_PROGRESS | CLOSED
+  status        String       @default("OPEN") // OPEN | IN_PROGRESS | CLOSED
   response      String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime     @default(now())
 }
 
 model Counter {

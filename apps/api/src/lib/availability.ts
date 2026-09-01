@@ -8,6 +8,7 @@ import { prisma } from '../db.js';
 /** Statuts de reservation qui bloquent du stock sur une periode. */
 export const BLOCKING_STATUSES = [
   'DRAFT',
+  'PENDING_SUPPLIER',
   'CONFIRMED',
   'PREPARING',
   'READY',
@@ -16,6 +17,42 @@ export const BLOCKING_STATUSES = [
 ];
 
 const MS_DAY = 86_400_000;
+
+/**
+ * Nombre d'exemplaires d'un produit **immobilises pour maintenance** sur la periode.
+ * Corrige le bug : un entretien / une reparation doit retirer l'exemplaire des
+ * disponibilites. Compte les exemplaires distincts qui ont soit :
+ *  - un `Maintenance` bloquant dont [startAt, endAt] chevauche [start, end),
+ *  - un `immobilisedUntil` posterieur au debut de la periode demandee.
+ */
+export async function maintenanceBlockedQty(
+  productId: string,
+  start: Date,
+  end: Date,
+): Promise<number> {
+  const units = await prisma.productUnit.findMany({
+    where: { productId },
+    select: {
+      id: true,
+      immobilisedUntil: true,
+      maintenances: {
+        where: { blocksAvailability: true, status: { in: ['PLANNED', 'IN_PROGRESS'] } },
+        select: { startAt: true, endAt: true },
+      },
+    },
+  });
+  let blocked = 0;
+  for (const u of units) {
+    const byFlag = u.immobilisedUntil != null && u.immobilisedUntil.getTime() > start.getTime();
+    const byPlan = u.maintenances.some((m) => {
+      const s = m.startAt ?? new Date(0);
+      const e = m.endAt ?? new Date(8640000000000000); // immobilise sans fin connue
+      return s.getTime() < end.getTime() && start.getTime() < e.getTime();
+    });
+    if (byFlag || byPlan) blocked += 1;
+  }
+  return blocked;
+}
 
 export interface CapacityInfo {
   productId: string;
@@ -98,8 +135,11 @@ export async function availabilityFor(
     };
   }
 
-  const reserved = await reservedQty(productId, start, end, opts.excludeReservationId);
-  const available = Math.max(0, cap.capacity - reserved);
+  const [reserved, inMaintenance] = await Promise.all([
+    reservedQty(productId, start, end, opts.excludeReservationId),
+    maintenanceBlockedQty(productId, start, end),
+  ]);
+  const available = Math.max(0, cap.capacity - reserved - inMaintenance);
   let status: AvailabilityStatus = statusFor(requestedQty, available);
 
   let nearbyPeriod: { start: string; end: string } | null = null;

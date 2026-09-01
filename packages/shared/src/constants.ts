@@ -113,6 +113,7 @@ export type StaffRole = (typeof STAFF_ROLES)[number];
 /** Statuts d'une reservation. */
 export const RESERVATION_STATUSES = [
   'DRAFT', // panier converti, paiement non finalise
+  'PENDING_SUPPLIER', // contient un article partenaire (Loiselet) : demande envoyee, en attente de confirmation
   'CONFIRMED', // payee, en attente de preparation
   'PREPARING', // preparateur en cours
   'READY', // materiel pret (Click & Collect / livraison)
@@ -130,8 +131,72 @@ export type FulfilmentMode = (typeof FULFILMENT_MODES)[number];
 export const PAYMENT_STATUSES = ['PENDING', 'AUTHORIZED', 'PAID', 'REFUNDED', 'FAILED'] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
+/** Mode de reglement d'une commande. `ON_SITE_*` = clic & collect uniquement. */
+export const PAYMENT_METHODS = ['ONLINE', 'ON_SITE_CASH', 'ON_SITE_CARD'] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/** Etat du reglement au niveau commande (distinct des Payment individuels). */
+export const ORDER_PAYMENT_STATUSES = [
+  'PENDING',
+  'ON_PICKUP', // a payer a l'enlevement
+  'AUTHORIZED', // empreinte posee
+  'PAID',
+  'PARTIALLY_REFUNDED',
+  'REFUNDED',
+] as const;
+export type OrderPaymentStatus = (typeof ORDER_PAYMENT_STATUSES)[number];
+
 export const DEPOSIT_STATUSES = ['HELD', 'PARTIAL_RELEASE', 'RELEASED', 'CAPTURED'] as const;
 export type DepositStatus = (typeof DEPOSIT_STATUSES)[number];
+
+/** Comment la caution est prise. */
+export const DEPOSIT_METHODS = [
+  'CARD_HOLD', // empreinte carte : bloquee, non debitee (defaut en ligne)
+  'CHARGE_REFUND', // encaissee pour de vrai puis remboursee au retour
+  'CASH', // liquide au comptoir (clic & collect)
+] as const;
+export type DepositMethod = (typeof DEPOSIT_METHODS)[number];
+
+/** Provenance d'un article au catalogue. */
+export const PRODUCT_SUPPLIERS = ['BRICOLOC', 'LOISELET'] as const;
+export type ProductSupplier = (typeof PRODUCT_SUPPLIERS)[number];
+
+/** Statut du flux de demande partenaire (Loiselet). */
+export const SUPPLIER_REQUEST_STATUSES = ['REQUESTED', 'CONFIRMED', 'DECLINED'] as const;
+export type SupplierRequestStatus = (typeof SUPPLIER_REQUEST_STATUSES)[number];
+
+/** Type de fournisseur. */
+export const SUPPLIER_KINDS = ['PARTNER_RENTAL', 'CONSUMABLE', 'EQUIPMENT'] as const;
+export type SupplierKind = (typeof SUPPLIER_KINDS)[number];
+
+/** Politique de livraison d'un produit. */
+export const DELIVERY_POLICIES = ['STANDARD', 'QUOTE_ONLY'] as const;
+export type DeliveryPolicy = (typeof DELIVERY_POLICIES)[number];
+
+/** Mode de disponibilite d'un produit. */
+export const AVAILABILITY_MODES = ['INSTANT', 'ON_REQUEST'] as const;
+export type AvailabilityMode = (typeof AVAILABILITY_MODES)[number];
+
+/** Types de liens entre articles (accessoires / consommables sur la fiche outil). */
+export const PRODUCT_LINK_TYPES = [
+  'ACCESSORY',
+  'CONSUMABLE',
+  'PPE',
+  'COMPLEMENTARY',
+  'PACK_ITEM',
+] as const;
+export type ProductLinkType = (typeof PRODUCT_LINK_TYPES)[number];
+
+/** Statut d'un avis client. */
+export const REVIEW_STATUSES = ['PENDING', 'PUBLISHED', 'REJECTED'] as const;
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
+
+/** Statut d'une maintenance. */
+export const MAINTENANCE_STATUSES = ['PLANNED', 'IN_PROGRESS', 'DONE', 'CANCELLED'] as const;
+export type MaintenanceStatus = (typeof MAINTENANCE_STATUSES)[number];
+
+export const MAINTENANCE_TYPES = ['ENTRETIEN', 'REPARATION', 'CONTROLE'] as const;
+export type MaintenanceType = (typeof MAINTENANCE_TYPES)[number];
 
 export const UNIT_STATES = ['AVAILABLE', 'RENTED', 'MAINTENANCE', 'DAMAGED', 'RETIRED'] as const;
 export type UnitState = (typeof UNIT_STATES)[number];

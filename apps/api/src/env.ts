@@ -25,12 +25,25 @@ if (existsSync(envPath)) {
   }
 }
 
+const deeplKey = process.env.DEEPL_API_KEY ?? '';
+const port = Number(process.env.PORT ?? 4000);
+const publicApiUrl = process.env.PUBLIC_API_URL ?? `http://localhost:${port}`;
+
 export const env = {
   databaseUrl: process.env.DATABASE_URL ?? 'file:./prisma/dev.db',
   jwtSecret: process.env.JWT_SECRET ?? 'dev-bricoloc-secret-change-me',
-  port: Number(process.env.PORT ?? 4000),
-  publicApiUrl:
-    process.env.PUBLIC_API_URL ?? `http://localhost:${process.env.PORT ?? 4000}`,
+  port,
+  publicApiUrl,
+  siteUrl: process.env.SITE_URL ?? 'https://www.bricoloc.be',
   corsOrigins: (process.env.CORS_ORIGINS ?? '*').split(',').map((s) => s.trim()),
   expoPushEnabled: process.env.EXPO_PUSH_ENABLED === 'true',
+
+  /** Traduction auto FR -> NL/EN. Clé « …:fx » = offre gratuite (api-free). */
+  deeplApiKey: deeplKey,
+  deeplApiHost: deeplKey.endsWith(':fx') ? 'https://api-free.deepl.com' : 'https://api.deepl.com',
+
+  /** Stockage local des médias (images produits, contenus). */
+  uploadsDir: path.join(root, 'uploads'),
+  /** URL publique de base pour les fichiers servis depuis uploadsDir. */
+  mediaBaseUrl: `${publicApiUrl}/uploads`,
 };

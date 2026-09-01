@@ -234,6 +234,9 @@ export const upsertContentSchema = z.object({
   locale: z.string().default('fr'),
   title: z.string().optional(),
   body: z.string(),
+  format: z.enum(['markdown', 'html']).default('markdown'),
+  /** true quand un humain valide une version NL/EN (fige la trad auto). */
+  markReviewed: z.boolean().default(false),
 });
 
 export const upsertDeliveryZoneSchema = z.object({

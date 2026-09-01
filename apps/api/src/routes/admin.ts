@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { createReadStream, existsSync } from 'node:fs';
 import {
+  SOURCE_LOCALE,
   createStaffSchema,
   upsertCategorySchema,
   upsertContentSchema,
@@ -17,6 +18,7 @@ import { setSetting, getSettings } from '../lib/settings.js';
 import { newQrToken } from '../lib/qr.js';
 import { productInclude, serializeProductDetail } from '../lib/serialize.js';
 import { generateInvoice } from '../lib/invoice.js';
+import { syncContentTranslations } from '../lib/i18n-content.js';
 
 export const adminRouter = Router();
 adminRouter.use(attachPrincipal, requireStaff());
@@ -433,12 +435,58 @@ adminRouter.put(
   requireStaff('RESPONSABLE'),
   h(async (req, res) => {
     const data = upsertContentSchema.parse(req.body);
+    const isSource = data.locale === SOURCE_LOCALE;
+    // Édition manuelle d'une langue cible => on fige (plus de réécrasement auto).
+    const reviewed = !isSource;
+
     const row = await prisma.content.upsert({
       where: { key_locale: { key: data.key, locale: data.locale } },
-      create: data,
-      update: { title: data.title, body: data.body },
+      create: {
+        key: data.key,
+        locale: data.locale,
+        title: data.title,
+        body: data.body,
+        format: data.format,
+        autoTranslated: false,
+        reviewedAt: reviewed ? new Date() : null,
+      },
+      update: {
+        title: data.title,
+        body: data.body,
+        format: data.format,
+        autoTranslated: isSource ? undefined : false,
+        reviewedAt: reviewed ? new Date() : undefined,
+      },
     });
-    res.json({ content: row });
+
+    // Le FR a changé => (re)traduire NL/EN en arrière-plan (sauf versions revues).
+    let translated: string[] = [];
+    if (isSource) {
+      translated = await syncContentTranslations({
+        key: data.key,
+        title: data.title,
+        body: data.body,
+        format: data.format,
+      });
+    }
+    res.json({ content: row, translated });
+  }),
+);
+
+/** Force la re-traduction NL/EN d'un contenu depuis sa version FR. */
+adminRouter.post(
+  '/content/:key/retranslate',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    const fr = await prisma.content.findUnique({
+      where: { key_locale: { key: req.params.key!, locale: SOURCE_LOCALE } },
+    });
+    if (!fr) throw notFound('Contenu FR introuvable');
+    const translated = await syncContentTranslations(
+      { key: fr.key, title: fr.title, body: fr.body, format: fr.format },
+      { force: true },
+    );
+    res.json({ translated });
   }),
 );
 
