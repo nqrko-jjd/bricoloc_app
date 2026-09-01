@@ -47,25 +47,51 @@ export function ScanField({
     return () => window.removeEventListener('keydown', onKey);
   }, [onScan]);
 
-  // Caméra + BarcodeDetector.
+  // Caméra : BarcodeDetector natif (Chrome/Android/Zebra) sinon ZXing (Safari/iOS).
   useEffect(() => {
     if (!camera) return;
     let stream: MediaStream | null = null;
     let raf = 0;
     let stopped = false;
+    let zxingControls: { stop: () => void } | null = null;
+
+    const hit = (raw: string) => {
+      if (stopped) return;
+      onScan(raw.trim());
+      setCamera(false);
+    };
 
     (async () => {
-      const BD = (window as unknown as { BarcodeDetector?: new (o?: unknown) => { detect: (s: unknown) => Promise<{ rawValue: string }[]> } }).BarcodeDetector;
-      if (!BD) {
-        setCamError('La lecture caméra n’est pas prise en charge par ce navigateur. Utilisez une douchette ou la saisie manuelle.');
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCamError(
+          window.isSecureContext
+            ? 'Caméra indisponible sur ce navigateur. Utilisez une douchette ou la saisie manuelle.'
+            : 'La caméra exige une connexion sécurisée (HTTPS). Elle fonctionnera sur le site en ligne. En attendant : douchette ou saisie manuelle.',
+        );
         return;
       }
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
+      } catch {
+        setCamError('Accès caméra refusé. Autorisez la caméra dans les réglages du navigateur.');
+        return;
+      }
+      if (stopped) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => undefined);
+      }
+
+      const BD = (
+        window as unknown as {
+          BarcodeDetector?: new (o?: unknown) => { detect: (s: unknown) => Promise<{ rawValue: string }[]> };
         }
+      ).BarcodeDetector;
+
+      if (BD) {
         const detector = new BD({
           formats: ['qr_code', 'code_128', 'ean_13', 'code_39', 'data_matrix'],
         });
@@ -73,25 +99,37 @@ export function ScanField({
           if (stopped || !videoRef.current) return;
           try {
             const codes = await detector.detect(videoRef.current);
-            if (codes[0]?.rawValue) {
-              onScan(codes[0].rawValue.trim());
-              setCamera(false);
-              return;
-            }
+            if (codes[0]?.rawValue) return hit(codes[0].rawValue);
           } catch {
             /* ignore */
           }
           raf = requestAnimationFrame(tick);
         };
         tick();
-      } catch {
-        setCamError('Accès caméra refusé.');
+        return;
+      }
+
+      // Repli ZXing (iOS Safari, Firefox…)
+      try {
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
+        const reader = new BrowserMultiFormatReader();
+        zxingControls = await reader.decodeFromStream(
+          stream,
+          videoRef.current!,
+          (res) => {
+            if (res) hit(res.getText());
+          },
+        );
+      } catch (e) {
+        console.warn('[scan] ZXing:', (e as Error).message);
+        setCamError('Lecture caméra impossible. Utilisez une douchette ou la saisie manuelle.');
       }
     })();
 
     return () => {
       stopped = true;
       cancelAnimationFrame(raf);
+      zxingControls?.stop();
       stream?.getTracks().forEach((t) => t.stop());
     };
   }, [camera, onScan]);

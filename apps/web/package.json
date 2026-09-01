@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
+    "dev:https": "next dev -p 3000 --experimental-https",
     "build": "next build",
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@bricoloc/shared": "*",
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
     "next": "^15.5.24",
     "next-intl": "^4.14.1",
     "react": "^19.2.0",
