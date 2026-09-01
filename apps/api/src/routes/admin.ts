@@ -25,35 +25,175 @@ export const adminRouter = Router();
 adminRouter.use(attachPrincipal, requireStaff());
 
 /* -------------------------- Tableau de bord -------------------------- */
+const DAY = 86_400_000;
+function dayBounds(offset = 0) {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  const start = new Date(d.getTime() + offset * DAY);
+  return { start, end: new Date(start.getTime() + DAY) };
+}
+
 adminRouter.get(
   '/dashboard',
   h(async (_req, res) => {
-    const [products, units, customers, reservations, openTickets, damages] = await Promise.all([
-      prisma.product.count(),
+    const today = dayBounds(0);
+    const in7 = new Date(Date.now() + 7 * DAY);
+    const last14Start = new Date(Date.now() - 14 * DAY);
+
+    const [
+      products,
+      unitsTotal,
+      unitsOut,
+      unitsMaint,
+      customers,
+      reservations,
+      openTickets,
+      damages,
+      pendingSupplier,
+      revenue,
+      revenue30,
+      newRes14,
+      pickupsToday,
+      returnsToday,
+      overdue,
+      recentReservations,
+      pendingReviews,
+      maintDue,
+    ] = await Promise.all([
+      prisma.product.count({ where: { published: true } }),
       prisma.productUnit.count(),
+      prisma.productUnit.count({ where: { state: 'RENTED' } }),
+      prisma.productUnit.count({ where: { state: 'MAINTENANCE' } }),
       prisma.user.count(),
       prisma.reservation.groupBy({ by: ['status'], _count: true }),
       prisma.supportTicket.count({ where: { status: { not: 'CLOSED' } } }),
       prisma.damage.count({ where: { resolved: false } }),
+      prisma.reservation.count({ where: { status: 'PENDING_SUPPLIER' } }),
+      prisma.payment.aggregate({
+        where: { status: 'PAID', kind: { in: ['RENTAL', 'EXTRA'] } },
+        _sum: { amount: true },
+      }),
+      prisma.payment.aggregate({
+        where: {
+          status: 'PAID',
+          kind: { in: ['RENTAL', 'EXTRA'] },
+          createdAt: { gte: new Date(Date.now() - 30 * DAY) },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.reservation.findMany({
+        where: { createdAt: { gte: last14Start } },
+        select: { createdAt: true, totals: true },
+      }),
+      prisma.reservation.findMany({
+        where: {
+          fulfilmentMode: 'PICKUP',
+          status: { in: ['CONFIRMED', 'PREPARING', 'READY'] },
+          periodStart: { gte: today.start, lt: today.end },
+        },
+        include: { user: true, items: true },
+        orderBy: { periodStart: 'asc' },
+      }),
+      prisma.reservation.findMany({
+        where: {
+          status: { in: ['OUT', 'RETURN_PENDING'] },
+          periodEnd: { gte: today.start, lt: today.end },
+        },
+        include: { user: true, items: true },
+        orderBy: { periodEnd: 'asc' },
+      }),
+      prisma.reservation.findMany({
+        where: { status: { in: ['OUT', 'RETURN_PENDING'] }, periodEnd: { lt: today.start } },
+        include: { user: true },
+        orderBy: { periodEnd: 'asc' },
+      }),
+      prisma.reservation.findMany({
+        where: { status: 'CONFIRMED', periodStart: { lte: in7 } },
+        include: { user: true, items: true },
+        orderBy: { periodStart: 'asc' },
+        take: 30,
+      }),
+      prisma.review.count({ where: { status: 'PENDING' } }),
+      prisma.productUnit.count({
+        where: { nextMaintenanceAt: { lte: new Date(Date.now() + 7 * DAY) }, state: { not: 'RETIRED' } },
+      }),
     ]);
-    const upcoming = await prisma.reservation.findMany({
-      where: { status: { in: ['CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDING'] } },
-      include: { user: true, items: true },
-      orderBy: { periodStart: 'asc' },
-      take: 20,
-    });
-    const revenue = await prisma.payment.aggregate({
-      where: { status: 'PAID', kind: { in: ['RENTAL', 'EXTRA', 'DEPOSIT'] } },
-      _sum: { amount: true },
-    });
+
+    // Série CA / jour sur 14 jours (à partir du snapshot totals).
+    const byDay: Record<string, { revenue: number; count: number }> = {};
+    for (let i = 13; i >= 0; i--) {
+      const k = new Date(Date.now() - i * DAY).toISOString().slice(0, 10);
+      byDay[k] = { revenue: 0, count: 0 };
+    }
+    for (const r of newRes14) {
+      const k = r.createdAt.toISOString().slice(0, 10);
+      if (!byDay[k]) continue;
+      byDay[k].count += 1;
+      const t = r.totals as { totalTVAC?: number } | null;
+      byDay[k].revenue += Number(t?.totalTVAC ?? 0);
+    }
+
+    const occupancy = unitsTotal ? Math.round((unitsOut / unitsTotal) * 100) : 0;
+
     res.json({
-      counters: { products, units, customers, openTickets, damages },
+      kpi: {
+        products,
+        unitsTotal,
+        unitsOut,
+        unitsMaint,
+        occupancy,
+        customers,
+        revenuePaid: revenue._sum.amount ?? 0,
+        revenue30: revenue30._sum.amount ?? 0,
+        newRes14: newRes14.length,
+      },
+      alerts: {
+        damages,
+        openTickets,
+        pendingSupplier,
+        overdue: overdue.length,
+        maintDue,
+        pendingReviews,
+        toPrepareSoon: recentReservations.length,
+      },
+      series: Object.entries(byDay).map(([date, v]) => ({ date, ...v })),
       reservationsByStatus: reservations,
-      revenuePaid: revenue._sum.amount ?? 0,
-      upcoming,
+      queue: {
+        pickupsToday: pickupsToday.map(slimRes),
+        returnsToday: returnsToday.map(slimRes),
+        overdue: overdue.map(slimRes),
+      },
     });
   }),
 );
+
+function slimRes(r: {
+  id: string;
+  number: string;
+  status: string;
+  periodStart: Date;
+  periodEnd: Date;
+  fulfilmentMode: string;
+  user?: { firstName: string; lastName: string } | null;
+  contact?: unknown;
+  items?: { quantity: number; nameSnapshot: string }[];
+}) {
+  const contact = r.contact as { firstName?: string; lastName?: string } | null;
+  return {
+    id: r.id,
+    number: r.number,
+    status: r.status,
+    periodStart: r.periodStart,
+    periodEnd: r.periodEnd,
+    fulfilmentMode: r.fulfilmentMode,
+    customer: r.user
+      ? `${r.user.firstName} ${r.user.lastName}`
+      : contact
+        ? `${contact.firstName ?? ''} ${contact.lastName ?? ''}`.trim() || 'Invité'
+        : 'Invité',
+    items: (r.items ?? []).map((i) => `${i.quantity}× ${i.nameSnapshot}`),
+  };
+}
 
 /* -------------------------- Categories -------------------------- */
 adminRouter.get(

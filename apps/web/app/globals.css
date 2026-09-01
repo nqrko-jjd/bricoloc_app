@@ -472,6 +472,54 @@ button { font-family: inherit; }
 .dz-actions button { border: none; background: rgba(255,255,255,0.9); color: var(--navy-deep); width: 24px; height: 24px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 0.85rem; line-height: 1; }
 .dz-actions button.dz-del { background: var(--err); color: #fff; }
 
+/* Tableau de bord admin */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: 16px; display: flex; flex-direction: column; gap: 6px;
+}
+.kpi--link { text-decoration: none; color: var(--ink); }
+.kpi--link:hover { border-color: var(--navy); }
+.kpi__label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-fg); font-weight: 700; }
+.kpi__value { font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; color: var(--navy-deep); line-height: 1; }
+.kpi__bar { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.kpi__bar span { display: block; height: 100%; background: var(--primary); }
+
+.dash-alerts { display: flex; flex-wrap: wrap; gap: 10px; }
+.dash-alert {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--r-xs);
+  text-decoration: none; font-weight: 600; font-size: var(--fs-sm); border: 1px solid transparent;
+}
+.dash-alert__n { font-family: var(--font-display); font-weight: 800; }
+.dash-alert--err { background: var(--err-bg); color: var(--err); border-color: color-mix(in srgb, var(--err) 25%, transparent); }
+.dash-alert--warn { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 25%, transparent); }
+.dash-alert--info { background: var(--info-bg); color: var(--navy); border-color: color-mix(in srgb, var(--navy) 20%, transparent); }
+
+.dash-queue { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.dash-queue li { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 8px; border-radius: var(--r-xs); background: var(--surface-2); }
+.dash-queue a { text-decoration: none; color: var(--ink); flex: 1; }
+.dash-queue a:hover strong { color: var(--primary); }
+
+/* Comptoir */
+.counter-scan {
+  display: flex; gap: 10px; align-items: center; padding: 16px; border-radius: var(--r-md);
+  background: var(--navy-deep); color: #fff; flex-wrap: wrap;
+}
+.counter-scan input {
+  flex: 1; min-width: 180px; padding: 14px 16px; font-size: 1.2rem; border-radius: var(--r-xs);
+  border: 2px solid transparent; font-family: var(--font-sans);
+}
+.counter-scan input:focus { outline: none; border-color: var(--primary); }
+.counter-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 16px; }
+.counter-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px; }
+.counter-col h3 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.counter-col--urgent { border-color: var(--err); }
+.counter-card { display: block; padding: 10px; border-radius: var(--r-xs); background: var(--surface-2); margin-bottom: 8px; text-decoration: none; color: var(--ink); }
+.counter-card:hover { background: color-mix(in srgb, var(--primary) 8%, var(--surface-2)); }
+.counter-card strong { color: var(--navy-deep); }
+.scan-camera { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+.scan-camera video { max-width: 92vw; max-height: 70vh; border-radius: var(--r-md); }
+
 /* =========================================================================
    Borne tactile 16"
    ========================================================================= */

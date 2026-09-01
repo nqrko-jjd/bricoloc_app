@@ -57,6 +57,126 @@ opsRouter.get(
   }),
 );
 
+/**
+ * Tableau du comptoir : réservations regroupées par état opérationnel.
+ * À préparer / prêtes / en cours (retour aujourd'hui) / en retard.
+ */
+opsRouter.get(
+  '/board',
+  h(async (_req, res) => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
+
+    const rows = await prisma.reservation.findMany({
+      where: {
+        status: { in: ['PENDING_SUPPLIER', 'CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDING'] },
+      },
+      include: {
+        items: { select: { quantity: true, nameSnapshot: true, kind: true } },
+        user: { select: { firstName: true, lastName: true, phone: true } },
+        deliveries: { select: { direction: true, status: true } },
+      },
+      orderBy: { periodStart: 'asc' },
+    });
+
+    const map = (r: (typeof rows)[number]) => ({
+      id: r.id,
+      number: r.number,
+      qrToken: r.qrToken,
+      status: r.status,
+      fulfilmentMode: r.fulfilmentMode,
+      paymentMethod: r.paymentMethod,
+      paymentStatus: r.paymentStatus,
+      periodStart: r.periodStart,
+      periodEnd: r.periodEnd,
+      customer: r.user
+        ? `${r.user.firstName} ${r.user.lastName}`
+        : (r.contact as { firstName?: string } | null)?.firstName ?? 'Invité',
+      phone: r.user?.phone ?? (r.contact as { phone?: string } | null)?.phone ?? null,
+      items: r.items.map((i) => `${i.quantity}× ${i.nameSnapshot}`),
+      lines: r.items.length,
+    });
+
+    const isToday = (d: Date) => d >= startOfDay && d < endOfDay;
+
+    res.json({
+      pendingSupplier: rows.filter((r) => r.status === 'PENDING_SUPPLIER').map(map),
+      toPrepare: rows.filter((r) => r.status === 'CONFIRMED' || r.status === 'PREPARING').map(map),
+      ready: rows.filter((r) => r.status === 'READY').map(map),
+      out: rows
+        .filter((r) => (r.status === 'OUT' || r.status === 'RETURN_PENDING') && isToday(r.periodEnd))
+        .map(map),
+      overdue: rows
+        .filter(
+          (r) => (r.status === 'OUT' || r.status === 'RETURN_PENDING') && r.periodEnd < startOfDay,
+        )
+        .map(map),
+    });
+  }),
+);
+
+/**
+ * Résolution universelle d'un code scanné (QR / code-barres / n°).
+ * Préfixe `R-` / `BRL-` ou numéro → réservation ;
+ * `U-` ou assetTag / barcode → exemplaire (+ sa réservation en cours) ;
+ * sinon → produit (slug / sku).
+ */
+opsRouter.get(
+  '/resolve/:code',
+  h(async (req, res) => {
+    const code = req.params.code.trim();
+    const up = code.toUpperCase();
+
+    // Réservation
+    if (/^(R-|BRL-)/i.test(code) || /^\d{4}-\d+$/.test(code) || /^F?\d{4,}/.test(code)) {
+      const r = await prisma.reservation.findFirst({
+        where: { OR: [{ qrToken: code }, { number: up }, { number: code }] },
+      });
+      if (r) return res.json({ type: 'reservation', id: r.id, number: r.number });
+    }
+
+    const reservation = await prisma.reservation.findFirst({
+      where: { OR: [{ qrToken: code }, { number: up }] },
+    });
+    if (reservation) {
+      return res.json({ type: 'reservation', id: reservation.id, number: reservation.number });
+    }
+
+    // Exemplaire
+    const unit = await prisma.productUnit.findFirst({
+      where: { OR: [{ qrToken: code }, { assetTag: up }, { barcode: code }] },
+      include: {
+        product: { select: { slug: true, name: true } },
+        reservationUnits: {
+          where: { returnedAt: null },
+          include: { reservationItem: { include: { reservation: { select: { id: true, number: true, status: true } } } } },
+        },
+      },
+    });
+    if (unit) {
+      const active = unit.reservationUnits[0]?.reservationItem.reservation ?? null;
+      return res.json({
+        type: 'unit',
+        id: unit.id,
+        assetTag: unit.assetTag,
+        state: unit.state,
+        product: unit.product,
+        activeReservation: active,
+      });
+    }
+
+    // Produit
+    const product = await prisma.product.findFirst({
+      where: { OR: [{ slug: code.toLowerCase() }, { slug: code }] },
+      select: { id: true, slug: true, name: true },
+    });
+    if (product) return res.json({ type: 'product', ...product });
+
+    throw notFound(`Rien ne correspond au code « ${code} »`);
+  }),
+);
+
 opsRouter.post(
   '/reservations/:id/status',
   requireStaff('PREPARATEUR', 'RESPONSABLE', 'COMPTOIR'),

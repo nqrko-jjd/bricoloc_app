@@ -1,9 +1,62 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { StatusBadge } from '@/components/StatusBadge';
+import { ScanField } from '@/components/admin/ScanField';
 import { toLocalInput, fromLocalInput } from '@/lib/dates';
+
+interface BoardRow {
+  id: string;
+  number: string;
+  status: string;
+  fulfilmentMode: string;
+  customer: string;
+  items: string[];
+}
+interface Board {
+  pendingSupplier: BoardRow[];
+  toPrepare: BoardRow[];
+  ready: BoardRow[];
+  out: BoardRow[];
+  overdue: BoardRow[];
+}
+
+function BoardCol({
+  title,
+  rows,
+  onPick,
+  urgent,
+}: {
+  title: string;
+  rows: BoardRow[];
+  onPick: (n: string) => void;
+  urgent?: boolean;
+}) {
+  return (
+    <div className={`counter-col${urgent ? ' counter-col--urgent' : ''}`}>
+      <h3>
+        {title} <span className="badge">{rows.length}</span>
+      </h3>
+      {rows.length === 0 && <p className="small muted">—</p>}
+      {rows.map((r) => (
+        <button
+          key={r.id}
+          type="button"
+          className="counter-card"
+          onClick={() => onPick(r.number)}
+          style={{ width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer' }}
+        >
+          <strong>{r.number}</strong> · {r.customer}
+          <span className="badge" style={{ marginLeft: 6 }}>
+            {r.fulfilmentMode === 'DELIVERY' ? 'Livr.' : 'Retrait'}
+          </span>
+          <div className="small muted">{r.items.slice(0, 2).join(' · ')}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 interface ScanResult {
   reservation: {
@@ -34,6 +87,14 @@ export default function ComptoirPage() {
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [err, setErr] = useState('');
   const [result, setResult] = useState<string>('');
+  const [board, setBoard] = useState<Board | null>(null);
+
+  async function loadBoard() {
+    setBoard(await staffApi<Board>('/api/ops/board').catch(() => null));
+  }
+  useEffect(() => {
+    loadBoard();
+  }, []);
 
   // pickup state
   const [pickedUnits, setPickedUnits] = useState<Record<string, boolean>>({});
@@ -55,13 +116,28 @@ export default function ComptoirPage() {
   const [depositAction, setDepositAction] = useState<'RELEASE' | 'PARTIAL' | 'CAPTURE'>('RELEASE');
   const [depositCaptured, setDepositCaptured] = useState(0);
 
-  async function doScan(e?: React.FormEvent) {
-    e?.preventDefault();
+  async function doScan(codeOrEvent?: string | React.FormEvent) {
+    const code = typeof codeOrEvent === 'string' ? codeOrEvent : token.trim();
+    if (codeOrEvent && typeof codeOrEvent !== 'string') codeOrEvent.preventDefault();
     setErr('');
     setResult('');
     setScan(null);
+    if (!code) return;
+    setToken(code);
     try {
-      const r = await staffApi<ScanResult>(`/api/ops/scan/${encodeURIComponent(token.trim())}`);
+      let lookup = code;
+      // Si c'est un exemplaire (assetTag / U-…), retrouver sa réservation en cours.
+      if (/^U-/i.test(code) || /^[A-Z0-9]{3,12}-[A-Z0-9]{4,8}$/i.test(code)) {
+        const resolved = await staffApi<{
+          type: string;
+          activeReservation?: { number: string } | null;
+        }>(`/api/ops/resolve/${encodeURIComponent(code)}`).catch(() => null);
+        if (resolved?.type === 'unit') {
+          if (!resolved.activeReservation) throw new Error('Cet exemplaire n’est lié à aucune location en cours.');
+          lookup = resolved.activeReservation.number;
+        }
+      }
+      const r = await staffApi<ScanResult>(`/api/ops/scan/${encodeURIComponent(lookup)}`);
       setScan(r);
       setReturnAt(toLocalInput(new Date().toISOString()));
       const preset: Record<string, boolean> = {};
@@ -85,7 +161,8 @@ export default function ComptoirPage() {
       method: 'POST',
       body: { status },
     });
-    await doScan();
+    await doScan(token);
+      loadBoard();
   }
 
   async function doPickup() {
@@ -107,7 +184,8 @@ export default function ComptoirPage() {
         },
       });
       setResult('Location activée. Le matériel est officiellement sorti.');
-      await doScan();
+      await doScan(token);
+      loadBoard();
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Erreur au retrait');
     }
@@ -145,7 +223,8 @@ export default function ComptoirPage() {
           `Caution ${r.deposit.status} — remboursé ${formatEUR(r.deposit.refunded)}, retenu ${formatEUR(r.deposit.captured)}. ` +
           `Facture finale : ${r.finalInvoice}.`,
       );
-      await doScan();
+      await doScan(token);
+      loadBoard();
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Erreur au retour');
     }
@@ -158,21 +237,27 @@ export default function ComptoirPage() {
   return (
     <div className="stack">
       <h1>Comptoir — retrait &amp; retour</h1>
-      <form className="card card-pad row" onSubmit={doScan}>
-        <div className="field" style={{ flex: 1 }}>
-          <label>Scanner / saisir le QR code ou le numéro de réservation</label>
-          <input
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            placeholder="R-XXXXXXXX ou BRL-20260901-0001"
-            autoFocus
-          />
-        </div>
-        <button className="btn btn-primary">Rechercher</button>
-      </form>
+      <ScanField
+        onScan={(c) => doScan(c)}
+        placeholder="Scanner un QR / code-barres, ou taper un n° de réservation ou d’exemplaire"
+      />
 
       {err && <div className="alert alert-err">{err}</div>}
       {result && <div className="alert alert-ok">{result}</div>}
+
+      {!r && board && (
+        <div className="counter-board">
+          <BoardCol title="À préparer" rows={board.toPrepare} onPick={doScan} />
+          <BoardCol title="Prêtes" rows={board.ready} onPick={doScan} />
+          <BoardCol title="En cours — retour aujourd’hui" rows={board.out} onPick={doScan} />
+          {board.overdue.length > 0 && (
+            <BoardCol title="⚠ En retard" rows={board.overdue} onPick={doScan} urgent />
+          )}
+          {board.pendingSupplier.length > 0 && (
+            <BoardCol title="Demandes Loiselet" rows={board.pendingSupplier} onPick={doScan} />
+          )}
+        </div>
+      )}
 
       {r && (
         <div className="card card-pad stack">
