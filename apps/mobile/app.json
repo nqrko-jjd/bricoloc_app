@@ -6,12 +6,14 @@
     "orientation": "portrait",
     "scheme": "bricoloc",
     "userInterfaceStyle": "light",
-    "primaryColor": "#E52421",
+    "primaryColor": "#EE2C24",
     "splash": {
       "backgroundColor": "#0B1D3A",
       "resizeMode": "contain"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bricoloc.app",
@@ -25,7 +27,17 @@
         "backgroundColor": "#0B1D3A"
       }
     },
-    "plugins": ["expo-router", "expo-notifications"],
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "expo-localization",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "BRICOLOC utilise la caméra pour scanner les QR codes de vos réservations et les étiquettes des machines."
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Image, Text, View, Pressable } from 'react-native';
+import { Image, Text, TextInput, View, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
+import { t as ti } from '@/lib/i18n';
 import { formatEUR } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button, Badge } from '@/components/ui';
 import type { ProductDetail } from '@/lib/types';
@@ -161,9 +162,121 @@ export default function ProductScreen() {
           ))}
         </Card>
       )}
+
+      <Reviews slug={slug} />
     </Screen>
   );
 }
+
+function Reviews({ slug }: { slug: string }) {
+  const { user } = useStore();
+  const [data, setData] = useState<{
+    summary: { avg: number; count: number };
+    reviews: { id: string; authorName: string; rating: number; title: string | null; body: string }[];
+  } | null>(null);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ rating: 5, body: '', authorName: '' });
+  const [done, setDone] = useState('');
+
+  async function load() {
+    setData(
+      await api<NonNullable<typeof data>>(`/api/products/${slug}/reviews`).catch(() => null),
+    );
+  }
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
+
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <H2>{ti('reviews.title')}</H2>
+        {data && data.summary.count > 0 && (
+          <Text style={{ fontWeight: '800', color: C.locDeep }}>
+            {'★'.repeat(Math.round(data.summary.avg))} {data.summary.avg.toFixed(1)} ({data.summary.count})
+          </Text>
+        )}
+      </View>
+      {!data || data.reviews.length === 0 ? (
+        <P muted>{ti('reviews.none')}</P>
+      ) : (
+        data.reviews.slice(0, 5).map((r) => (
+          <View key={r.id} style={{ paddingVertical: 6, borderTopWidth: 1, borderColor: C.border }}>
+            <Text style={{ fontWeight: '700' }}>
+              {r.authorName} · {'★'.repeat(r.rating)}
+            </Text>
+            {r.title ? <Text style={{ fontWeight: '600' }}>{r.title}</Text> : null}
+            <Text style={{ color: C.ink }}>{r.body}</Text>
+          </View>
+        ))
+      )}
+
+      {done ? (
+        <P>{done}</P>
+      ) : open ? (
+        <View style={{ gap: 8, marginTop: 8 }}>
+          {!user && (
+            <TextInput
+              placeholder={ti('reviews.rating')}
+              value={form.authorName}
+              onChangeText={(v) => setForm({ ...form, authorName: v })}
+              placeholderTextColor={C.lightGray}
+              style={inp}
+            />
+          )}
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Pressable key={n} onPress={() => setForm({ ...form, rating: n })}>
+                <Text style={{ fontSize: 26, color: n <= form.rating ? '#f5a623' : C.border }}>★</Text>
+              </Pressable>
+            ))}
+          </View>
+          <TextInput
+            placeholder={ti('reviews.body')}
+            value={form.body}
+            onChangeText={(v) => setForm({ ...form, body: v })}
+            multiline
+            placeholderTextColor={C.lightGray}
+            style={[inp, { minHeight: 80 }]}
+          />
+          <Button
+            title={ti('reviews.submit')}
+            onPress={async () => {
+              try {
+                await api('/api/reviews', {
+                  method: 'POST',
+                  body: {
+                    productSlug: slug,
+                    rating: form.rating,
+                    body: form.body,
+                    authorName: user ? undefined : form.authorName || undefined,
+                  },
+                });
+                setDone(ti('reviews.thanks'));
+                setOpen(false);
+                load();
+              } catch (e) {
+                setDone(e instanceof Error ? e.message : 'Erreur');
+              }
+            }}
+          />
+        </View>
+      ) : (
+        <Button title={ti('reviews.write')} variant="outline" onPress={() => setOpen(true)} />
+      )}
+    </Card>
+  );
+}
+
+const inp = {
+  backgroundColor: C.white,
+  borderWidth: 1,
+  borderColor: C.border,
+  borderRadius: 8,
+  paddingHorizontal: 10,
+  paddingVertical: 8,
+};
 
 const stepBtn = {
   backgroundColor: C.loc,

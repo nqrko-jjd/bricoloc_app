@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
+import { t as ti } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
 import { formatEUR, formatDateBE } from '@/lib/format';
@@ -94,9 +95,9 @@ export default function CatalogueScreen() {
         </View>
       )}
 
-      <View style={{ padding: 12 }}>
+      <View style={{ padding: 12, flexDirection: 'row', gap: 8, alignItems: 'center' }}>
         <TextInput
-          placeholder="Rechercher un outil…"
+          placeholder={ti('home.search')}
           placeholderTextColor={C.lightGray}
           value={q}
           onChangeText={setQ}
@@ -107,8 +108,23 @@ export default function CatalogueScreen() {
             borderRadius: 10,
             paddingHorizontal: 12,
             paddingVertical: 10,
+            flex: 1,
           }}
         />
+        <Pressable
+          onPress={() => router.push('/scan')}
+          accessibilityLabel={ti('home.scan')}
+          style={{
+            backgroundColor: C.loc,
+            borderRadius: 10,
+            paddingHorizontal: 14,
+            paddingVertical: 11,
+          }}
+        >
+          <Text style={{ color: C.white, fontSize: 18 }}>⌗</Text>
+        </Pressable>
+      </View>
+      <View style={{ paddingHorizontal: 12 }}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}

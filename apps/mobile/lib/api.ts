@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { currentLocale } from './i18n';
 
 /**
  * URL de l'API BRICOLOC.
@@ -59,7 +60,13 @@ export async function api<T = unknown>(path: string, opts: Opts = {}): Promise<T
   if (token) headers.authorization = `Bearer ${token}`;
   if (cartKey) headers['x-cart-key'] = cartKey;
 
-  const res = await fetch(`${API_URL}${path}`, {
+  // Ajoute ?locale= sur les GET du catalogue (contenus traduits par l'API).
+  let url = `${API_URL}${path}`;
+  if ((opts.method ?? 'GET') === 'GET' && /\/api\/(catalog|products|public\/content)/.test(path) && !/[?&]locale=/.test(path)) {
+    url += `${path.includes('?') ? '&' : '?'}locale=${currentLocale()}`;
+  }
+
+  const res = await fetch(url, {
     method: opts.method ?? 'GET',
     headers,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,

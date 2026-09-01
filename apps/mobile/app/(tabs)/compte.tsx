@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
+import { t as ti, currentLocale, setLocaleOverride, LOCALES } from '@/lib/i18n';
 import { formatDateTimeBE } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button, Badge } from '@/components/ui';
 import type { Notif } from '@/lib/types';
@@ -12,6 +14,7 @@ export default function CompteScreen() {
   const { user, logout } = useStore();
   const router = useRouter();
   const [notifs, setNotifs] = useState<Notif[]>([]);
+  const [lang, setLang] = useState(currentLocale());
 
   const load = useCallback(() => {
     if (!user) return;
@@ -86,6 +89,24 @@ export default function CompteScreen() {
       </Card>
 
       <Card>
+        <H2>{ti('account.language')}</H2>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+          {LOCALES.map((l) => (
+            <Button
+              key={l}
+              title={l.toUpperCase()}
+              variant={l === lang ? 'primary' : 'ghost'}
+              onPress={async () => {
+                setLocaleOverride(l);
+                setLang(l);
+                await AsyncStorage.setItem('bricoloc_locale', l);
+              }}
+            />
+          ))}
+        </View>
+      </Card>
+
+      <Card>
         <H2>Contacter BRICOLOC</H2>
         <P muted>
           Support &amp; SAV depuis chaque réservation (« Signaler un problème »), ou par téléphone
@@ -93,7 +114,7 @@ export default function CompteScreen() {
         </P>
       </Card>
 
-      <Button title="Se déconnecter" variant="ghost" onPress={() => logout()} />
+      <Button title={ti('common.logout')} variant="ghost" onPress={() => logout()} />
     </Screen>
   );
 }
