@@ -27,24 +27,6 @@ const BRANDS = [
   'Geberit', 'Atika', 'Eibenstock', 'Master', 'Eurom', 'Paslode', 'Prebena', 'Stanley',
 ];
 
-const FAQ = {
-  price: [
-    ['Comment est calculé le prix ?', 'Au jour, à la semaine (4× le tarif jour) ou au mois (12× le tarif jour). Les dates de la commande fixent la durée facturée.'],
-    ['La caution, c’est quoi ?', 'Une empreinte bancaire : le montant est bloqué sans être débité, puis libéré au retour si tout est en ordre. En Click & Collect, la caution peut être laissée en espèces.'],
-    ['Y a-t-il une réduction longue durée ?', 'Oui, les tarifs sont dégressifs et une remise s’applique automatiquement pour les professionnels.'],
-  ],
-  delivery: [
-    ['Click & Collect, comment ça marche ?', 'Vous réservez en ligne, on prépare le matériel, vous le retirez au dépôt de Ruisbroek (Sint-Pieters-Leeuw) aux horaires d’ouverture.'],
-    ['Vous livrez sur chantier ?', 'Oui, dans la zone desservie. Le tarif est calculé automatiquement depuis votre adresse (distance depuis le dépôt).'],
-    ['Offre week-end ?', 'Retrait le vendredi ou samedi, retour le lundi matin : une seule journée facturée.'],
-  ],
-  gear: [
-    ['Le matériel est-il fiable ?', 'Chaque machine est suivie à l’exemplaire, entretenue et contrôlée avant chaque location.'],
-    ['Les accessoires sont-ils fournis ?', 'Les accessoires de base sont inclus. Les consommables adaptés (mèches, disques, papier abrasif…) sont proposés sur chaque fiche.'],
-    ['Et si je casse quelque chose ?', 'On l’évalue au retour ; seule la remise en état est facturée, prélevée sur la caution.'],
-  ],
-};
-
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -52,13 +34,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const tn = await getTranslations('nav');
 
   const [{ categories }, popularRes, packsRes, content] = await Promise.all([
-    api<{ categories: Category[] }>('/api/catalog/categories', { next: { revalidate: 120 } }),
-    api<{ products: ProductSummary[] }>('/api/catalog/products?pageSize=8&sort=name', {
+    api<{ categories: Category[] }>(`/api/catalog/categories?locale=${locale}`, {
+      next: { revalidate: 120 },
+    }),
+    api<{ products: ProductSummary[] }>(`/api/catalog/products?pageSize=8&sort=name&locale=${locale}`, {
       next: { revalidate: 60 },
     }),
-    api<{ products: ProductSummary[] }>('/api/catalog/products?kind=PACK&pageSize=6', {
-      next: { revalidate: 120 },
-    }).catch(() => ({ products: [] as ProductSummary[] })),
+    api<{ products: ProductSummary[] }>(
+      `/api/catalog/products?kind=PACK&pageSize=6&locale=${locale}`,
+      { next: { revalidate: 120 } },
+    ).catch(() => ({ products: [] as ProductSummary[] })),
     loadContent('home.', locale),
   ]);
   const popular = popularRes.products ?? [];
@@ -222,13 +207,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <h2>{t('faqTitle')}</h2>
           </div>
           <div className="faq3">
-            {(['price', 'delivery', 'gear'] as const).map((col) => (
+            {(['Price', 'Delivery', 'Gear'] as const).map((col) => (
               <div key={col} className="faq3__col reveal">
-                <h3>{t(col === 'price' ? 'faqPrice' : col === 'delivery' ? 'faqDelivery' : 'faqGear')}</h3>
-                {FAQ[col].map(([q, a]) => (
-                  <details key={q}>
-                    <summary>{q}</summary>
-                    <p>{a}</p>
+                <h3>{t(`faq${col}`)}</h3>
+                {[1, 2, 3].map((n) => (
+                  <details key={n}>
+                    <summary>{t(`faq${col}Q${n}`)}</summary>
+                    <p>{t(`faq${col}A${n}`)}</p>
                   </details>
                 ))}
               </div>

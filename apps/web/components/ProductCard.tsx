@@ -1,4 +1,5 @@
 'use client';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { formatEUR } from '@bricoloc/shared';
 import type { ProductSummary } from '@/lib/types';
@@ -6,15 +7,15 @@ import { AvailabilityBadge } from './AvailabilityBadge';
 import { AddToCartButton } from './AddToCartButton';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 
-const KIND_LABEL: Record<string, string> = {
-  MACHINE: 'Machine',
-  ACCESSORY: 'Accessoire',
-  CONSUMABLE: 'Consommable',
-  PPE: 'Protection',
-  PACK: 'Pack',
-};
-
 export function ProductCard({ p }: { p: ProductSummary }) {
+  const t = useTranslations('catalogue');
+  const KIND_LABEL: Record<string, string> = {
+    MACHINE: t('kindMachine'),
+    ACCESSORY: t('kindAccessory'),
+    CONSUMABLE: t('kindConsumable'),
+    PPE: t('kindPpe'),
+    PACK: t('kindPack'),
+  };
   return (
     <div className="card product-card">
       <Link href={`/produits/${p.slug}`}>
@@ -37,10 +38,13 @@ export function ProductCard({ p }: { p: ProductSummary }) {
         </h3>
         {p.shortDescription && <p className="small muted">{p.shortDescription}</p>}
         <div className="price">
-          {formatEUR(p.dailyPrice)} <small>/ {p.isConsumable ? 'unité' : 'jour'}</small>
+          {formatEUR(p.dailyPrice)}{' '}
+          <small>/ {p.isConsumable ? t('perUnit') : t('perDay')}</small>
         </div>
         {!p.isConsumable && (
-          <div className="small muted">Caution {formatEUR(p.deposit)}</div>
+          <div className="small muted">
+            {t('deposit')} {formatEUR(p.deposit)}
+          </div>
         )}
         <div style={{ marginTop: 'auto', display: 'grid', gap: 8, paddingTop: 8 }}>
           <AvailabilityBadge a={p.availability} />

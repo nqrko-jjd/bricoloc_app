@@ -88,7 +88,25 @@
     "ctaText": "Hundreds of professional machines, bookable online 24 hours a day.",
     "ctaButton": "Book now",
     "from": "as soon as",
-    "perDay": "/ day"
+    "perDay": "/ day",
+    "faqPriceQ1": "How is the price calculated?",
+    "faqPriceA1": "By the day, by the week (4 times the daily rate) or by the month (12 times the daily rate). The dates specified in the order determine the period for which the invoice is issued.",
+    "faqPriceQ2": "What is a deposit?",
+    "faqPriceA2": "A card hold: the amount is reserved but not debited, and is released upon return if everything is in order. For Click & Collect, the deposit can be paid in cash.",
+    "faqPriceQ3": "Is there a long-term discount?",
+    "faqPriceA3": "Yes, the rates are on a sliding scale and a discount is automatically applied for business customers.",
+    "faqDeliveryQ1": "Click & Collect – how does it work?",
+    "faqDeliveryA1": "You book online, we prepare the equipment, and you collect it from the Ruisbroek depot (Sint-Pieters-Leeuw) during opening hours.",
+    "faqDeliveryQ2": "Do you deliver to building sites?",
+    "faqDeliveryA2": "Yes, within the service area. The fare is calculated automatically based on your address (distance from the depot).",
+    "faqDeliveryQ3": "Weekend offer?",
+    "faqDeliveryA3": "Collect on Friday or Saturday, return on Monday morning: only one day will be charged.",
+    "faqGearQ1": "Is the equipment reliable?",
+    "faqGearA1": "Each machine is individually tracked, serviced and inspected before every hire.",
+    "faqGearQ2": "Are the accessories included?",
+    "faqGearA2": "Basic accessories are included. Suitable consumables (bits, discs, sandpaper, etc.) are listed on each product page.",
+    "faqGearQ3": "What if I break something?",
+    "faqGearA3": "We assess the damage on return; only the cost of repairs is charged, which is deducted from the deposit."
   },
   "search": {
     "title": "I know my dates",
@@ -163,6 +181,20 @@
     "allCategories": "All categories",
     "loading": "Loading…",
     "empty": "No items match your search.",
-    "count": "{count} item(s)"
+    "count": "{count} item(s)",
+    "perDay": "day",
+    "perUnit": "unit",
+    "deposit": "Deposit",
+    "addToCart": "Add to basket",
+    "kindMachine": "Machine",
+    "kindAccessory": "Accessory",
+    "kindConsumable": "Consumable",
+    "kindPpe": "Protection",
+    "kindPack": "Pack",
+    "availChooseDates": "Choose your dates",
+    "availOk": "Available",
+    "availPartial": "{available} available on {requested} requested",
+    "availNearby": "Unavailable — available from {date}",
+    "availNone": "Unavailable during this period"
   }
 }

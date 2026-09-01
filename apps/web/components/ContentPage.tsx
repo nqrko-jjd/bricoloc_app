@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getLocale } from 'next-intl/server';
 import { api } from '@/lib/api';
 
 interface Props {
@@ -7,10 +8,11 @@ interface Props {
   intro?: string;
 }
 
-async function fetchContent(key: string) {
+async function fetchContent(key: string, locale: string) {
   try {
     const r = await api<{ content: { title: string | null; body: string } | null }>(
-      `/api/public/content/${key}`,
+      `/api/public/content/${key}?locale=${locale}`,
+      { next: { revalidate: 60 } },
     );
     return r.content;
   } catch {
@@ -19,12 +21,14 @@ async function fetchContent(key: string) {
 }
 
 export async function contentMetadata(key: string, fallback: string): Promise<Metadata> {
-  const c = await fetchContent(key);
+  const locale = await getLocale();
+  const c = await fetchContent(key, locale);
   return { title: c?.title ?? fallback };
 }
 
 export async function ContentPage({ contentKey, fallbackTitle, intro }: Props) {
-  const content = await fetchContent(contentKey);
+  const locale = await getLocale();
+  const content = await fetchContent(contentKey, locale);
   return (
     <div className="section container" style={{ maxWidth: 780 }}>
       <h1>{content?.title ?? fallbackTitle}</h1>

@@ -1,5 +1,6 @@
 'use client';
 import { Suspense, useEffect, useState } from 'react';
+import { useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
@@ -14,6 +15,7 @@ type Step = 'dates' | 'browse' | 'cart' | 'contact' | 'pay' | 'done';
 
 function KioskCatalogue() {
   const router = useRouter();
+  const locale = useLocale();
   const params = useSearchParams();
   const [step, setStep] = useState<Step>('dates');
   const [cart, setCart] = useState<Cart | null>(null);
@@ -34,7 +36,7 @@ function KioskCatalogue() {
 
   async function openDetail(slug: string) {
     setDetailImg(0);
-    const sp = `?start=${fromLocalInput(start)}&end=${fromLocalInput(end)}`;
+    const sp = `?start=${fromLocalInput(start)}&end=${fromLocalInput(end)}&locale=${locale}`;
     const r = await api<{ product: ProductDetail }>(`/api/catalog/products/${slug}${sp}`);
     setDetail(r.product);
   }
@@ -72,6 +74,7 @@ function KioskCatalogue() {
       end: fromLocalInput(end),
       pageSize: '30',
       sort: 'name',
+      locale,
     });
     if (q) sp.set('q', q);
     if (params.get('available')) sp.set('onlyAvailable', 'true');

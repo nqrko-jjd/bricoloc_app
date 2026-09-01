@@ -88,7 +88,25 @@
     "ctaText": "Honderden professionele apparaten, 24 uur per dag online te reserveren.",
     "ctaButton": "Nu reserveren",
     "from": "vanaf",
-    "perDay": "/ dag"
+    "perDay": "/ dag",
+    "faqPriceQ1": "Hoe wordt de prijs berekend?",
+    "faqPriceA1": "Per dag, per week (4× het dagtarief) of per maand (12× het dagtarief). De data van de bestelling bepalen de gefactureerde looptijd.",
+    "faqPriceQ2": "Wat is een borgsom?",
+    "faqPriceA2": "Een bankgarantie: het bedrag wordt geblokkeerd zonder dat het wordt afgeschreven, en bij terugkomst weer vrijgegeven als alles in orde is. Bij Click & Collect kan de borgsom contant worden betaald.",
+    "faqPriceQ3": "Is er een korting voor langdurige klanten?",
+    "faqPriceA3": "Ja, de tarieven zijn degressief en voor professionals geldt automatisch een korting.",
+    "faqDeliveryQ1": "Click & Collect, hoe werkt het?",
+    "faqDeliveryA1": "U reserveert online, wij maken de spullen klaar en u haalt ze tijdens de openingstijden op bij het magazijn in Ruisbroek (Sint-Pieters-Leeuw).",
+    "faqDeliveryQ2": "Leveren jullie op de bouwplaats?",
+    "faqDeliveryA2": "Ja, binnen het bediende gebied. Het tarief wordt automatisch berekend op basis van uw adres (afstand vanaf het depot).",
+    "faqDeliveryQ3": "Weekendaanbieding?",
+    "faqDeliveryA3": "Afhalen op vrijdag of zaterdag, terugbrengen op maandagochtend: er wordt slechts één dag in rekening gebracht.",
+    "faqGearQ1": "Is de apparatuur betrouwbaar?",
+    "faqGearA1": "Elke machine wordt individueel bijgehouden, onderhouden en gecontroleerd voordat deze wordt verhuurd.",
+    "faqGearQ2": "Worden de accessoires meegeleverd?",
+    "faqGearA2": "De basisaccessoires zijn inbegrepen. De bijbehorende verbruiksartikelen (borstels, schijven, schuurpapier…) worden op elke productpagina vermeld.",
+    "faqGearQ3": "Wat als ik iets kapotmaak?",
+    "faqGearA3": "Bij terugkomst wordt de toestand beoordeeld; alleen de reparatiekosten worden in rekening gebracht en van de borgsom afgetrokken."
   },
   "search": {
     "title": "Ik weet mijn data",
@@ -163,6 +181,20 @@
     "allCategories": "Alle categorieën",
     "loading": "Bezig met laden…",
     "empty": "Er zijn geen artikelen gevonden die aan uw zoekopdracht voldoen.",
-    "count": "{count} artikel(en)"
+    "count": "{count} artikel(en)",
+    "perDay": "dag",
+    "perUnit": "eenheid",
+    "deposit": "Borgsom",
+    "addToCart": "Aan winkelmandje toevoegen",
+    "kindMachine": "Machine",
+    "kindAccessory": "Accessoire",
+    "kindConsumable": "Verbruiksartikel",
+    "kindPpe": "Bescherming",
+    "kindPack": "Pakket",
+    "availChooseDates": "Kies uw data",
+    "availOk": "Beschikbaar",
+    "availPartial": "{available} beschikbaar van {requested} gevraagd",
+    "availNearby": "Niet beschikbaar — vrij vanaf {date}",
+    "availNone": "Niet beschikbaar in deze periode"
   }
 }

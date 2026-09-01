@@ -1,12 +1,13 @@
 'use client';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useCart } from '@/lib/providers';
 
 export function AddToCartButton({
   productId,
   quantity = 1,
   small = false,
-  label = 'Ajouter au panier',
+  label,
   variant = 'primary',
 }: {
   productId: string;
@@ -16,7 +17,9 @@ export function AddToCartButton({
   variant?: 'primary' | 'outline' | 'secondary';
 }) {
   const { addItem } = useCart();
+  const t = useTranslations('catalogue');
   const [state, setState] = useState<'idle' | 'busy' | 'done'>('idle');
+  const text = label ?? t('addToCart');
 
   async function onClick() {
     setState('busy');
@@ -35,7 +38,7 @@ export function AddToCartButton({
       onClick={onClick}
       disabled={state === 'busy'}
     >
-      {state === 'busy' ? '…' : state === 'done' ? '✔ Ajouté' : label}
+      {state === 'busy' ? '…' : state === 'done' ? '✔' : text}
     </button>
   );
 }

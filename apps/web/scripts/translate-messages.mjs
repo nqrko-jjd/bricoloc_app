@@ -51,10 +51,21 @@ function setDeep(obj, dotted, value) {
 }
 
 async function deepl(texts, target) {
+  // Protège les placeholders ICU {xxx} : DeepL les traduit parfois. On les
+  // remplace par des jetons neutres, on traduit, puis on restaure dans l'ordre.
+  const masks = texts.map((t) => {
+    const found = t.match(/\{\w+\}/g) ?? [];
+    let masked = t;
+    found.forEach((ph, i) => {
+      masked = masked.replace(ph, `[[${i}]]`);
+    });
+    return { masked, found };
+  });
+
   const body = new URLSearchParams();
   body.set('source_lang', 'FR');
   body.set('target_lang', target);
-  for (const t of texts) body.append('text', t);
+  for (const m of masks) body.append('text', m.masked);
 
   const res = await fetch(`${host}/v2/translate`, {
     method: 'POST',
@@ -63,14 +74,13 @@ async function deepl(texts, target) {
   });
   if (!res.ok) throw new Error(`DeepL ${res.status}: ${await res.text()}`);
   const json = await res.json();
-  const out = json.translations.map((t) => t.text);
-  // garde-fou : les placeholders ICU {xxx} doivent survivre
-  out.forEach((tr, i) => {
-    for (const ph of texts[i].match(/\{\w+\}/g) ?? []) {
-      if (!tr.includes(ph)) console.warn(`  ⚠ placeholder ${ph} perdu dans: ${tr}`);
-    }
+  return json.translations.map((tr, i) => {
+    let out = tr.text;
+    masks[i].found.forEach((ph, j) => {
+      out = out.replace(new RegExp(`\\[\\[\\s*${j}\\s*\\]\\]`), ph);
+    });
+    return out;
   });
-  return out;
 }
 
 const flatFr = flatten(fr);
