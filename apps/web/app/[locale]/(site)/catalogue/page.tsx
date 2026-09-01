@@ -1,14 +1,18 @@
 'use client';
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import type { Category, ProductSummary } from '@/lib/types';
 import { useCart } from '@/lib/providers';
+import { useRouter } from '@/i18n/navigation';
 import { ProductCard } from '@/components/ProductCard';
 
 function CatalogueInner() {
   const params = useSearchParams();
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('catalogue');
   const { cart } = useCart();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<ProductSummary[]>([]);
@@ -23,10 +27,10 @@ function CatalogueInner() {
   const page = Number(params.get('page') ?? '1');
 
   useEffect(() => {
-    api<{ categories: Category[] }>('/api/catalog/categories').then((r) =>
+    api<{ categories: Category[] }>(`/api/catalog/categories?locale=${locale}`).then((r) =>
       setCategories(r.categories),
     );
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     setLoading(true);
@@ -35,6 +39,7 @@ function CatalogueInner() {
     if (category) sp.set('category', category);
     if (kind) sp.set('kind', kind);
     sp.set('sort', sort);
+    sp.set('locale', locale);
     sp.set('page', String(page));
     sp.set('pageSize', '18');
     if (cart?.period) {
@@ -48,7 +53,7 @@ function CatalogueInner() {
         setTotal(r.total);
       })
       .finally(() => setLoading(false));
-  }, [q, category, kind, sort, page, onlyAvailable, cart?.period]);
+  }, [q, category, kind, sort, page, onlyAvailable, cart?.period, locale]);
 
   function update(next: Record<string, string | null>) {
     const sp = new URLSearchParams(params.toString());
@@ -62,42 +67,38 @@ function CatalogueInner() {
 
   return (
     <div className="section container">
-      <h1>Catalogue</h1>
-      <p className="muted">
-        {cart?.period
-          ? 'Disponibilités et prix calculés pour la période choisie.'
-          : 'Parcourez librement. Vous indiquerez vos dates avant de valider le panier.'}
-      </p>
+      <h1>{t('title')}</h1>
+      <p className="muted">{cart?.period ? t('subtitleDated') : t('subtitle')}</p>
 
       <div className="card card-body" style={{ margin: '18px 0' }}>
         <div className="filters">
           <div className="field" style={{ flex: 1, minWidth: 200 }}>
-            <label>Recherche</label>
+            <label>{t('search')}</label>
             <input
               defaultValue={q}
-              placeholder="marteau, ponceuse, nettoyeur…"
+              placeholder={t('searchPlaceholder')}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') update({ q: (e.target as HTMLInputElement).value });
               }}
             />
           </div>
           <div className="field">
-            <label>Type</label>
+            <label>{t('type')}</label>
             <select value={kind} onChange={(e) => update({ kind: e.target.value })}>
-              <option value="">Tous</option>
-              <option value="MACHINE">Machines</option>
-              <option value="PACK">Packs</option>
-              <option value="ACCESSORY">Accessoires</option>
-              <option value="CONSUMABLE">Consommables</option>
-              <option value="PPE">Protections</option>
+              <option value="">{t('typeAll')}</option>
+              <option value="MACHINE">{t('typeMachine')}</option>
+              <option value="PACK">{t('typePack')}</option>
+              <option value="ACCESSORY">{t('typeAccessory')}</option>
+              <option value="CONSUMABLE">{t('typeConsumable')}</option>
+              <option value="PPE">{t('typePpe')}</option>
             </select>
           </div>
           <div className="field">
-            <label>Tri</label>
+            <label>{t('sort')}</label>
             <select value={sort} onChange={(e) => update({ sort: e.target.value })}>
-              <option value="name">Nom</option>
-              <option value="price_asc">Prix croissant</option>
-              <option value="price_desc">Prix décroissant</option>
+              <option value="name">{t('sortName')}</option>
+              <option value="price_asc">{t('sortPriceAsc')}</option>
+              <option value="price_desc">{t('sortPriceDesc')}</option>
             </select>
           </div>
           {cart?.period && (
@@ -107,7 +108,7 @@ function CatalogueInner() {
                 checked={onlyAvailable}
                 onChange={(e) => update({ onlyAvailable: e.target.checked ? 'true' : null })}
               />
-              <span className="small">Uniquement disponibles</span>
+              <span className="small">{t('onlyAvailable')}</span>
             </label>
           )}
         </div>
@@ -116,7 +117,7 @@ function CatalogueInner() {
             className={`chip${!category ? ' active' : ''}`}
             onClick={() => update({ category: null })}
           >
-            Toutes catégories
+            {t('allCategories')}
           </button>
           {categories.map((c) => (
             <button
@@ -132,15 +133,13 @@ function CatalogueInner() {
 
       {loading ? (
         <p className="loading-dark">
-          <span className="spinner" /> Chargement…
+          <span className="spinner" /> {t('loading')}
         </p>
       ) : products.length === 0 ? (
-        <div className="alert alert-info">
-          Aucun article ne correspond{cart?.period ? ' sur cette période' : ''}.
-        </div>
+        <div className="alert alert-info">{t('empty')}</div>
       ) : (
         <>
-          <p className="small muted">{total} article(s)</p>
+          <p className="small muted">{t('count', { count: total })}</p>
           <div className="grid grid-cards">
             {products.map((p) => (
               <ProductCard key={p.id} p={p} />
@@ -154,7 +153,7 @@ function CatalogueInner() {
 
 export default function CataloguePage() {
   return (
-    <Suspense fallback={<div className="section container">Chargement…</div>}>
+    <Suspense fallback={<div className="section container" />}>
       <CatalogueInner />
     </Suspense>
   );

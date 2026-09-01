@@ -285,12 +285,31 @@ test('cycle complet : de la creation machine a la facture finale', async () => {
 });
 
 test('parcours B : dates demandees seulement avant validation, avec conflit de dispo', async () => {
+  // Machine dédiée à 2 exemplaires.
+  const login = await api('/api/auth/staff/login', {
+    method: 'POST',
+    body: { email: 'admin@bricoloc.example', password: 'bricoloc' },
+  });
+  const adminToken = login.json.token as string;
+  const slug = `test-dispo-${Date.now()}`;
+  const created = await api('/api/admin/products', {
+    method: 'POST',
+    token: adminToken,
+    body: { slug, name: 'Machine test dispo', kind: 'MACHINE', dailyPrice: 40, deposit: 300 },
+  });
+  const miniId = created.json.product.id as string;
+  for (let i = 1; i <= 2; i++) {
+    await api('/api/admin/units', {
+      method: 'POST',
+      token: adminToken,
+      body: { productId: miniId, assetTag: `DISPO-${Date.now()}-${i}` },
+    });
+  }
+
   const cartNew = await api('/api/cart/new', { method: 'POST' });
   const cartKey = cartNew.json.cartKey as string;
 
-  // Machine a 2 exemplaires : on en demande 5 -> PARTIAL/UNAVAILABLE attendu.
-  const mini = await api('/api/catalog/products?q=Mini-pelle&pageSize=1');
-  const miniId = mini.json.products[0].id as string;
+  // On en demande 5 -> PARTIAL/UNAVAILABLE attendu.
   await api('/api/cart/items', { method: 'POST', cartKey, body: { productId: miniId, quantity: 5 } });
 
   const start = new Date(Date.now() + 2 * 86400000).toISOString();

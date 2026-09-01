@@ -141,5 +141,28 @@
     "reviewThanks": "Thank you for your feedback!",
     "reviewModerated": "Thank you! Your review will be published once it has been verified.",
     "reply": "Response from Bricoloc"
+  },
+  "catalogue": {
+    "title": "Catalogue",
+    "subtitle": "Browse at your leisure. You’ll need to enter your dates before confirming your basket.",
+    "subtitleDated": "Availability and prices calculated for the selected period.",
+    "search": "Search",
+    "searchPlaceholder": "hammer, sander, cleaner…",
+    "type": "Type",
+    "typeAll": "All",
+    "typeMachine": "Machines",
+    "typePack": "Packs",
+    "typeAccessory": "Accessories",
+    "typeConsumable": "Consumables",
+    "typePpe": "Protections",
+    "sort": "Sort",
+    "sortName": "Surname",
+    "sortPriceAsc": "Price (ascending)",
+    "sortPriceDesc": "Price: descending",
+    "onlyAvailable": "Available only",
+    "allCategories": "All categories",
+    "loading": "Loading…",
+    "empty": "No items match your search.",
+    "count": "{count} item(s)"
   }
 }

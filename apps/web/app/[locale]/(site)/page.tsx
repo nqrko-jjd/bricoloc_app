@@ -11,13 +11,13 @@ export const dynamic = 'force-dynamic';
 
 /** Tâches → catégorie ciblée + visuel. Le lien retombe sur /catalogue si la catégorie n'existe pas encore. */
 const TASKS = [
-  { key: 'demolir', label: 'Démolir, percer', img: 'task-demolir', cat: 'percage-demolition' },
-  { key: 'beton', label: 'Béton & pierre', img: 'task-beton', cat: 'carrelage' },
-  { key: 'bois', label: 'Travailler le bois', img: 'task-bois', cat: 'sciage-decoupe' },
-  { key: 'peindre', label: 'Peindre & enduire', img: 'task-peindre', cat: 'peinture' },
-  { key: 'poncer', label: 'Poncer', img: 'task-poncer', cat: 'poncage' },
-  { key: 'chauffer', label: 'Chauffer & assécher', img: 'task-chauffer', cat: 'equipement-chantier' },
-  { key: 'jardin', label: 'Jardin & extérieur', img: 'task-jardin', cat: 'jardin' },
+  { key: 'demolir', label: 'Démolir, percer', img: 'task-demolir', cat: 'forer-casser' },
+  { key: 'beton', label: 'Béton & pierre', img: 'task-beton', cat: 'beton-pierre' },
+  { key: 'bois', label: 'Travailler le bois', img: 'task-bois', cat: 'travail-du-bois' },
+  { key: 'peindre', label: 'Peindre & enduire', img: 'task-peindre', cat: 'peintures-finitions' },
+  { key: 'poncer', label: 'Poncer', img: 'task-poncer', cat: 'travail-du-bois' },
+  { key: 'chauffer', label: 'Chauffer & assécher', img: 'task-chauffer', cat: 'chauffage-deshumidification' },
+  { key: 'jardin', label: 'Jardin & extérieur', img: 'task-jardin', cat: 'exterieur' },
   { key: 'nettoyer', label: 'Nettoyer', img: 'task-nettoyer', cat: 'nettoyage' },
 ];
 
@@ -34,7 +34,7 @@ const FAQ = {
     ['Y a-t-il une réduction longue durée ?', 'Oui, les tarifs sont dégressifs et une remise s’applique automatiquement pour les professionnels.'],
   ],
   delivery: [
-    ['Click & Collect, comment ça marche ?', 'Vous réservez en ligne, on prépare le matériel, vous le retirez au dépôt de Leeuw-Saint-Pierre aux horaires d’ouverture.'],
+    ['Click & Collect, comment ça marche ?', 'Vous réservez en ligne, on prépare le matériel, vous le retirez au dépôt de Ruisbroek (Sint-Pieters-Leeuw) aux horaires d’ouverture.'],
     ['Vous livrez sur chantier ?', 'Oui, dans la zone desservie. Le tarif est calculé automatiquement depuis votre adresse (distance depuis le dépôt).'],
     ['Offre week-end ?', 'Retrait le vendredi ou samedi, retour le lundi matin : une seule journée facturée.'],
   ],

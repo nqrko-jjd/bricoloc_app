@@ -141,5 +141,28 @@
     "reviewThanks": "Bedankt voor uw beoordeling!",
     "reviewModerated": "Bedankt! Uw beoordeling wordt na controle gepubliceerd.",
     "reply": "Antwoord van Bricoloc"
+  },
+  "catalogue": {
+    "title": "Catalogus",
+    "subtitle": "Bekijk het aanbod op uw gemak. U vult uw data in voordat u het winkelmandje bevestigt.",
+    "subtitleDated": "Beschikbaarheid en prijzen berekend voor de geselecteerde periode.",
+    "search": "Zoeken",
+    "searchPlaceholder": "hamer, schuurmachine, reinigingsapparaat…",
+    "type": "Type",
+    "typeAll": "Alle",
+    "typeMachine": "Machines",
+    "typePack": "Pakketten",
+    "typeAccessory": "Accessoires",
+    "typeConsumable": "Verbruiksartikelen",
+    "typePpe": "Beschermingen",
+    "sort": "Sorteren",
+    "sortName": "Naam",
+    "sortPriceAsc": "Prijs oplopend",
+    "sortPriceDesc": "Prijs in aflopende volgorde",
+    "onlyAvailable": "Alleen beschikbaar",
+    "allCategories": "Alle categorieën",
+    "loading": "Bezig met laden…",
+    "empty": "Er zijn geen artikelen gevonden die aan uw zoekopdracht voldoen.",
+    "count": "{count} artikel(en)"
   }
 }
