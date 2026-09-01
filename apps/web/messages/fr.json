@@ -1,0 +1,57 @@
+{
+  "common": {
+    "brand": "BRICOLOC",
+    "tagline": "Le bon outil. Au bon moment.",
+    "demoRibbon": "Environnement de DÉMONSTRATION — données, tarifs et paiements fictifs",
+    "loading": "Chargement…",
+    "search": "Rechercher",
+    "book": "Réserver",
+    "add": "Ajouter",
+    "seeMore": "Voir plus",
+    "back": "Retour",
+    "close": "Fermer"
+  },
+  "nav": {
+    "catalogue": "Catalogue",
+    "howItWorks": "Fonctionnement",
+    "clickCollect": "Click & Collect",
+    "delivery": "Livraison",
+    "pros": "Pros",
+    "faq": "FAQ",
+    "account": "Mon compte",
+    "login": "Connexion",
+    "cart": "Panier",
+    "advice": "Conseils",
+    "contact": "Contact",
+    "legal": "Mentions légales",
+    "staffArea": "Espace équipe",
+    "kiosk": "Borne comptoir"
+  },
+  "language": {
+    "label": "Langue",
+    "fr": "Français",
+    "nl": "Néerlandais",
+    "en": "Anglais"
+  },
+  "footer": {
+    "rent": "Louer",
+    "pickupDelivery": "Retrait & livraison",
+    "help": "Aide",
+    "info": "Infos",
+    "deliverySite": "Livraison chantier",
+    "servicesPros": "Services pros",
+    "rights": "© {year} BRICOLOC. Belgique · EUR · TVA 21 %."
+  },
+  "dateBar": {
+    "noDates": "Aucune date choisie — vous pourrez les indiquer plus tard.",
+    "chooseDates": "Choisir mes dates",
+    "period": "Période",
+    "edit": "Modifier",
+    "start": "Début",
+    "return": "Retour",
+    "apply": "Appliquer",
+    "cancel": "Annuler",
+    "clear": "Effacer",
+    "browseWithoutDates": "Parcourir sans dates"
+  }
+}

@@ -1,0 +1,529 @@
+<title>Plan de refonte Bricoloc</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #f7f5f2;
+    --surface: #ffffff;
+    --surface-2: #f1eee9;
+    --ink: #17202e;
+    --muted: #59626f;
+    --line: #e4e0d9;
+    --brico: #ee2c24;
+    --loc: #0b1d3a;
+    --loc-tint: #e8ebf1;
+    --ok: #1a7f45;
+    --ok-bg: #e5f1ea;
+    --wait: #a65e00;
+    --wait-bg: #f7ecdc;
+    --cta-bg: #0b1d3a;
+    --cta-fg: #ffffff;
+    --cta-border: transparent;
+    --shadow: 0 1px 2px rgba(11, 29, 58, .06), 0 10px 30px rgba(11, 29, 58, .07);
+    --font-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0b121d;
+      --surface: #131c2a;
+      --surface-2: #0f1826;
+      --ink: #e7ebf1;
+      --muted: #97a1b1;
+      --line: #26313f;
+      --brico: #f5473f;
+      --loc: #9fb3d1;
+      --loc-tint: #1a2536;
+      --ok: #47b97d;
+      --ok-bg: #13251c;
+      --wait: #d98b3a;
+      --wait-bg: #2a2013;
+      --cta-bg: #131c2a;
+      --cta-fg: #e7ebf1;
+      --cta-border: #26313f;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0b121d;
+    --surface: #131c2a;
+    --surface-2: #0f1826;
+    --ink: #e7ebf1;
+    --muted: #97a1b1;
+    --line: #26313f;
+    --brico: #f5473f;
+    --loc: #9fb3d1;
+    --loc-tint: #1a2536;
+    --ok: #47b97d;
+    --ok-bg: #13251c;
+    --wait: #d98b3a;
+    --wait-bg: #2a2013;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .4);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  .prose { max-width: 720px; }
+
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.12; text-wrap: balance; color: var(--ink); }
+  h1 { font-size: clamp(2rem, 5vw, 3.1rem); letter-spacing: -0.02em; margin: 0; }
+  h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); letter-spacing: -0.01em; margin: 0 0 0.6rem; }
+  h3 { font-size: 1.06rem; font-weight: 600; margin: 0 0 0.3rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--brico); text-underline-offset: 2px; }
+  strong { font-weight: 600; }
+  code {
+    font-family: var(--font-mono); font-size: 0.86em;
+    background: var(--surface-2); padding: 0.1em 0.38em; border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+    display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem;
+  }
+  .eyebrow::before {
+    content: ""; width: 22px; height: 2px; background: var(--brico); flex: none;
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .masthead .wrap { padding-top: 40px; padding-bottom: 40px; }
+  .logo {
+    font-family: var(--font-display); font-weight: 700; font-size: 1.05rem;
+    letter-spacing: 0.02em; display: inline-flex; align-items: baseline; gap: 0;
+    margin-bottom: 1.6rem;
+  }
+  .logo .b { color: var(--brico); }
+  .logo .l { color: var(--loc); }
+  .masthead h1 { margin-bottom: 0.7rem; }
+  .lede { font-size: 1.12rem; color: var(--muted); max-width: 620px; margin: 0; }
+  .meta {
+    margin-top: 1.6rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+    font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem;
+  }
+  .meta b { color: var(--ink); font-weight: 500; }
+
+  section { padding: 52px 0; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: 0; }
+
+  /* ---------- Status board ---------- */
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .col {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 20px; box-shadow: var(--shadow);
+  }
+  .col h3 {
+    font-family: var(--font-mono); font-size: 0.74rem; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .col h3 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dot-ok { background: var(--ok); }
+  .dot-fix { background: var(--loc); }
+  .dot-wait { background: var(--wait); }
+  .col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+  .col li { font-size: 0.92rem; line-height: 1.4; padding-left: 1.1rem; position: relative; }
+  .col li::before {
+    content: ""; position: absolute; left: 0; top: 0.55em;
+    width: 5px; height: 5px; border-radius: 1px; background: var(--muted);
+  }
+
+  /* ---------- Delta list ---------- */
+  .deltas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 8px; }
+  .delta {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .delta .k {
+    font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--brico); display: block; margin-bottom: 0.35rem;
+  }
+  .delta p { margin: 0; font-size: 0.92rem; color: var(--muted); }
+  .delta strong { color: var(--ink); }
+
+  /* ---------- Workstreams ---------- */
+  .ws {
+    display: grid; grid-template-columns: 84px 1fr; gap: 8px 28px;
+    padding: 28px 0; border-top: 1px solid var(--line);
+  }
+  .ws:first-of-type { border-top: 0; }
+  .ws .num {
+    font-family: var(--font-display); font-weight: 700; font-size: 2.5rem;
+    line-height: 1; color: var(--loc-tint); letter-spacing: -0.03em;
+    -webkit-text-stroke: 1px var(--line);
+  }
+  .ws .body { min-width: 0; }
+  .ws h3 { font-family: var(--font-display); font-size: 1.28rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .ws .goal { margin: 0 0 0.9rem; color: var(--muted); }
+  .ws .liv { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .ws .liv li {
+    font-size: 0.82rem; background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 11px; color: var(--ink);
+  }
+  .ws .dep {
+    margin-top: 0.85rem; font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted);
+  }
+  .ws .dep b { color: var(--ink); font-weight: 500; }
+
+  /* ---------- Decision cards ---------- */
+  .decisions { display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 22px 24px; box-shadow: var(--shadow);
+  }
+  .card .q { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.6rem; }
+  .card .tag {
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ok); background: var(--ok-bg);
+    border-radius: 5px; padding: 3px 7px; flex: none; white-space: nowrap;
+  }
+  .card h3 { margin: 0; font-size: 1.08rem; }
+  .card p { margin: 0 0 0.6rem; font-size: 0.94rem; }
+  .card .reco {
+    font-size: 0.92rem; padding: 10px 14px; background: var(--ok-bg);
+    border-radius: 8px; color: var(--ink);
+  }
+  .card .reco b { color: var(--ok); font-weight: 600; letter-spacing: 0.02em; }
+  .card .note { font-size: 0.88rem; color: var(--muted); margin: 0.5rem 0 0; }
+
+  .next {
+    background: var(--cta-bg); color: var(--cta-fg);
+    border: 1px solid var(--cta-border); border-radius: 14px; padding: 28px 30px;
+  }
+  .next h2 { color: inherit; }
+  .next ol { margin: 0; padding-left: 1.2rem; }
+  .next li { margin-bottom: 0.5rem; }
+  .next a { color: inherit; text-decoration-color: var(--brico); text-decoration-thickness: 2px; }
+
+  footer {
+    padding: 40px 0 60px; font-family: var(--font-mono); font-size: 0.78rem;
+    color: var(--muted); text-align: center;
+  }
+
+  @media (max-width: 720px) {
+    .board { grid-template-columns: 1fr; }
+    .deltas { grid-template-columns: 1fr; }
+    .ws { grid-template-columns: 1fr; gap: 6px; }
+    .ws .num { font-size: 1.6rem; }
+  }
+
+  .reveal { opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    * { scroll-behavior: auto !important; }
+  }
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="logo"><span class="b">BRICO</span><span class="l">LOC</span></span>
+    <h1>Plan de refonte</h1>
+    <p class="lede">Reconstruire la plateforme de location sur une base unique — site, appli mobile, espace client, back-office, borne comptoir — puis la déployer sur bricoloc.be.</p>
+    <div class="meta">
+      <span><b>Document&nbsp;:</b> feuille de route — décisions prises</span>
+      <span><b>Version&nbsp;:</b> 2 — 1 sept. 2026</span>
+      <span><b>Base actuelle&nbsp;:</b> code v1 en place (cycle de réservation testé)</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Où on en est</p>
+    <div class="board">
+      <div class="col reveal">
+        <h3><span class="dot dot-ok"></span>Décidé</h3>
+        <ul>
+          <li>Projet réel Bricoloc — refonte de la plateforme WordPress actuelle</li>
+          <li>5 interfaces, un seul backend, mêmes comptes et mêmes données</li>
+          <li>Rouge de marque <code>#EE2C24</code>, marine <code>#0B1D3A</code>, logo « B » in/out</li>
+          <li>Prix réels&nbsp;: Jour / Semaine (×4) / Mois (×12) + caution par palier</li>
+          <li>Pro / Particulier&nbsp;: bouton dans l'en-tête, pas de fenêtre à l'entrée</li>
+          <li>Avis clients&nbsp;; upload d'images en local pour démarrer</li>
+          <li><strong>Hébergement&nbsp;: VPS Combell + Docker</strong></li>
+          <li><strong>Migration&nbsp;: machines + tarifs uniquement</strong>, pas les comptes clients</li>
+          <li><strong>Paiement&nbsp;: Mollie</strong> (compte existant) — Bancontact + cartes</li>
+          <li><strong>Traductions&nbsp;: auto FR → NL/EN via DeepL</strong> à chaque modif du FR, correction manuelle possible</li>
+          <li><strong>Scan&nbsp;: Zebra TC51 ET smartphone</strong> (caméra) — mêmes écrans</li>
+          <li><strong>Navy adouci</strong> (`#16335C`) pour les grands aplats, navy exact gardé pour le logo</li>
+          <li><strong>Livraison au km</strong> depuis l'adresse (géocodage OpenStreetMap)</li>
+          <li>Accueil calqué sur la structure de <strong>kiloutou.fr</strong></li>
+        </ul>
+      </div>
+      <div class="col reveal">
+        <h3><span class="dot dot-fix"></span>Déjà en place</h3>
+        <ul>
+          <li>API unique&nbsp;: moteur de disponibilité, panier daté, checkout, cycle complet retrait → retour → caution → facture</li>
+          <li>Back-office 12 sections (produits, exemplaires, comptoir, réservations, livraisons…)</li>
+          <li>Borne tactile (accueil, catalogue, réservation, reset inactivité)</li>
+          <li>Appli mobile iOS/Android (Expo SDK 54) — <strong>bug réseau corrigé et confirmé</strong></li>
+          <li>Tests automatisés du cycle de réservation au vert</li>
+        </ul>
+      </div>
+      <div class="col reveal">
+        <h3><span class="dot dot-wait"></span>Reste à faire</h3>
+        <ul>
+          <li>Valider la direction des maquettes (v3 — structure Kiloutou)</li>
+          <li>Clé DeepL <b>reçue</b> ✓ · Mollie + VPS Combell : plus tard</li>
+          <li>Liste des marques du parc · coordonnées agence · adresse du dépôt</li>
+          <li>Caler une priorité entre les lots</li>
+          <li>Mascottes Brico / Bolt&nbsp;: plus tard, à produire</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Ce qui change par rapport à la v1</p>
+    <div class="prose">
+      <p>La v1 est un socle fonctionnel complet mais générique, avec des données fictives. La refonte le transforme en produit Bricoloc prêt pour la production.</p>
+    </div>
+    <div class="deltas">
+      <div class="delta reveal"><span class="k">Langues</span><p><strong>FR / NL / EN</strong> partout&nbsp;: site, appli, back-office, contenus, et SEO (balises <code>hreflang</code>, sitemaps par langue).</p></div>
+      <div class="delta reveal"><span class="k">Base de données</span><p>SQLite (dev) → <strong>PostgreSQL</strong> (production). Changement transparent côté code, migrations gérées.</p></div>
+      <div class="delta reveal"><span class="k">Identité</span><p>Vraie charte Bricoloc&nbsp;: rouge <code>#EE2C24</code>, logo, <strong>illustrations et photos réelles</strong>, système de composants, animations au scroll.</p></div>
+      <div class="delta reveal"><span class="k">Catalogue</span><p>Les <strong>~120 machines réelles</strong> + 5 BricoPacks, vrais tarifs J/S/M, vraies catégories, photos par produit.</p></div>
+      <div class="delta reveal"><span class="k">Paiement</span><p><strong>Mollie</strong>&nbsp;: Bancontact + cartes, en conditions réelles. Le mode démo reste dispo pour les tests.</p></div>
+      <div class="delta reveal"><span class="k">SEO</span><p>Métadonnées par produit et catégorie, réglages globaux, <strong>sitemap</strong>, données structurées Produit/Offre, Open Graph.</p></div>
+      <div class="delta reveal"><span class="k">Scan &amp; stock</span><p>Mode Terminal <strong>Zebra TC51, smartphone ou scanner USB</strong>&nbsp;: in/out machines et consommables, mouvements de stock, étiquettes QR + code-barres.</p></div>
+      <div class="delta reveal"><span class="k">Livraison géolocalisée</span><p>Frais calculés depuis l'<strong>adresse du client</strong> — distance au dépôt, tarif par tranches de km ou au km. Fini les préfixes de code postal saisis à la main.</p></div>
+      <div class="delta reveal"><span class="k">Back-office</span><p>Refonte complète&nbsp;: tableau de bord visuel, réservations éditables, fiche client complète, maintenance qui bloque l'exemplaire, tout modifiable (contenus, équipe, zones).</p></div>
+      <div class="delta reveal"><span class="k">Caution</span><p>Style hôtel&nbsp;: le montant est <strong>bloqué sur la carte, pas débité</strong>. Au retour, on libère l'empreinte — ou on capture ce qui est dû (retard, dommage, nettoyage).</p></div>
+      <div class="delta reveal"><span class="k">Expérience</span><p>Accueil et fiches produits repensés, cohérents, modernes&nbsp;; espace client mobile réellement synchronisé avec le site.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Les lots de travail</p>
+    <div class="prose"><p>Chaque lot est une livraison testable. L'ordre suit les dépendances&nbsp;: les fondations d'abord, puis les interfaces, puis la mise en production.</p></div>
+
+    <div class="ws reveal">
+      <div class="num">0</div>
+      <div class="body">
+        <h3>Fondations</h3>
+        <p class="goal">Poser les bases techniques et graphiques dont tout le reste dépend.</p>
+        <ul class="liv">
+          <li>i18n FR/NL/EN + auto-traduction DeepL</li><li>PostgreSQL + migrations</li><li>Upload d'images (local)</li>
+          <li>Design system Bricoloc</li><li>Intégration logo + photos</li><li>Rouge #EE2C24 partout</li>
+        </ul>
+        <p class="dep"><b>Dépend de&nbsp;:</b> rien — point de départ.</p>
+      </div>
+    </div>
+
+    <div class="ws reveal">
+      <div class="num">1</div>
+      <div class="body">
+        <h3>Accueil</h3>
+        <p class="goal">Une page moderne qui met en avant la recherche, les catégories et les BricoPacks, avec des révélations au scroll.</p>
+        <ul class="liv">
+          <li>Hero photo/vidéo + recherche visuelle</li><li>Tuiles catégories en images</li>
+          <li>Section « Pour quel chantier ? »</li><li>BricoPacks en vedette</li>
+          <li>« Comment ça marche »</li><li>FAQ + avis clients</li><li>Animations au scroll</li>
+        </ul>
+        <p class="dep"><b>Dépend de&nbsp;:</b> Lot 0.</p>
+      </div>
+    </div>
+
+    <div class="ws reveal">
+      <div class="num">2</div>
+      <div class="body">
+        <h3>Fiches produits</h3>
+        <p class="goal">Un gabarit unique et cohérent, quelle que soit la richesse des données.</p>
+        <ul class="liv">
+          <li>Galerie + référence + note</li><li>Prix en paliers J / S / M</li>
+          <li>Disponibilité sur la période</li><li>Accordéons fixes (caractéristiques, usage, sécurité…)</li>
+          <li>Accessoires / consommables / EPI</li><li>Avis + dépôt d'avis</li><li>Produits liés</li>
+        </ul>
+        <p class="dep"><b>Dépend de&nbsp;:</b> Lot 0.</p>
+      </div>
+    </div>
+
+    <div class="ws reveal">
+      <div class="num">3</div>
+      <div class="body">
+        <h3>Catalogue réel + livraison géolocalisée</h3>
+        <p class="goal">Le vrai catalogue Bricoloc, et un calcul de frais de livraison basé sur l'adresse.</p>
+        <ul class="liv">
+          <li>Import ~120 machines + 5 BricoPacks</li><li>Vrais tarifs J/S/M + cautions</li>
+          <li>Catégorisation dans les 10 catégories réelles</li><li>Photos produits</li>
+          <li>Adresse du dépôt configurable</li><li>Géocodage adresse client (OpenStreetMap)</li>
+          <li>Distance dépôt → client</li><li>Tarif par tranches de km <em>ou</em> au km (config admin)</li>
+          <li>Frais calculés dès la saisie de l'adresse</li>
+        </ul>
+        <p class="dep"><b>Dépend de&nbsp;:</b> Lots 0 et 2.</p>
+      </div>
+    </div>
+
+    <div class="ws reveal">
+      <div class="num">4</div>
+      <div class="body">
+        <h3>Back-office — refonte complète</h3>
+        <p class="goal">L'outil de l'équipe : lisible, éditable partout, scan intégré (retours David).</p>
+        <ul class="liv">
+          <li>Tableau de bord visuel (KPI, mini-graphes, file du jour, alertes)</li>
+          <li>Comptoir : <b>scan caméra</b> + douchette Zebra/USB, file des commandes en cours</li>
+          <li><b>Éditeur de réservation</b> complet (dates, lignes, prix, frais, statut)</li>
+          <li>Produit : upload images <b>drag &amp; drop</b>, onglets, paliers de prix</li>
+          <li>Exemplaires : clic droit / appui long → statut, réparation, entretien</li>
+          <li><b>Maintenance qui bloque</b> l'exemplaire sur sa période</li>
+          <li>Fiche client complète (adresses, historique, factures, notes, PO)</li>
+          <li>Zones de livraison : CRUD + règle km/tranches</li>
+          <li>Contenus : éditeur riche, plus de zones éditables, 3 langues</li>
+          <li>Équipe : édition (nom, rôle, statut, mot de passe)</li>
+          <li>SEO produit / catégorie / global · sitemap · hreflang · données structurées</li>
+        </ul>
+        <p class="dep"><b>Dépend de&nbsp;:</b> Lots 0 et 3 · le scan chevauche le Lot 5.</p>
+      </div>
+    </div>
+
+    <div class="ws reveal">
+      <div class="num">5</div>
+      <div class="body">
+        <h3>Scan &amp; inventaire</h3>
+        <p class="goal">Gérer les entrées/sorties d'outils et de consommables au scanner, sans jamais taper.</p>
+        <ul class="liv">
+          <li>Mode Terminal (TC51 / smartphone / poste fixe)</li><li>DataWedge Zebra + scanners USB</li>
+          <li>Scan caméra (appli + navigateur)</li><li>Référence / code-barres consommables</li>
+          <li>Mouvements de stock</li><li>Étiquettes QR + Code128 imprimables</li>
+        </ul>
+        <p class="dep"><b>Dépend de&nbsp;:</b> Lot 4.</p>
+      </div>
+    </div>
+
+    <div class="ws reveal">
+      <div class="num">6</div>
+      <div class="body">
+        <h3>Appli mobile</h3>
+        <p class="goal">Aligner l'appli sur le nouveau site et compléter l'espace client.</p>
+        <ul class="liv">
+          <li>Alignement visuel sur le site</li><li>Espace client complet et synchronisé</li>
+          <li>Avis</li><li>Scan caméra</li><li>i18n FR/NL/EN</li><li>Notifications</li>
+        </ul>
+        <p class="dep"><b>Dépend de&nbsp;:</b> Lots 0, 1, 2 (bug réseau déjà corrigé).</p>
+      </div>
+    </div>
+
+    <div class="ws reveal">
+      <div class="num">7</div>
+      <div class="body">
+        <h3>Paiement, caution &amp; mise en production</h3>
+        <p class="goal">Passer en conditions réelles et publier sur le domaine.</p>
+        <ul class="liv">
+          <li>Mollie live — loyer (Bancontact + cartes)</li>
+          <li><b>Caution = empreinte bancaire</b> (bloquée, non débitée) → libérée ou capturée au retour</li>
+          <li>VPS Combell + Docker Compose</li><li>Domaine bricoloc.be + HTTPS</li>
+          <li>Sauvegardes automatiques</li><li>Pages légales, CGV, RGPD</li>
+          <li>Redirections depuis l'ancien site (SEO)</li>
+        </ul>
+        <p class="dep"><b>Dépend de&nbsp;:</b> tous les lots précédents.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Décisions prises</p>
+    <div class="decisions">
+
+      <div class="card reveal">
+        <div class="q"><span class="tag">Hébergement</span><h3>VPS Combell + Docker</h3></div>
+        <p>Combell (belge, support 24/7 FR/NL, infra redondante, hébergeur Node.js reconnu) plutôt que Behostings — plus de marge et de support. Un <b>VPS Linux</b> (~4 Go RAM pour démarrer) fait tourner toute la pile via <b>Docker Compose</b>&nbsp;: API, site, PostgreSQL, reverse-proxy HTTPS, sauvegardes.</p>
+        <p class="reco"><b>Portable</b> — la pile Docker se déplace en une commande si tu changes d'hébergeur un jour.</p>
+        <p class="note">Behostings resterait un choix valable&nbsp;: plus petit, un peu moins cher.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="q"><span class="tag">Migration</span><h3>Machines + tarifs uniquement</h3></div>
+        <p>On importe le <b>catalogue</b> (noms, photos, tarifs J/S/M, cautions — déjà récupérés depuis bricoloc.be et le PDF tarif). <b>Pas</b> de reprise des comptes clients&nbsp;: ré-inscription propre à la mise en ligne.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="q"><span class="tag">Paiement</span><h3>Mollie (compte existant)</h3></div>
+        <p>Bancontact + cartes, standard en Belgique, ~0,25 € + petit % par transaction, sans abonnement. Je branche la <b>clé de test</b> d'abord, la clé live au Lot 7. Le mode démo reste disponible pour les essais.</p>
+        <p class="note">À me transmettre&nbsp;: la clé API de test depuis ton tableau de bord Mollie.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="q"><span class="tag">Navigation</span><h3>Catégories + section chantier légère</h3></div>
+        <p>Les <b>10 catégories</b> réelles en navigation principale, plus une section « Pour quel chantier&nbsp;? » sur l'accueil (6–8 tâches → sélection prête à l'emploi). Les BricoPacks complètent.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="q"><span class="tag">Scan</span><h3>Zebra TC51, smartphone et scanner USB</h3></div>
+        <p>Le mode Terminal fonctionne dans les trois cas&nbsp;: <b>TC51</b> (scanner intégré, DataWedge), <b>smartphone</b> (scan par caméra, appli ou navigateur), <b>poste fixe</b> + scanner USB. Mêmes écrans partout&nbsp;: gros boutons, scan d'abord. Étiquettes QR + Code128 lisibles par tous.</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="q"><span class="tag">Langues</span><h3>Auto FR → NL/EN via DeepL</h3></div>
+        <p>À chaque modification d'un texte en français (fiche produit, page, FAQ…), les versions <b>NL et EN</b> sont regénérées automatiquement via DeepL. Elles restent <b>corrigeables à la main</b> dans le back-office (un champ par langue). L'interface, elle, est traduite proprement.</p>
+        <p class="note">À me transmettre&nbsp;: une clé API DeepL (l'offre gratuite — 500 000 caractères/mois — suffit pour démarrer).</p>
+      </div>
+
+      <div class="card reveal">
+        <div class="q"><span class="tag">Marque</span><h3>Mascottes Brico / Bolt — plus tard</h3></div>
+        <p>Elles n'existent pas encore. On démarre sans&nbsp;: la charte tient avec le logo « B », les photos, les vidéos et un jeu d'icônes. On les intègrera quand tu les feras produire.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="next reveal">
+      <h2>Prochaine étape</h2>
+      <ol>
+        <li><strong>Moi</strong> — 2 maquettes&nbsp;: nouvel accueil + nouvelle fiche produit, aux vraies couleurs Bricoloc, avec le vrai catalogue. Tu valides.</li>
+        <li><strong>Toi</strong> — clé API DeepL + clé de test Mollie&nbsp;; commande du VPS Combell (je fournis les specs exactes).</li>
+        <li><strong>Ensuite</strong> — je démarre le Lot 0 (fondations&nbsp;: i18n, PostgreSQL, upload images, design system).</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Document de travail — révisable. Bricoloc / JJD&nbsp;Consult · 1 septembre 2026
+</footer>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var els = document.querySelectorAll('.reveal');
+    if (reduce || !('IntersectionObserver' in window)) {
+      els.forEach(function (e) { e.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.1 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>

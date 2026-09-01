@@ -1,0 +1,57 @@
+{
+  "common": {
+    "brand": "BRICOLOC",
+    "tagline": "Het juiste gereedschap. Op het juiste moment.",
+    "demoRibbon": "DEMO-omgeving — fictieve gegevens, tarieven en betalingen",
+    "loading": "Laden…",
+    "search": "Zoeken",
+    "book": "Reserveren",
+    "add": "Toevoegen",
+    "seeMore": "Meer bekijken",
+    "back": "Terug",
+    "close": "Sluiten"
+  },
+  "nav": {
+    "catalogue": "Catalogus",
+    "howItWorks": "Zo werkt het",
+    "clickCollect": "Click & Collect",
+    "delivery": "Levering",
+    "pros": "Professionals",
+    "faq": "FAQ",
+    "account": "Mijn account",
+    "login": "Aanmelden",
+    "cart": "Winkelmandje",
+    "advice": "Advies",
+    "contact": "Contact",
+    "legal": "Wettelijke vermeldingen",
+    "staffArea": "Teamruimte",
+    "kiosk": "Baliezuil"
+  },
+  "language": {
+    "label": "Taal",
+    "fr": "Frans",
+    "nl": "Nederlands",
+    "en": "Engels"
+  },
+  "footer": {
+    "rent": "Huren",
+    "pickupDelivery": "Afhaling & levering",
+    "help": "Hulp",
+    "info": "Info",
+    "deliverySite": "Levering op de werf",
+    "servicesPros": "Diensten voor professionals",
+    "rights": "© {year} BRICOLOC. België · EUR · 21 % btw."
+  },
+  "dateBar": {
+    "noDates": "Nog geen data gekozen — u kunt ze later invullen.",
+    "chooseDates": "Mijn data kiezen",
+    "period": "Periode",
+    "edit": "Wijzigen",
+    "start": "Begin",
+    "return": "Terugbrengen",
+    "apply": "Toepassen",
+    "cancel": "Annuleren",
+    "clear": "Wissen",
+    "browseWithoutDates": "Bekijken zonder data"
+  }
+}

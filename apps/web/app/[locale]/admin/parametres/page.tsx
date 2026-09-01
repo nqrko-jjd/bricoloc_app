@@ -1,0 +1,91 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { staffApi } from '@/lib/staff';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const NUMERIC = [
+  ['vatRate', 'Taux de TVA (0-1)'],
+  ['minLeadTimeHours', 'Délai mini avant retrait (h)'],
+  ['sameDayCutoffHour', 'Heure limite retour “même jour”'],
+  ['lateFeeMultiplier', 'Multiplicateur frais de retard'],
+  ['deliveryBaseFee', 'Frais de livraison de base'],
+  ['deliveryFreeThreshold', 'Livraison offerte dès (HTVA)'],
+  ['cleaningFeeDefault', 'Frais de nettoyage par défaut'],
+  ['proDiscountPctDefault', 'Remise PRO par défaut (0-1)'],
+];
+
+export default function AdminParametres() {
+  const [s, setS] = useState<any>(null);
+  const [company, setCompany] = useState<any>({});
+  const [msg, setMsg] = useState('');
+
+  const load = () =>
+    staffApi<{ settings: any }>('/api/admin/settings').then((r) => {
+      setS(r.settings);
+      setCompany(r.settings.company ?? {});
+    });
+  useEffect(() => {
+    load();
+  }, []);
+  if (!s) return <p>Chargement…</p>;
+
+  async function save(key: string, value: any) {
+    await staffApi('/api/admin/settings', { method: 'PUT', body: { key, value } });
+    setMsg(`« ${key} » enregistré.`);
+    await load();
+  }
+
+  return (
+    <div className="stack">
+      <h1>Paramètres</h1>
+      {msg && <div className="alert alert-ok">{msg}</div>}
+      <div className="card card-pad">
+        <h3>Paramètres économiques</h3>
+        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          {NUMERIC.map(([key, label]) => (
+            <div className="field" key={key}>
+              <label>{label}</label>
+              <input
+                type="number"
+                step="0.01"
+                defaultValue={s[key]}
+                onBlur={(e) => save(key, Number(e.target.value))}
+              />
+            </div>
+          ))}
+        </div>
+        <label className="row" style={{ gap: 8, marginTop: 10 }}>
+          <input
+            type="checkbox"
+            defaultChecked={!!s.weekendRuleEnabled}
+            onChange={(e) => save('weekendRuleEnabled', e.target.checked)}
+          />
+          <span className="small">Règle week-end (vendredi → lundi = 1 jour)</span>
+        </label>
+      </div>
+
+      <div className="card card-pad">
+        <h3>Coordonnées de la société</h3>
+        <p className="small muted">Actuellement fictives (démo) — à compléter.</p>
+        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          {['legalName', 'vatNumber', 'address', 'phone', 'email', 'iban'].map((k) => (
+            <div className="field" key={k}>
+              <label>{k}</label>
+              <input
+                value={company[k] ?? ''}
+                onChange={(e) => setCompany({ ...company, [k]: e.target.value })}
+              />
+            </div>
+          ))}
+        </div>
+        <button
+          className="btn btn-primary btn-sm"
+          style={{ marginTop: 10 }}
+          onClick={() => save('company', company)}
+        >
+          Enregistrer les coordonnées
+        </button>
+      </div>
+    </div>
+  );
+}

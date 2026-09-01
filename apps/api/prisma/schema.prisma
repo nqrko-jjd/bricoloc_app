@@ -1,0 +1,427 @@
+// BRICOLOC - schema de donnees unique (site, mobile, borne, admin).
+// SQLite pour le dev ; migrable vers PostgreSQL sans changement de modele.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Parametres economiques et coordonnees societe, editables en admin.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+/// Contenus editoriaux du site (FAQ, conseils, pages legales...).
+model Content {
+  id        String   @id @default(cuid())
+  key       String
+  locale    String   @default("fr")
+  title     String?
+  body      String
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, locale])
+}
+
+model StaffUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String // STAFF_ROLES
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  pickups       PickupRecord[]
+  returns       ReturnRecord[]
+  deliveries    Delivery[]
+  maintenances  Maintenance[]
+}
+
+model User {
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  passwordHash        String
+  firstName           String
+  lastName            String
+  phone               String
+  customerType        String   @default("PARTICULIER") // PARTICULIER | PRO
+  companyName         String?
+  vatNumber           String?
+  negotiatedDiscountPct Float?
+  createdAt           DateTime @default(now())
+
+  addresses     Address[]
+  reservations  Reservation[]
+  carts         Cart[]
+  notifications Notification[]
+  pushTokens    PushToken[]
+  supportTickets SupportTicket[]
+}
+
+model Address {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label              String?
+  line1              String
+  line2              String?
+  postalCode         String
+  city               String
+  country            String   @default("BE")
+  isConstructionSite Boolean  @default(false)
+  contactName        String?
+  contactPhone       String?
+  createdAt          DateTime @default(now())
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  bolt        String?
+  description String?
+  position    Int       @default(0)
+  products    Product[]
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  kind             String   @default("MACHINE") // MACHINE | ACCESSORY | CONSUMABLE | PPE | PACK
+  categoryId       String?
+  category         Category? @relation(fields: [categoryId], references: [id])
+  shortDescription String?
+  description       String?
+  recommendedUses  Json?
+  specs            Json?
+  includedAccessories Json?
+  images           Json?
+  manualUrl        String?
+  documents        Json?
+
+  dailyPrice     Float
+  weekendPrice   Float?
+  weekPrice      Float?
+  monthPrice     Float?
+  tiers          Json? // [{minDays, perDay}]
+  proDiscountPct Float?
+  deposit        Float   @default(0)
+
+  /// Stock pour les articles non suivis a l'exemplaire (consommables, petits accessoires).
+  /// null => la capacite est calculee sur le nombre d'exemplaires (ProductUnit).
+  stockQty  Int?
+  /// true pour un consommable (vendu, non restitue -> pas de reservation de stock dans le temps).
+  isConsumable Boolean @default(false)
+
+  isDemo    Boolean @default(true)
+  published Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  units            ProductUnit[]
+  linksFrom        ProductLink[] @relation("linkFrom")
+  linksTo          ProductLink[] @relation("linkTo")
+  cartItems        CartItem[]
+  reservationItems ReservationItem[]
+}
+
+/// Relations entre articles : accessoire recommande, consommable, EPI, complementaire, contenu de pack.
+model ProductLink {
+  id       String @id @default(cuid())
+  fromId   String
+  toId     String
+  type     String // ACCESSORY | CONSUMABLE | PPE | COMPLEMENTARY | PACK_ITEM
+  quantity Int    @default(1)
+  from     Product @relation("linkFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to       Product @relation("linkTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId, type])
+}
+
+/// Exemplaire physique d'une machine.
+model ProductUnit {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  assetTag          String   @unique
+  serialNumber      String?
+  qrToken           String   @unique
+  state             String   @default("AVAILABLE") // UNIT_STATES
+  notes             String?
+  images            Json?
+  nextMaintenanceAt DateTime?
+  createdAt         DateTime @default(now())
+
+  reservationUnits ReservationUnit[]
+  damages          Damage[]
+  maintenances     Maintenance[]
+}
+
+model Cart {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionKey    String   @unique
+  periodStart   DateTime?
+  periodEnd     DateTime?
+  fulfilmentMode String? // PICKUP | DELIVERY
+  address       Json?
+  slot          String?
+  promoCode     String?
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  items CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int     @default(1)
+
+  @@unique([cartId, productId])
+}
+
+model Reservation {
+  id             String   @id @default(cuid())
+  number         String   @unique
+  qrToken        String   @unique
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status         String   @default("DRAFT") // RESERVATION_STATUSES
+  channel        String   @default("WEB") // WEB | MOBILE | KIOSK
+  periodStart    DateTime
+  periodEnd      DateTime
+  fulfilmentMode String   @default("PICKUP")
+  address        Json?
+  slot           String?
+  contact        Json?
+  promoCode      String?
+  totals         Json // snapshot CartTotals
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  items      ReservationItem[]
+  payments   Payment[]
+  deposit    Deposit?
+  deliveries Delivery[]
+  pickup     PickupRecord?
+  return     ReturnRecord?
+  damages    Damage[]
+  invoices   Invoice[]
+  tickets    SupportTicket[]
+}
+
+model ReservationItem {
+  id           String   @id @default(cuid())
+  reservationId String
+  reservation  Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  nameSnapshot String
+  kind         String
+  quantity     Int
+  unitPriceHT  Float
+  lineHT       Float
+  depositUnit  Float    @default(0)
+  billedDays   Int      @default(1)
+  appliedRule  String   @default("STANDARD")
+  periodStart  DateTime? // override exceptionnel (admin)
+  periodEnd    DateTime?
+
+  units ReservationUnit[]
+}
+
+/// Affectation d'un exemplaire physique a une ligne de reservation (au retrait).
+model ReservationUnit {
+  id                String   @id @default(cuid())
+  reservationItemId String
+  reservationItem   ReservationItem @relation(fields: [reservationItemId], references: [id], onDelete: Cascade)
+  unitId            String
+  unit              ProductUnit @relation(fields: [unitId], references: [id])
+  assignedAt        DateTime @default(now())
+  returnedAt        DateTime?
+
+  @@unique([reservationItemId, unitId])
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  provider      String   @default("mock")
+  status        String   @default("PENDING") // PAYMENT_STATUSES
+  kind          String   @default("RENTAL") // RENTAL | DEPOSIT | EXTRA | REFUND
+  amount        Float
+  externalRef   String?
+  meta          Json?
+  createdAt     DateTime @default(now())
+}
+
+model Deposit {
+  id             String   @id @default(cuid())
+  reservationId  String   @unique
+  reservation    Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  amount         Float
+  status         String   @default("HELD") // DEPOSIT_STATUSES
+  capturedAmount Float    @default(0)
+  updatedAt      DateTime @updatedAt
+}
+
+model Delivery {
+  id            String   @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  direction     String   @default("OUT") // OUT | RETURN
+  status        String   @default("REQUESTED") // DELIVERY_STATUSES
+  driverId      String?
+  driver        StaffUser? @relation(fields: [driverId], references: [id])
+  slot          String?
+  address       Json?
+  distanceKm    Float    @default(0)
+  feeHT         Float    @default(0)
+  signature     String?
+  photo         String?
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+}
+
+model PickupRecord {
+  id            String   @id @default(cuid())
+  reservationId String   @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  staffId       String?
+  staff         StaffUser? @relation(fields: [staffId], references: [id])
+  checklist     Json
+  photos        Json?
+  signature     String
+  note          String?
+  createdAt     DateTime @default(now())
+}
+
+model ReturnRecord {
+  id             String   @id @default(cuid())
+  reservationId  String   @unique
+  reservation    Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  staffId        String?
+  staff          StaffUser? @relation(fields: [staffId], references: [id])
+  actualReturnAt DateTime
+  checklist      Json
+  photos         Json?
+  cleaningFeeHT  Float    @default(0)
+  otherFeeHT     Float    @default(0)
+  otherFeeReason String?
+  lateDays       Int      @default(0)
+  lateFeeHT      Float    @default(0)
+  note           String?
+  createdAt      DateTime @default(now())
+}
+
+model Damage {
+  id            String   @id @default(cuid())
+  reservationId String?
+  reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  unitId        String
+  unit          ProductUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  description   String
+  feeHT         Float    @default(0)
+  photos        Json?
+  resolved      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
+
+model Maintenance {
+  id          String   @id @default(cuid())
+  unitId      String
+  unit        ProductUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  type        String   @default("ENTRETIEN") // ENTRETIEN | REPARATION | CONTROLE
+  description String
+  cost        Float    @default(0)
+  performedAt DateTime @default(now())
+  nextAt      DateTime?
+  staffId     String?
+  staff       StaffUser? @relation(fields: [staffId], references: [id])
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  number        String   @unique
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  kind          String   @default("FINAL") // RESERVATION | FINAL
+  totals        Json
+  lines         Json
+  pdfPath       String?
+  issuedAt      DateTime @default(now())
+}
+
+model Promotion {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  kind       String // PERCENT | AMOUNT
+  value      Float
+  active     Boolean  @default(true)
+  minTotalHT Float    @default(0)
+  expiresAt  DateTime?
+  createdAt  DateTime @default(now())
+}
+
+model DeliveryZone {
+  id             String  @id @default(cuid())
+  name           String
+  postalPrefixes Json // ["1000","10","2"]
+  baseFee        Float
+  perKm          Float   @default(0)
+  active         Boolean @default(true)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // NOTIFICATION_TYPES
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String // ios | android | web
+  createdAt DateTime @default(now())
+}
+
+model SupportTicket {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reservationId String?
+  reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  subject       String
+  message       String
+  status        String   @default("OPEN") // OPEN | IN_PROGRESS | CLOSED
+  response      String?
+  createdAt     DateTime @default(now())
+}
+
+model Counter {
+  name  String @id
+  value Int    @default(0)
+}

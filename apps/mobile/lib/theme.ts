@@ -1,0 +1,16 @@
+export const C = {
+  brico: '#E52421',
+  loc: '#0B1D3A',
+  locSoft: '#13294F',
+  white: '#FFFFFF',
+  darkGray: '#33363A',
+  lightGray: '#A7A9AC',
+  bg: '#F5F6F8',
+  border: '#DFE3E8',
+  ok: '#1A7F45',
+  okBg: '#E5F4EC',
+  warn: '#B26A00',
+  warnBg: '#FDF1E0',
+  err: '#C02626',
+  errBg: '#FCEBEB',
+};

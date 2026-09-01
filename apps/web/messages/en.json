@@ -1,0 +1,57 @@
+{
+  "common": {
+    "brand": "BRICOLOC",
+    "tagline": "The right tool. At the right time.",
+    "demoRibbon": "DEMO environment — fictitious data, prices and payments",
+    "loading": "Loading…",
+    "search": "Search",
+    "book": "Book",
+    "add": "Add",
+    "seeMore": "See more",
+    "back": "Back",
+    "close": "Close"
+  },
+  "nav": {
+    "catalogue": "Catalogue",
+    "howItWorks": "How it works",
+    "clickCollect": "Click & Collect",
+    "delivery": "Delivery",
+    "pros": "Trade",
+    "faq": "FAQ",
+    "account": "My account",
+    "login": "Log in",
+    "cart": "Cart",
+    "advice": "Advice",
+    "contact": "Contact",
+    "legal": "Legal notice",
+    "staffArea": "Staff area",
+    "kiosk": "Counter kiosk"
+  },
+  "language": {
+    "label": "Language",
+    "fr": "French",
+    "nl": "Dutch",
+    "en": "English"
+  },
+  "footer": {
+    "rent": "Rent",
+    "pickupDelivery": "Pickup & delivery",
+    "help": "Help",
+    "info": "Info",
+    "deliverySite": "On-site delivery",
+    "servicesPros": "Trade services",
+    "rights": "© {year} BRICOLOC. Belgium · EUR · 21% VAT."
+  },
+  "dateBar": {
+    "noDates": "No dates chosen yet — you can set them later.",
+    "chooseDates": "Choose my dates",
+    "period": "Period",
+    "edit": "Edit",
+    "start": "Start",
+    "return": "Return",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "browseWithoutDates": "Browse without dates"
+  }
+}
