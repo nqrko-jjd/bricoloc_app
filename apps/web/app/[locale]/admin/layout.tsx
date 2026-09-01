@@ -7,14 +7,16 @@ import { Logo } from '@/components/Logo';
 const NAV = [
   ['/admin', 'Tableau de bord'],
   ['/admin/comptoir', 'Comptoir (retrait/retour)'],
+  ['/admin/terminal', 'Terminal (scan / inventaire)'],
   ['/admin/reservations', 'Réservations'],
   ['/admin/livraisons', 'Livraisons'],
   ['/admin/produits', 'Catalogue & produits'],
   ['/admin/exemplaires', 'Exemplaires & maintenance'],
+  ['/admin/etiquettes', 'Étiquettes QR'],
   ['/admin/clients', 'Clients'],
   ['/admin/promotions', 'Promotions'],
-  ['/admin/zones', 'Zones de livraison'],
-  ['/admin/contenus', 'Contenus du site'],
+  ['/admin/zones', 'Livraison'],
+  ['/admin/contenus', 'Contenus & avis'],
   ['/admin/parametres', 'Paramètres'],
   ['/admin/equipe', 'Équipe'],
 ];

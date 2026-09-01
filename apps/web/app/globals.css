@@ -520,6 +520,33 @@ button { font-family: inherit; }
 .scan-camera { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 .scan-camera video { max-width: 92vw; max-height: 70vh; border-radius: var(--r-md); }
 
+/* Terminal (mode inventaire plein écran) */
+.terminal { display: flex; flex-direction: column; gap: 18px; max-width: 720px; }
+.terminal-card { display: flex; flex-direction: column; gap: 12px; }
+.terminal-card h2 { margin: 0; }
+
+/* Étiquettes imprimables */
+.label-sheet { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+.label {
+  display: flex; gap: 3mm; align-items: center; padding: 3mm;
+  border: 1px dashed var(--border); border-radius: 6px; break-inside: avoid;
+}
+.label__qr { width: 22mm; height: 22mm; }
+.label__body { display: flex; flex-direction: column; gap: 1mm; min-width: 0; }
+.label__tag { font-family: monospace; font-size: 12pt; font-weight: 700; }
+.label__name { font-size: 8pt; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.label__brand { font-family: var(--font-display); font-weight: 800; font-size: 8pt; color: var(--primary); }
+.label__body svg { max-width: 44mm; height: auto; }
+
+@media print {
+  .no-print, .admin-side, .demo-ribbon { display: none !important; }
+  .admin-main { padding: 0 !important; }
+  .admin-shell { display: block !important; }
+  .label-sheet { grid-template-columns: repeat(3, 1fr); }
+  .label { border-color: #ccc; }
+  body { background: #fff; }
+}
+
 /* =========================================================================
    Borne tactile 16"
    ========================================================================= */

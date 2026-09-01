@@ -16,7 +16,7 @@ import { prisma } from '../db.js';
 import { badRequest, h, notFound } from '../lib/http.js';
 import { attachPrincipal, hashPassword, requireStaff } from '../lib/auth.js';
 import { setSetting, getSettings } from '../lib/settings.js';
-import { newQrToken } from '../lib/qr.js';
+import { newQrToken, qrDataUrl } from '../lib/qr.js';
 import { productInclude, serializeProductDetail } from '../lib/serialize.js';
 import { generateInvoice } from '../lib/invoice.js';
 import { syncContentTranslations } from '../lib/i18n-content.js';
@@ -361,6 +361,58 @@ adminRouter.delete(
   h(async (req, res) => {
     await prisma.productUnit.delete({ where: { id: req.params.id } });
     res.status(204).end();
+  }),
+);
+
+/** Crée N exemplaires d'un coup (atelier étiquettes). */
+adminRouter.post(
+  '/units/bulk',
+  requireStaff('RESPONSABLE', 'TECHNICIEN'),
+  h(async (req, res) => {
+    const { productId, count } = req.body ?? {};
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw notFound('Produit introuvable');
+    const n = Math.min(50, Math.max(1, Number(count ?? 1)));
+    const prefix = product.slug.slice(0, 10).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const start = await prisma.productUnit.count({ where: { productId } });
+    const created = [];
+    for (let i = 0; i < n; i++) {
+      created.push(
+        await prisma.productUnit.create({
+          data: {
+            productId,
+            assetTag: `${prefix}-${String(start + i + 1).padStart(3, '0')}`,
+            qrToken: newQrToken('U'),
+            state: 'AVAILABLE',
+          },
+        }),
+      );
+    }
+    res.status(201).json({ units: created });
+  }),
+);
+
+/** Données d'étiquettes : QR (data URL) + code-barres pour une liste d'exemplaires ou un produit. */
+adminRouter.post(
+  '/labels',
+  h(async (req, res) => {
+    const { unitIds, productId } = req.body ?? {};
+    const units = await prisma.productUnit.findMany({
+      where: unitIds?.length ? { id: { in: unitIds } } : productId ? { productId } : { id: 'none' },
+      include: { product: { select: { name: true, slug: true } } },
+      orderBy: { assetTag: 'asc' },
+    });
+    const labels = await Promise.all(
+      units.map(async (u) => ({
+        unitId: u.id,
+        assetTag: u.assetTag,
+        barcode: u.barcode ?? u.assetTag,
+        productName: u.product.name,
+        qrToken: u.qrToken,
+        qrDataUrl: await qrDataUrl(u.qrToken),
+      })),
+    );
+    res.json({ labels });
   }),
 );
 
