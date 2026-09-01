@@ -7,7 +7,8 @@ import { api } from '@/lib/api';
 import { ensureKioskCart, kioskApi, kioskCartKey, resetKioskSession } from '@/lib/kiosk';
 import { defaultPeriod, toLocalInput, fromLocalInput } from '@/lib/dates';
 import { OnScreenKeyboard } from '@/components/OnScreenKeyboard';
-import type { Cart, ProductSummary } from '@/lib/types';
+import { PLACEHOLDER_IMG } from '@/lib/placeholder';
+import type { Cart, ProductSummary, ProductDetail } from '@/lib/types';
 
 type Step = 'dates' | 'browse' | 'cart' | 'contact' | 'pay' | 'done';
 
@@ -28,6 +29,15 @@ function KioskCatalogue() {
   const [contact, setContact] = useState({ firstName: '', lastName: '', email: '', phone: '' });
   const [field, setField] = useState<keyof typeof contact>('firstName');
   const [result, setResult] = useState<{ number: string; qrDataUrl: string } | null>(null);
+  const [detail, setDetail] = useState<ProductDetail | null>(null);
+  const [detailImg, setDetailImg] = useState(0);
+
+  async function openDetail(slug: string) {
+    setDetailImg(0);
+    const sp = `?start=${fromLocalInput(start)}&end=${fromLocalInput(end)}`;
+    const r = await api<{ product: ProductDetail }>(`/api/catalog/products/${slug}${sp}`);
+    setDetail(r.product);
+  }
 
   async function refreshCart() {
     const key = kioskCartKey();
@@ -164,51 +174,46 @@ function KioskCatalogue() {
             onChange={(e) => setQ(e.target.value)}
             style={{ width: '100%', padding: 14, fontSize: '1.1rem', borderRadius: 10, border: 'none' }}
           />
-          <div
-            className="grid"
-            style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', marginTop: 16 }}
-          >
+          <div className="kiosk-cat-grid">
             {products.map((p) => {
               const inCart = cart?.items.find((i) => i.productId === p.id);
               const dispo = p.availability?.status;
               return (
-                <div key={p.id} className="card card-body" style={{ color: 'var(--dark-gray)' }}>
-                  <strong>{p.name}</strong>
-                  <div className="small muted">
-                    {formatEUR(p.dailyPrice)} / {p.isConsumable ? 'unité' : 'jour'}
-                  </div>
-                  <div className="small" style={{ margin: '6px 0' }}>
-                    {dispo === 'AVAILABLE' ? (
-                      <span style={{ color: 'var(--ok)' }}>✔ Disponible</span>
-                    ) : dispo === 'PARTIAL' ? (
-                      <span style={{ color: 'var(--warn)' }}>Stock limité</span>
-                    ) : (
-                      <span style={{ color: 'var(--err)' }}>Indisponible</span>
-                    )}
-                  </div>
+                <div key={p.id} className="kiosk-prod">
+                  <button className="kiosk-prod__open" onClick={() => openDetail(p.slug)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.image || PLACEHOLDER_IMG}
+                      alt=""
+                      onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER_IMG)}
+                    />
+                    <span className="kiosk-prod__name">{p.name}</span>
+                    <span className="kiosk-prod__price">
+                      {formatEUR(p.dailyPrice)} / {p.isConsumable ? 'unité' : 'jour'}
+                    </span>
+                    <span className="kiosk-prod__dispo">
+                      {dispo === 'AVAILABLE' ? (
+                        <span style={{ color: 'var(--ok)' }}>✔ Disponible</span>
+                      ) : dispo === 'PARTIAL' ? (
+                        <span style={{ color: 'var(--warn)' }}>Stock limité</span>
+                      ) : (
+                        <span style={{ color: 'var(--err)' }}>Indisponible</span>
+                      )}
+                    </span>
+                  </button>
                   {inCart ? (
-                    <div className="row">
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => setQty(p.id, Math.max(0, inCart.quantity - 1))}
-                      >
-                        −
-                      </button>
+                    <div className="kiosk-prod__qty">
+                      <button onClick={() => setQty(p.id, Math.max(0, inCart.quantity - 1))}>−</button>
                       <span>{inCart.quantity}</span>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => setQty(p.id, inCart.quantity + 1)}
-                      >
-                        +
-                      </button>
+                      <button onClick={() => setQty(p.id, inCart.quantity + 1)}>+</button>
                     </div>
                   ) : (
                     <button
-                      className="btn btn-primary btn-sm btn-block"
+                      className="btn btn-primary btn-block"
                       disabled={dispo === 'UNAVAILABLE' || dispo === 'NEARBY'}
                       onClick={() => add(p.id)}
                     >
-                      Ajouter
+                      + Ajouter
                     </button>
                   )}
                 </div>
@@ -324,6 +329,104 @@ function KioskCatalogue() {
           <button className="btn btn-ghost" style={{ marginTop: 12 }} onClick={() => setStep('cart')}>
             Retour
           </button>
+        </div>
+      )}
+
+      {detail && (
+        <div className="kiosk-modal" onClick={() => setDetail(null)}>
+          <div className="kiosk-modal__box" onClick={(e) => e.stopPropagation()}>
+            <button className="kiosk-modal__close" onClick={() => setDetail(null)} aria-label="Fermer">
+              ✕
+            </button>
+            <div className="kiosk-modal__grid">
+              <div className="kiosk-modal__media">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={detail.images?.[detailImg] || detail.image || PLACEHOLDER_IMG}
+                  alt={detail.name}
+                  onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER_IMG)}
+                />
+                {(detail.images?.length ?? 0) > 1 && (
+                  <div className="kiosk-modal__thumbs">
+                    {detail.images.map((src, i) => (
+                      <button
+                        key={i}
+                        className={i === detailImg ? 'is-active' : ''}
+                        onClick={() => setDetailImg(i)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt="" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="kiosk-modal__info">
+                {detail.brand && <span className="eyebrow">{detail.brand}</span>}
+                <h2>{detail.name}</h2>
+
+                <div className="kiosk-modal__tiers">
+                  <div>
+                    <span>Jour</span>
+                    <strong>{formatEUR(detail.dailyPrice)}</strong>
+                  </div>
+                  <div>
+                    <span>Semaine</span>
+                    <strong>{formatEUR(detail.weekPrice ?? detail.dailyPrice * 4)}</strong>
+                  </div>
+                  <div>
+                    <span>Mois</span>
+                    <strong>{formatEUR(detail.monthPrice ?? detail.dailyPrice * 12)}</strong>
+                  </div>
+                </div>
+                {detail.deposit > 0 && (
+                  <p className="small muted">Caution : {formatEUR(detail.deposit)}</p>
+                )}
+
+                {detail.description && <p>{detail.description}</p>}
+
+                {detail.recommendedUses?.length > 0 && (
+                  <>
+                    <h3>Utilisations conseillées</h3>
+                    <ul>
+                      {detail.recommendedUses.map((u) => (
+                        <li key={u}>{u}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
+                {Object.keys(detail.specs ?? {}).length > 0 && (
+                  <>
+                    <h3>Caractéristiques</h3>
+                    <table className="table">
+                      <tbody>
+                        {Object.entries(detail.specs).map(([k, v]) => (
+                          <tr key={k}>
+                            <th>{k}</th>
+                            <td>{v}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+
+                <button
+                  className="btn btn-primary btn-lg btn-block"
+                  style={{ marginTop: 16 }}
+                  disabled={detail.availability?.status === 'UNAVAILABLE'}
+                  onClick={async () => {
+                    await add(detail.id);
+                    setDetail(null);
+                  }}
+                >
+                  + Ajouter au panier
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
