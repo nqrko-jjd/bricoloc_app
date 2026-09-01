@@ -5,6 +5,7 @@ import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
 import { API_URL } from '@/lib/api';
 import { staffApi, useStaff } from '@/lib/staff';
 import { StatusBadge } from '@/components/StatusBadge';
+import { toLocalInput, fromLocalInput } from '@/lib/dates';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function AdminReservationDetail({
@@ -16,6 +17,9 @@ export default function AdminReservationDetail({
   const { token } = useStaff();
   const [r, setR] = useState<any>(null);
   const [msg, setMsg] = useState('');
+  const [addSlug, setAddSlug] = useState('');
+  const [fee, setFee] = useState('');
+  const [disc, setDisc] = useState('');
 
   async function load() {
     const res = await staffApi<{ reservation: any }>(`/api/admin/reservations/${id}`);
@@ -25,7 +29,19 @@ export default function AdminReservationDetail({
     load();
   }, [id]);
 
-  if (!r) return <p>Chargement…</p>;
+  async function act(fn: () => Promise<unknown>, ok = 'Enregistré.') {
+    try {
+      await fn();
+      setMsg(ok);
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    }
+  }
+
+  if (!r) return <p className="loading-dark"><span className="spinner" /> Chargement…</p>;
+  const editable = ['DRAFT', 'PENDING_SUPPLIER', 'CONFIRMED', 'PREPARING', 'READY'].includes(r.status);
+  const t = r.totals ?? {};
 
   return (
     <div className="stack">
@@ -73,13 +89,32 @@ export default function AdminReservationDetail({
       <div className="two-col">
         <div className="stack">
           <div className="card card-body">
-            <h3>Lignes</h3>
+            <h3>Lignes {editable && <span className="badge badge-ok">modifiable</span>}</h3>
             <table className="table">
               <tbody>
                 {r.items.map((i: any) => (
                   <tr key={i.id}>
                     <td>
-                      {i.quantity}× {i.nameSnapshot}
+                      {editable ? (
+                        <input
+                          type="number"
+                          min={1}
+                          defaultValue={i.quantity}
+                          style={{ width: 56 }}
+                          onBlur={(e) =>
+                            Number(e.target.value) !== i.quantity &&
+                            act(() =>
+                              staffApi(`/api/admin/reservation-items/${i.id}`, {
+                                method: 'PATCH',
+                                body: { quantity: Number(e.target.value) },
+                              }),
+                            )
+                          }
+                        />
+                      ) : (
+                        `${i.quantity}×`
+                      )}{' '}
+                      {i.nameSnapshot}
                       <span className="small muted"> · {i.billedDays} j · {i.appliedRule}</span>
                       {i.units?.length > 0 && (
                         <div className="small muted">
@@ -88,13 +123,122 @@ export default function AdminReservationDetail({
                       )}
                     </td>
                     <td style={{ textAlign: 'right' }}>{formatEUR(i.lineHT)}</td>
+                    {editable && (
+                      <td>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() =>
+                            act(
+                              () =>
+                                staffApi(`/api/admin/reservation-items/${i.id}`, { method: 'DELETE' }),
+                              'Ligne supprimée.',
+                            )
+                          }
+                        >
+                          ×
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="small muted">
-              Période : {formatDateTimeBE(r.periodStart)} → {formatDateTimeBE(r.periodEnd)}
+
+            {editable && (
+              <div className="row" style={{ marginTop: 8 }}>
+                <input
+                  placeholder="slug produit à ajouter (ex : disqueuse-125-mm)"
+                  value={addSlug}
+                  onChange={(e) => setAddSlug(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() =>
+                    addSlug &&
+                    act(async () => {
+                      await staffApi(`/api/admin/reservations/${id}/items`, {
+                        method: 'POST',
+                        body: { productSlug: addSlug.trim(), quantity: 1 },
+                      });
+                      setAddSlug('');
+                    }, 'Ligne ajoutée.')
+                  }
+                >
+                  + Ajouter
+                </button>
+              </div>
+            )}
+
+            <div className="field-2" style={{ marginTop: 12 }}>
+              <label className="field small">
+                Période — début
+                <input
+                  type="datetime-local"
+                  defaultValue={toLocalInput(r.periodStart)}
+                  disabled={!editable}
+                  onBlur={(e) =>
+                    act(() =>
+                      staffApi(`/api/admin/reservations/${id}`, {
+                        method: 'PATCH',
+                        body: { periodStart: fromLocalInput(e.target.value) },
+                      }),
+                    )
+                  }
+                />
+              </label>
+              <label className="field small">
+                Période — retour
+                <input
+                  type="datetime-local"
+                  defaultValue={toLocalInput(r.periodEnd)}
+                  disabled={!editable}
+                  onBlur={(e) =>
+                    act(() =>
+                      staffApi(`/api/admin/reservations/${id}`, {
+                        method: 'PATCH',
+                        body: { periodEnd: fromLocalInput(e.target.value) },
+                      }),
+                    )
+                  }
+                />
+              </label>
             </div>
+
+            {editable && (
+              <div className="row" style={{ marginTop: 10 }}>
+                <input placeholder="Frais € HT" value={fee} onChange={(e) => setFee(e.target.value)} style={{ width: 120 }} />
+                <input placeholder="Remise € HT" value={disc} onChange={(e) => setDisc(e.target.value)} style={{ width: 120 }} />
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() =>
+                    act(
+                      () =>
+                        staffApi(`/api/admin/reservations/${id}/recompute`, {
+                          method: 'POST',
+                          body: {
+                            extraFeesHT: fee === '' ? undefined : Number(fee),
+                            extraDiscountHT: disc === '' ? undefined : Number(disc),
+                          },
+                        }),
+                      'Recalculé.',
+                    )
+                  }
+                >
+                  Appliquer & recalculer
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="card card-body">
+            <h3>Totaux</h3>
+            <div className="line small"><span>Location HTVA</span><span>{formatEUR(t.rentalHT ?? 0)}</span></div>
+            {t.deliveryFeeHT ? <div className="line small"><span>Livraison HTVA</span><span>{formatEUR(t.deliveryFeeHT)}</span></div> : null}
+            {t.extraFeesHT ? <div className="line small"><span>Frais</span><span>{formatEUR(t.extraFeesHT)}</span></div> : null}
+            {t.discountHT ? <div className="line small"><span>Remise</span><span>−{formatEUR(t.discountHT)}</span></div> : null}
+            <div className="line"><strong>Total TVAC</strong><strong>{formatEUR(t.totalTVAC ?? 0)}</strong></div>
+            <div className="line small deposit"><span>Caution</span><span>{formatEUR(t.depositsTotal ?? 0)}</span></div>
           </div>
 
           {r.pickup && (

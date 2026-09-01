@@ -78,19 +78,73 @@ export default function AdminEquipe() {
               <th>E-mail</th>
               <th>Rôle</th>
               <th>Actif</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((s) => (
-              <tr key={s.id}>
-                <td>{s.name}</td>
-                <td className="small">{s.email}</td>
-                <td>
-                  <span className="badge">{s.role}</span>
-                </td>
-                <td>{s.active ? '✔' : '—'}</td>
-              </tr>
-            ))}
+            {rows.map((s) => {
+              const admin = staff?.role === 'ADMIN';
+              const patch = (body: Record<string, unknown>) =>
+                staffApi(`/api/admin/staff/${s.id}`, { method: 'PATCH', body }).then(load);
+              return (
+                <tr key={s.id}>
+                  <td>
+                    {admin ? (
+                      <input defaultValue={s.name} onBlur={(e) => patch({ name: e.target.value })} />
+                    ) : (
+                      s.name
+                    )}
+                  </td>
+                  <td className="small">
+                    {admin ? (
+                      <input defaultValue={s.email} onBlur={(e) => patch({ email: e.target.value })} />
+                    ) : (
+                      s.email
+                    )}
+                  </td>
+                  <td>
+                    {admin ? (
+                      <select defaultValue={s.role} onChange={(e) => patch({ role: e.target.value })}>
+                        {ROLES.map((r) => (
+                          <option key={r}>{r}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="badge">{s.role}</span>
+                    )}
+                  </td>
+                  <td>
+                    {admin ? (
+                      <input
+                        type="checkbox"
+                        defaultChecked={s.active}
+                        onChange={(e) => patch({ active: e.target.checked })}
+                      />
+                    ) : s.active ? (
+                      '✔'
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td>
+                    {admin && (
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={async () => {
+                          const r = await staffApi<{ temporaryPassword: string }>(
+                            `/api/admin/staff/${s.id}/reset-password`,
+                            { method: 'POST' },
+                          );
+                          alert(`Nouveau mot de passe temporaire pour ${s.name} :\n\n${r.temporaryPassword}\n\nÀ communiquer et à changer.`);
+                        }}
+                      >
+                        Réinit. mot de passe
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

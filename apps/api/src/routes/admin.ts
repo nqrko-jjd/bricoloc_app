@@ -20,6 +20,8 @@ import { newQrToken } from '../lib/qr.js';
 import { productInclude, serializeProductDetail } from '../lib/serialize.js';
 import { generateInvoice } from '../lib/invoice.js';
 import { syncContentTranslations } from '../lib/i18n-content.js';
+import { recomputeReservation } from '../lib/quote.js';
+import { randomBytes } from 'node:crypto';
 
 export const adminRouter = Router();
 adminRouter.use(attachPrincipal, requireStaff());
@@ -362,32 +364,106 @@ adminRouter.delete(
   }),
 );
 
+/** Change direct de l'état / notes d'un exemplaire (menu contextuel back-office). */
+adminRouter.patch(
+  '/units/:id',
+  requireStaff('RESPONSABLE', 'TECHNICIEN', 'COMPTOIR'),
+  h(async (req, res) => {
+    const { state, notes, serialNumber, sku, barcode, immobilisedUntil } = req.body ?? {};
+    const unit = await prisma.productUnit.update({
+      where: { id: req.params.id! },
+      data: {
+        state: state ?? undefined,
+        notes: notes === undefined ? undefined : notes,
+        serialNumber: serialNumber === undefined ? undefined : serialNumber,
+        sku: sku === undefined ? undefined : sku,
+        barcode: barcode === undefined ? undefined : (barcode || null),
+        immobilisedUntil:
+          immobilisedUntil === undefined ? undefined : immobilisedUntil ? new Date(immobilisedUntil) : null,
+      },
+    });
+    res.json({ unit });
+  }),
+);
+
 /* -------------------------- Maintenance -------------------------- */
+adminRouter.get(
+  '/units/:id/history',
+  h(async (req, res) => {
+    const [maintenances, damages, assignments] = await Promise.all([
+      prisma.maintenance.findMany({ where: { unitId: req.params.id! }, orderBy: { performedAt: 'desc' } }),
+      prisma.damage.findMany({ where: { unitId: req.params.id! }, orderBy: { createdAt: 'desc' } }),
+      prisma.reservationUnit.findMany({
+        where: { unitId: req.params.id! },
+        include: { reservationItem: { include: { reservation: { select: { number: true, status: true } } } } },
+        orderBy: { assignedAt: 'desc' },
+        take: 20,
+      }),
+    ]);
+    res.json({ maintenances, damages, assignments });
+  }),
+);
+
 adminRouter.post(
   '/units/:id/maintenance',
-  requireStaff('TECHNICIEN', 'RESPONSABLE'),
+  requireStaff('TECHNICIEN', 'RESPONSABLE', 'COMPTOIR'),
   h(async (req, res) => {
-    const { type, description, cost, nextAt } = req.body ?? {};
-    const unit = await prisma.productUnit.findUnique({ where: { id: req.params.id } });
+    const { type, description, cost, startAt, endAt, blocksAvailability, nextAt } = req.body ?? {};
+    const unit = await prisma.productUnit.findUnique({ where: { id: req.params.id! } });
     if (!unit) throw notFound();
+
+    const start = startAt ? new Date(startAt) : new Date();
+    const end = endAt ? new Date(endAt) : null;
+    const blocks = blocksAvailability !== false;
+    const activeNow = blocks && start <= new Date() && (!end || end >= new Date());
+
     const m = await prisma.maintenance.create({
       data: {
         unitId: unit.id,
         type: type ?? 'ENTRETIEN',
+        status: end && end < new Date() ? 'DONE' : 'PLANNED',
         description: description ?? 'Entretien',
         cost: Number(cost ?? 0),
+        startAt: start,
+        endAt: end,
+        blocksAvailability: blocks,
         nextAt: nextAt ? new Date(nextAt) : null,
         staffId: req.principal?.kind === 'staff' ? req.principal.id : undefined,
       },
     });
+
     await prisma.productUnit.update({
       where: { id: unit.id },
       data: {
-        state: 'AVAILABLE',
+        // Immobilise l'exemplaire tant que la période de maintenance court.
+        state: activeNow ? 'MAINTENANCE' : unit.state === 'MAINTENANCE' ? 'AVAILABLE' : unit.state,
+        immobilisedUntil: activeNow ? (end ?? new Date(Date.now() + 30 * 86_400_000)) : unit.immobilisedUntil,
         nextMaintenanceAt: nextAt ? new Date(nextAt) : unit.nextMaintenanceAt,
       },
     });
     res.status(201).json({ maintenance: m });
+  }),
+);
+
+/** Signale un dommage sur un exemplaire (hors retour). */
+adminRouter.post(
+  '/units/:id/damage',
+  requireStaff('TECHNICIEN', 'RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const { description, feeHT } = req.body ?? {};
+    const unit = await prisma.productUnit.findUnique({ where: { id: req.params.id! } });
+    if (!unit) throw notFound();
+    const damage = await prisma.damage.create({
+      data: {
+        unitId: unit.id,
+        description: description ?? 'Dommage constaté',
+        feeHT: Number(feeHT ?? 0),
+      },
+    });
+    if (unit.state === 'AVAILABLE') {
+      await prisma.productUnit.update({ where: { id: unit.id }, data: { state: 'DAMAGED' } });
+    }
+    res.status(201).json({ damage });
   }),
 );
 
@@ -433,17 +509,23 @@ adminRouter.patch(
   '/reservations/:id',
   requireStaff('RESPONSABLE', 'COMPTOIR'),
   h(async (req, res) => {
-    const { status, note, periodStart, periodEnd } = req.body ?? {};
+    const { status, note, periodStart, periodEnd, fulfilmentMode, address, slot } = req.body ?? {};
     const r = await prisma.reservation.update({
       where: { id: req.params.id },
       data: {
         status: status ?? undefined,
-        note: note ?? undefined,
+        note: note === undefined ? undefined : note,
         periodStart: periodStart ? new Date(periodStart) : undefined,
         periodEnd: periodEnd ? new Date(periodEnd) : undefined,
+        fulfilmentMode: fulfilmentMode ?? undefined,
+        address: address === undefined ? undefined : (address as never),
+        slot: slot === undefined ? undefined : slot,
       },
     });
-    res.json({ reservation: r });
+    if (periodStart || periodEnd || fulfilmentMode || address !== undefined) {
+      await recomputeReservation(r.id);
+    }
+    res.json({ reservation: await prisma.reservation.findUnique({ where: { id: r.id } }) });
   }),
 );
 
@@ -460,7 +542,92 @@ adminRouter.patch(
         periodEnd: periodEnd ? new Date(periodEnd) : null,
       },
     });
+    await recomputeReservation(item.reservationId);
     res.json({ item });
+  }),
+);
+
+/* ----- Éditeur de réservation : lignes, frais, recalcul ----- */
+
+/** Ajoute une ligne à une réservation existante. */
+adminRouter.post(
+  '/reservations/:id/items',
+  requireStaff('RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const { productSlug, productId, quantity } = req.body ?? {};
+    const product = await prisma.product.findFirst({
+      where: productId ? { id: productId } : { slug: productSlug },
+    });
+    if (!product) throw notFound('Produit introuvable');
+    const qty = Math.max(1, Number(quantity ?? 1));
+    const existing = await prisma.reservationItem.findFirst({
+      where: { reservationId: req.params.id!, productId: product.id },
+    });
+    if (existing) {
+      await prisma.reservationItem.update({
+        where: { id: existing.id },
+        data: { quantity: existing.quantity + qty },
+      });
+    } else {
+      await prisma.reservationItem.create({
+        data: {
+          reservationId: req.params.id!,
+          productId: product.id,
+          nameSnapshot: product.name,
+          kind: product.kind,
+          quantity: qty,
+          unitPriceHT: product.dailyPrice,
+          lineHT: product.dailyPrice * qty,
+          depositUnit: product.deposit,
+        },
+      });
+    }
+    await recomputeReservation(req.params.id!);
+    res.status(201).json({ ok: true });
+  }),
+);
+
+adminRouter.patch(
+  '/reservation-items/:id',
+  requireStaff('RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const { quantity, unitPriceOverride } = req.body ?? {};
+    const item = await prisma.reservationItem.update({
+      where: { id: req.params.id! },
+      data: {
+        quantity: quantity === undefined ? undefined : Math.max(1, Number(quantity)),
+        ...(unitPriceOverride !== undefined
+          ? { unitPriceHT: Number(unitPriceOverride), appliedRule: 'MANUAL' }
+          : {}),
+      },
+    });
+    await recomputeReservation(item.reservationId);
+    res.json({ ok: true });
+  }),
+);
+
+adminRouter.delete(
+  '/reservation-items/:id',
+  requireStaff('RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const item = await prisma.reservationItem.delete({ where: { id: req.params.id! } });
+    await recomputeReservation(item.reservationId);
+    res.status(204).end();
+  }),
+);
+
+/** Frais / remise manuels + recalcul complet. */
+adminRouter.post(
+  '/reservations/:id/recompute',
+  requireStaff('RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const { extraFeesHT, extraDiscountHT } = req.body ?? {};
+    await recomputeReservation(req.params.id!, {
+      extraFeesHT: extraFeesHT === undefined ? undefined : Number(extraFeesHT),
+      extraDiscountHT: extraDiscountHT === undefined ? undefined : Number(extraDiscountHT),
+    });
+    const r = await prisma.reservation.findUnique({ where: { id: req.params.id! } });
+    res.json({ totals: r?.totals ?? null });
   }),
 );
 
@@ -493,24 +660,104 @@ adminRouter.get(
   }),
 );
 
+/** Fiche client complète : coordonnées, adresses, historique, factures, cautions, tickets. */
+adminRouter.get(
+  '/customers/:id',
+  h(async (req, res) => {
+    const u = await prisma.user.findUnique({
+      where: { id: req.params.id! },
+      include: {
+        addresses: true,
+        reservations: {
+          include: { items: true, deposit: true, invoices: true, payments: true },
+          orderBy: { createdAt: 'desc' },
+        },
+        supportTickets: { orderBy: { createdAt: 'desc' } },
+        reviews: { include: { product: { select: { slug: true, name: true } } } },
+      },
+    });
+    if (!u) throw notFound('Client introuvable');
+    const { passwordHash, ...safe } = u;
+    void passwordHash;
+    const spent = u.reservations
+      .flatMap((r) => r.payments)
+      .filter((p) => p.status === 'PAID' && ['RENTAL', 'EXTRA'].includes(p.kind))
+      .reduce((s, p) => s + p.amount, 0);
+    res.json({
+      customer: safe,
+      stats: {
+        reservations: u.reservations.length,
+        spent: Math.round(spent * 100) / 100,
+        openTickets: u.supportTickets.filter((t) => t.status !== 'CLOSED').length,
+      },
+    });
+  }),
+);
+
+/** Note interne sur un client (stockée dans un Setting dédié `customer.note.<id>`). */
+adminRouter.put(
+  '/customers/:id/note',
+  requireStaff('RESPONSABLE', 'COMPTABILITE', 'COMPTOIR'),
+  h(async (req, res) => {
+    await setSetting(`customer.note.${req.params.id}`, { text: String(req.body?.text ?? ''), at: new Date().toISOString() });
+    res.json({ ok: true });
+  }),
+);
+
 adminRouter.patch(
   '/customers/:id',
   requireStaff('RESPONSABLE', 'COMPTABILITE'),
   h(async (req, res) => {
-    const { customerType, negotiatedDiscountPct, companyName, vatNumber } = req.body ?? {};
+    const { customerType, negotiatedDiscountPct, companyName, vatNumber, firstName, lastName, phone } =
+      req.body ?? {};
     const u = await prisma.user.update({
       where: { id: req.params.id },
       data: {
         customerType: customerType ?? undefined,
         negotiatedDiscountPct:
           negotiatedDiscountPct === undefined ? undefined : Number(negotiatedDiscountPct),
-        companyName: companyName ?? undefined,
-        vatNumber: vatNumber ?? undefined,
+        companyName: companyName === undefined ? undefined : companyName,
+        vatNumber: vatNumber === undefined ? undefined : vatNumber,
+        firstName: firstName ?? undefined,
+        lastName: lastName ?? undefined,
+        phone: phone ?? undefined,
       },
     });
     const { passwordHash, ...safe } = u;
     void passwordHash;
     res.json({ customer: safe });
+  }),
+);
+
+/** Adresses d'un client (CRUD depuis la fiche). */
+adminRouter.post(
+  '/customers/:id/addresses',
+  requireStaff('RESPONSABLE', 'COMPTABILITE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const b = req.body ?? {};
+    const addr = await prisma.address.create({
+      data: {
+        userId: req.params.id!,
+        label: b.label ?? null,
+        line1: String(b.line1 ?? ''),
+        line2: b.line2 ?? null,
+        postalCode: String(b.postalCode ?? ''),
+        city: String(b.city ?? ''),
+        country: b.country ?? 'BE',
+        isConstructionSite: Boolean(b.isConstructionSite),
+        contactName: b.contactName ?? null,
+        contactPhone: b.contactPhone ?? null,
+      },
+    });
+    res.status(201).json({ address: addr });
+  }),
+);
+adminRouter.delete(
+  '/addresses/:id',
+  requireStaff('RESPONSABLE', 'COMPTABILITE'),
+  h(async (req, res) => {
+    await prisma.address.delete({ where: { id: req.params.id! } });
+    res.status(204).end();
   }),
 );
 
@@ -690,12 +937,42 @@ adminRouter.post(
     res.status(201).json({ zone });
   }),
 );
+adminRouter.patch(
+  '/delivery-zones/:id',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    const b = req.body ?? {};
+    const zone = await prisma.deliveryZone.update({
+      where: { id: req.params.id! },
+      data: {
+        name: b.name ?? undefined,
+        mode: b.mode ?? undefined,
+        postalPrefixes: b.postalPrefixes === undefined ? undefined : (b.postalPrefixes as never),
+        maxDistanceKm: b.maxDistanceKm === undefined ? undefined : Number(b.maxDistanceKm),
+        baseFee: b.baseFee === undefined ? undefined : Number(b.baseFee),
+        perKm: b.perKm === undefined ? undefined : Number(b.perKm),
+        active: b.active === undefined ? undefined : Boolean(b.active),
+      },
+    });
+    res.json({ zone });
+  }),
+);
 adminRouter.delete(
   '/delivery-zones/:id',
   requireStaff('RESPONSABLE'),
   h(async (req, res) => {
     await prisma.deliveryZone.delete({ where: { id: req.params.id } });
     res.status(204).end();
+  }),
+);
+
+/** Test rapide du tarif de livraison depuis une adresse (outil admin). */
+adminRouter.post(
+  '/delivery/test',
+  h(async (req, res) => {
+    const { quoteDelivery } = await import('../lib/delivery.js');
+    const q = await quoteDelivery(req.body ?? {}, Number(req.body?.rentalHT) || 0);
+    res.json(q);
   }),
 );
 
@@ -775,6 +1052,49 @@ adminRouter.post(
     res.status(201).json({ staff: safe });
   }),
 );
+/** Édition complète d'un membre d'équipe (nom, e-mail, rôle, actif). */
+adminRouter.patch(
+  '/staff/:id',
+  requireStaff('ADMIN'),
+  h(async (req, res) => {
+    const { name, email, role, active } = req.body ?? {};
+    if (email) {
+      const clash = await prisma.staffUser.findFirst({
+        where: { email: String(email).toLowerCase(), id: { not: req.params.id } },
+      });
+      if (clash) throw badRequest('Cet e-mail est déjà utilisé');
+    }
+    const staff = await prisma.staffUser.update({
+      where: { id: req.params.id! },
+      data: {
+        name: name ?? undefined,
+        email: email ? String(email).toLowerCase() : undefined,
+        role: role ?? undefined,
+        active: active === undefined ? undefined : Boolean(active),
+      },
+    });
+    const { passwordHash, ...safe } = staff;
+    void passwordHash;
+    res.json({ staff: safe });
+  }),
+);
+
+/** Réinitialise le mot de passe : renvoie un mot de passe temporaire à communiquer. */
+adminRouter.post(
+  '/staff/:id/reset-password',
+  requireStaff('ADMIN'),
+  h(async (req, res) => {
+    const temp =
+      (req.body?.password as string | undefined) ||
+      randomBytes(6).toString('base64url').replace(/[^a-zA-Z0-9]/g, '') + '9x';
+    await prisma.staffUser.update({
+      where: { id: req.params.id! },
+      data: { passwordHash: await hashPassword(temp) },
+    });
+    res.json({ temporaryPassword: temp });
+  }),
+);
+
 adminRouter.delete(
   '/staff/:id',
   requireStaff('ADMIN'),

@@ -8,13 +8,131 @@ interface Unit {
   id: string;
   assetTag: string;
   serialNumber: string | null;
+  barcode: string | null;
   qrToken: string;
   state: string;
+  immobilisedUntil: string | null;
   nextMaintenanceAt: string | null;
+  notes: string | null;
   product: { id: string; name: string };
   reservationUnits: { assignedAt: string; returnedAt: string | null; reservationItem: { reservation: { number: string } } }[];
   damages: { description: string; feeHT: number; resolved: boolean }[];
-  maintenances: { type: string; description: string; performedAt: string }[];
+  maintenances: { type: string; status?: string; description: string; performedAt: string; startAt?: string | null; endAt?: string | null }[];
+}
+
+const STATES = ['AVAILABLE', 'RENTED', 'MAINTENANCE', 'DAMAGED', 'RETIRED'];
+
+function MaintenanceForm({
+  unitId,
+  onDone,
+  setMsg,
+}: {
+  unitId: string;
+  onDone: () => void;
+  setMsg: (s: string) => void;
+}) {
+  const [m, setM] = useState({
+    type: 'ENTRETIEN',
+    description: '',
+    cost: '',
+    startAt: '',
+    endAt: '',
+    blocksAvailability: true,
+  });
+  const [dmg, setDmg] = useState({ description: '', feeHT: '' });
+  return (
+    <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 12 }}>
+      <div className="card card-body">
+        <strong className="small">Planifier un entretien / une réparation</strong>
+        <div className="row" style={{ marginTop: 6 }}>
+          <select value={m.type} onChange={(e) => setM({ ...m, type: e.target.value })}>
+            <option value="ENTRETIEN">Entretien</option>
+            <option value="REPARATION">Réparation</option>
+            <option value="CONTROLE">Contrôle</option>
+          </select>
+          <input
+            placeholder="Description"
+            value={m.description}
+            onChange={(e) => setM({ ...m, description: e.target.value })}
+            style={{ flex: 1 }}
+          />
+          <input placeholder="Coût €" value={m.cost} onChange={(e) => setM({ ...m, cost: e.target.value })} style={{ width: 80 }} />
+        </div>
+        <div className="row" style={{ marginTop: 6 }}>
+          <label className="small">
+            Immobilisé du{' '}
+            <input type="date" value={m.startAt} onChange={(e) => setM({ ...m, startAt: e.target.value })} />
+          </label>
+          <label className="small">
+            au <input type="date" value={m.endAt} onChange={(e) => setM({ ...m, endAt: e.target.value })} />
+          </label>
+          <label className="small row" style={{ gap: 4 }}>
+            <input
+              type="checkbox"
+              checked={m.blocksAvailability}
+              onChange={(e) => setM({ ...m, blocksAvailability: e.target.checked })}
+            />
+            retire des disponibilités
+          </label>
+        </div>
+        <button
+          className="btn btn-outline btn-sm"
+          style={{ marginTop: 8 }}
+          onClick={async () => {
+            if (!m.description) return;
+            await staffApi(`/api/admin/units/${unitId}/maintenance`, {
+              method: 'POST',
+              body: {
+                type: m.type,
+                description: m.description,
+                cost: Number(m.cost) || 0,
+                startAt: m.startAt || undefined,
+                endAt: m.endAt || undefined,
+                blocksAvailability: m.blocksAvailability,
+              },
+            });
+            setMsg('Maintenance enregistrée — l’exemplaire est retiré des disponibilités sur la période.');
+            setM({ ...m, description: '', cost: '', startAt: '', endAt: '' });
+            onDone();
+          }}
+        >
+          Enregistrer
+        </button>
+      </div>
+
+      <div className="card card-body">
+        <strong className="small">Signaler un dommage</strong>
+        <input
+          placeholder="Description"
+          value={dmg.description}
+          onChange={(e) => setDmg({ ...dmg, description: e.target.value })}
+          style={{ marginTop: 6, width: '100%' }}
+        />
+        <input
+          placeholder="Frais € HT"
+          value={dmg.feeHT}
+          onChange={(e) => setDmg({ ...dmg, feeHT: e.target.value })}
+          style={{ marginTop: 6, width: '100%' }}
+        />
+        <button
+          className="btn btn-outline btn-sm"
+          style={{ marginTop: 8 }}
+          onClick={async () => {
+            if (!dmg.description) return;
+            await staffApi(`/api/admin/units/${unitId}/damage`, {
+              method: 'POST',
+              body: { description: dmg.description, feeHT: Number(dmg.feeHT) || 0 },
+            });
+            setMsg('Dommage enregistré.');
+            setDmg({ description: '', feeHT: '' });
+            onDone();
+          }}
+        >
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function AdminExemplaires() {
@@ -104,33 +222,46 @@ export default function AdminExemplaires() {
           <tbody>
             {units.map((u) => (
               <Fragment key={u.id}>
-                <tr>
+                <tr
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setOpen(u.id);
+                  }}
+                >
                   <td>{u.assetTag}</td>
                   <td>{u.product.name}</td>
                   <td className="small">{u.serialNumber ?? '—'}</td>
-                  <td className="small">{u.qrToken}</td>
+                  <td className="small">{u.qrToken.slice(0, 10)}…</td>
                   <td>
-                    <span
-                      className={`badge ${
-                        u.state === 'AVAILABLE'
-                          ? 'badge-ok'
-                          : u.state === 'RENTED'
-                            ? 'badge'
-                            : 'badge-warn'
-                      }`}
+                    <select
+                      defaultValue={u.state}
+                      onChange={async (e) => {
+                        await staffApi(`/api/admin/units/${u.id}`, {
+                          method: 'PATCH',
+                          body: { state: e.target.value },
+                        });
+                        setMsg(`${u.assetTag} → ${e.target.value}`);
+                        await load();
+                      }}
                     >
-                      {u.state}
-                    </span>
+                      {STATES.map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
                   </td>
                   <td className="small">
-                    {u.nextMaintenanceAt ? formatDateBE(u.nextMaintenanceAt) : '—'}
+                    {u.immobilisedUntil
+                      ? `immobilisé jusqu’au ${formatDateBE(u.immobilisedUntil)}`
+                      : u.nextMaintenanceAt
+                        ? formatDateBE(u.nextMaintenanceAt)
+                        : '—'}
                   </td>
                   <td>
                     <button
                       className="btn btn-ghost btn-sm"
                       onClick={() => setOpen(open === u.id ? null : u.id)}
                     >
-                      {open === u.id ? 'Fermer' : 'Historique'}
+                      {open === u.id ? 'Fermer' : 'Actions'}
                     </button>
                   </td>
                 </tr>
@@ -162,31 +293,22 @@ export default function AdminExemplaires() {
                           </ul>
                         </div>
                         <div>
-                          <strong className="small">Entretiens</strong>
+                          <strong className="small">Entretiens / réparations</strong>
                           <ul className="small">
                             {u.maintenances.map((m, i) => (
                               <li key={i}>
                                 {formatDateBE(m.performedAt)} — {m.type} : {m.description}
+                                {m.startAt && m.endAt
+                                  ? ` (${formatDateBE(m.startAt)}→${formatDateBE(m.endAt)})`
+                                  : ''}
                               </li>
                             ))}
                             {u.maintenances.length === 0 && <li>—</li>}
                           </ul>
-                          <button
-                            className="btn btn-outline btn-sm"
-                            onClick={async () => {
-                              const description = prompt('Description de l’entretien ?');
-                              if (!description) return;
-                              await staffApi(`/api/admin/units/${u.id}/maintenance`, {
-                                method: 'POST',
-                                body: { type: 'ENTRETIEN', description },
-                              });
-                              await load();
-                            }}
-                          >
-                            + Entretien
-                          </button>
                         </div>
                       </div>
+
+                      <MaintenanceForm unitId={u.id} onDone={load} setMsg={setMsg} />
                     </td>
                   </tr>
                 )}

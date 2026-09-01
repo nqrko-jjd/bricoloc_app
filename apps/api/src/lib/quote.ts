@@ -215,3 +215,94 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
     vatRate: rate,
   };
 }
+
+/**
+ * Recalcule une réservation existante après édition en back-office :
+ * re-tarife chaque ligne, applique d'éventuels frais/remises manuels,
+ * met à jour les `ReservationItem` et le snapshot `totals`.
+ */
+export async function recomputeReservation(
+  reservationId: string,
+  opts: { extraFeesHT?: number; extraDiscountHT?: number } = {},
+): Promise<void> {
+  const r = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    include: { items: { include: { product: true } }, user: true },
+  });
+  if (!r) throw new Error('Réservation introuvable');
+
+  const settings = await getSettings();
+  const ps = pricingSettings(settings);
+  const rate = vatRate(settings);
+  const customerType = (r.user?.customerType as CustomerType) ?? 'PARTICULIER';
+
+  let rentalHT = 0;
+  let depositsTotal = 0;
+
+  for (const item of r.items) {
+    const start = item.periodStart ?? r.periodStart;
+    const end = item.periodEnd ?? r.periodEnd;
+    if (item.product.isConsumable) {
+      const unit = round2(item.product.dailyPrice);
+      await prisma.reservationItem.update({
+        where: { id: item.id },
+        data: {
+          nameSnapshot: item.product.name,
+          unitPriceHT: unit,
+          lineHT: round2(unit * item.quantity),
+          depositUnit: 0,
+          billedDays: 0,
+          appliedRule: 'CONSUMABLE',
+        },
+      });
+      rentalHT += round2(unit * item.quantity);
+      continue;
+    }
+    const p = computeRentalPrice({
+      pricing: toPricing(item.product),
+      period: { start, end },
+      quantity: item.quantity,
+      customerType,
+      settings: ps,
+    });
+    await prisma.reservationItem.update({
+      where: { id: item.id },
+      data: {
+        nameSnapshot: item.product.name,
+        unitPriceHT: p.unitPrice,
+        lineHT: p.linePrice,
+        depositUnit: item.product.deposit,
+        billedDays: p.billedDays,
+        appliedRule: p.appliedRule,
+      },
+    });
+    rentalHT += p.linePrice;
+    depositsTotal += p.depositTotal;
+  }
+  rentalHT = round2(rentalHT);
+  depositsTotal = round2(depositsTotal);
+
+  let deliveryFeeHT = 0;
+  if (r.fulfilmentMode === 'DELIVERY') {
+    const d = await computeDeliveryFee(r.address as QuoteInput['deliveryAddress'], rentalHT, settings);
+    deliveryFeeHT = d.feeHT;
+  }
+
+  const prev = (r.totals as { extraFeesHT?: number; discountHT?: number } | null) ?? {};
+  const extraFeesHT = round2(opts.extraFeesHT ?? Number(prev.extraFeesHT ?? 0));
+  const discountHT = round2(opts.extraDiscountHT ?? Number(prev.discountHT ?? 0));
+
+  const totals = computeCartTotals({
+    rentalLinesHT: [rentalHT],
+    depositsTotal,
+    deliveryFeeHT,
+    extraFeesHT,
+    discountHT,
+    vatRate: rate,
+  });
+
+  await prisma.reservation.update({
+    where: { id: reservationId },
+    data: { totals: totals as never },
+  });
+}

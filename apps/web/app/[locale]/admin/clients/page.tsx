@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { formatDateBE } from '@bricoloc/shared';
+import { Link } from '@/i18n/navigation';
 import { staffApi } from '@/lib/staff';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -32,7 +33,9 @@ export default function AdminClients() {
             {rows.map((c) => (
               <tr key={c.id}>
                 <td>
-                  {c.firstName} {c.lastName}
+                  <Link href={`/admin/clients/${c.id}`}>
+                    {c.firstName} {c.lastName}
+                  </Link>
                 </td>
                 <td className="small">{c.email}</td>
                 <td>
