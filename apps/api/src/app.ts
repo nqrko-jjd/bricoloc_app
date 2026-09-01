@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import { env } from './env.js';
 import { errorHandler, notFound } from './lib/http.js';
+import { uploadsRouter } from './routes/uploads.js';
 import { authRouter } from './routes/auth.js';
 import { catalogRouter } from './routes/catalog.js';
 import { availabilityRouter } from './routes/availability.js';
@@ -25,6 +26,18 @@ export function createApp() {
   app.use(express.json({ limit: '8mb' }));
   app.use(morgan('dev'));
 
+  // Médias téléversés (images produits / contenus) servis en statique.
+  app.use(
+    '/uploads',
+    express.static(env.uploadsDir, {
+      maxAge: '30d',
+      immutable: true,
+      fallthrough: false,
+      index: false,
+      dotfiles: 'ignore',
+    }),
+  );
+
   app.get('/health', (_req, res) => res.json({ ok: true, service: 'bricoloc-api', ts: Date.now() }));
 
   app.use('/api/auth', authRouter);
@@ -35,6 +48,7 @@ export function createApp() {
   app.use('/api/reservations', reservationsRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/public', publicRouter);
+  app.use('/api/admin/uploads', uploadsRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/ops', opsRouter);
 

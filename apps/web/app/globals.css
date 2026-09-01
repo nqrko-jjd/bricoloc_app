@@ -454,6 +454,24 @@ button { font-family: inherit; }
 .admin-main { padding: 26px; background: var(--ground); }
 @media (max-width: 800px) { .admin-shell { grid-template-columns: 1fr; } .admin-side { display: flex; gap: 6px; overflow-x: auto; } }
 
+/* Zone de dépôt d'images (back-office) */
+.dropzone-wrap { display: flex; flex-direction: column; gap: 12px; }
+.dropzone {
+  border: 2px dashed var(--border); border-radius: var(--r-md); padding: 28px 16px;
+  text-align: center; cursor: pointer; background: var(--surface); color: var(--muted-fg);
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.dropzone:hover, .dropzone.is-over { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 5%, var(--surface)); }
+.dropzone p { margin: 0; font-weight: 600; }
+.dropzone-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.dz-item { position: relative; border: 1px solid var(--border); border-radius: var(--r-xs); overflow: hidden; background: var(--surface-2); aspect-ratio: 1; cursor: grab; }
+.dz-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dz-badge { position: absolute; top: 6px; left: 6px; background: var(--primary); color: var(--on-primary); font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: var(--r-pill); }
+.dz-actions { position: absolute; inset: auto 0 0 0; display: flex; justify-content: center; gap: 2px; padding: 4px; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+.dz-item:hover .dz-actions { opacity: 1; }
+.dz-actions button { border: none; background: rgba(255,255,255,0.9); color: var(--navy-deep); width: 24px; height: 24px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 0.85rem; line-height: 1; }
+.dz-actions button.dz-del { background: var(--err); color: #fff; }
+
 /* =========================================================================
    Borne tactile 16"
    ========================================================================= */

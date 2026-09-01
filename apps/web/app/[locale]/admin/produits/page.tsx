@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { formatEUR } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
+import { ImageDropzone } from '@/components/admin/ImageDropzone';
 import type { ProductDetail, Category } from '@/lib/types';
 
 const EMPTY = {
@@ -20,7 +21,7 @@ const EMPTY = {
   deposit: '200',
   stockQty: '',
   published: true,
-  images: '',
+  images: [] as string[],
 };
 
 export default function AdminProduits() {
@@ -63,7 +64,7 @@ export default function AdminProduits() {
       deposit: String(p.deposit),
       stockQty: p.totalStock && p.kind !== 'MACHINE' ? String(p.totalStock) : '',
       published: p.isDemo ? true : true,
-      images: p.images.join(', '),
+      images: p.images,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -89,7 +90,7 @@ export default function AdminProduits() {
         tiers: form.tiers ? JSON.parse(form.tiers) : [],
         deposit: Number(form.deposit),
         published: form.published,
-        images: form.images ? form.images.split(',').map((s) => s.trim()).filter(Boolean) : [],
+        images: form.images,
       };
       await staffApi('/api/admin/products', { method: 'POST', body });
       setMsg(editing ? 'Produit mis à jour.' : 'Produit créé et publié au catalogue.');
@@ -239,8 +240,8 @@ export default function AdminProduits() {
           />
         </div>
         <div className="field">
-          <label>Images (URLs séparées par des virgules)</label>
-          <input value={form.images} onChange={(e) => set('images', e.target.value)} />
+          <label>Images (glisser-déposer, la 1re est la principale)</label>
+          <ImageDropzone value={form.images} onChange={(v) => set('images', v)} />
         </div>
         <label className="row" style={{ gap: 8 }}>
           <input
