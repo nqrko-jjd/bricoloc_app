@@ -1,6 +1,23 @@
 import type { Prisma } from '@prisma/client';
+import { pickText, type I18nText, type Locale, SOURCE_LOCALE } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { availabilityFor } from './availability.js';
+
+/**
+ * Résout les champs texte d'un produit/catégorie pour une langue.
+ * Le champ scalaire (FR) reste la source ; `i18n` porte NL/EN.
+ */
+function loc(
+  scalar: string | null | undefined,
+  i18n: unknown,
+  field: string,
+  locale: Locale,
+): string | null {
+  if (locale === SOURCE_LOCALE) return scalar ?? null;
+  const bag = (i18n as Record<string, I18nText> | null | undefined)?.[field];
+  const v = pickText(bag, locale, SOURCE_LOCALE);
+  return v || scalar || null;
+}
 
 export type ProductWithRels = Prisma.ProductGetPayload<{
   include: {
@@ -21,17 +38,23 @@ function unitStock(p: ProductWithRels): number {
   return p.units.filter((u) => ['AVAILABLE', 'RENTED'].includes(u.state)).length;
 }
 
-export function serializeProductSummary(p: ProductWithRels) {
+export function serializeProductSummary(p: ProductWithRels, locale: Locale = SOURCE_LOCALE) {
   return {
     id: p.id,
     slug: p.slug,
-    name: p.name,
+    name: loc(p.name, p.i18n, 'name', locale) ?? p.name,
     kind: p.kind,
-    shortDescription: p.shortDescription,
+    brand: p.brand,
+    supplier: p.supplier,
+    shortDescription: loc(p.shortDescription, p.i18n, 'shortDescription', locale),
     images: (p.images as string[]) ?? [],
     image: (p.images as string[])?.[0] ?? null,
     category: p.category
-      ? { slug: p.category.slug, name: p.category.name, bolt: p.category.bolt }
+      ? {
+          slug: p.category.slug,
+          name: loc(p.category.name, p.category.i18n, 'name', locale) ?? p.category.name,
+          bolt: p.category.bolt,
+        }
       : null,
     dailyPrice: p.dailyPrice,
     weekendPrice: p.weekendPrice,
@@ -39,28 +62,37 @@ export function serializeProductSummary(p: ProductWithRels) {
     deposit: p.deposit,
     isConsumable: p.isConsumable,
     isDemo: p.isDemo,
+    availabilityMode: p.availabilityMode,
+    deliveryPolicy: p.deliveryPolicy,
     totalStock: unitStock(p),
   };
 }
 
-export function serializeProductDetail(p: ProductWithRels) {
+export function serializeProductDetail(
+  p: ProductWithRels,
+  locale: Locale = SOURCE_LOCALE,
+  rating: { avg: number; count: number } = { avg: 0, count: 0 },
+) {
   const links = (type: string) =>
     p.linksFrom
       .filter((l) => l.type === type && l.to.published)
       .map((l) => ({
         id: l.to.id,
         slug: l.to.slug,
-        name: l.to.name,
+        name: loc(l.to.name, l.to.i18n, 'name', locale) ?? l.to.name,
         kind: l.to.kind,
         quantity: l.quantity,
         dailyPrice: l.to.dailyPrice,
+        weekPrice: l.to.weekPrice,
+        monthPrice: l.to.monthPrice,
         deposit: l.to.deposit,
         image: (l.to.images as string[])?.[0] ?? null,
         isConsumable: l.to.isConsumable,
       }));
+  const seo = (p.seo as { title?: I18nText; description?: I18nText } | null) ?? {};
   return {
-    ...serializeProductSummary(p),
-    description: p.description,
+    ...serializeProductSummary(p, locale),
+    description: loc(p.description, p.i18n, 'description', locale),
     recommendedUses: (p.recommendedUses as string[]) ?? [],
     specs: (p.specs as Record<string, string>) ?? {},
     includedAccessories: (p.includedAccessories as string[]) ?? [],
@@ -69,12 +101,39 @@ export function serializeProductDetail(p: ProductWithRels) {
     monthPrice: p.monthPrice,
     tiers: (p.tiers as { minDays: number; perDay: number }[]) ?? [],
     proDiscountPct: p.proDiscountPct,
+    model: p.model,
+    supplierRef: p.supplier === 'LOISELET' ? p.supplierRef : null,
+    weightKg: p.weightKg,
+    bulky: p.bulky,
+    seo: {
+      title: pickText(seo.title, locale, SOURCE_LOCALE) || null,
+      description: pickText(seo.description, locale, SOURCE_LOCALE) || null,
+    },
+    rating,
     recommendedAccessories: links('ACCESSORY'),
     consumables: links('CONSUMABLE'),
     ppe: links('PPE'),
     complementary: links('COMPLEMENTARY'),
     packItems: links('PACK_ITEM'),
   };
+}
+
+/** Note moyenne + nombre d'avis publiés, groupés par produit. */
+export async function ratingsFor(productIds: string[]): Promise<Map<string, { avg: number; count: number }>> {
+  const rows = await prisma.review.groupBy({
+    by: ['productId'],
+    where: { productId: { in: productIds }, status: 'PUBLISHED' },
+    _avg: { rating: true },
+    _count: true,
+  });
+  const map = new Map<string, { avg: number; count: number }>();
+  for (const r of rows) {
+    map.set(r.productId, {
+      avg: Math.round((r._avg.rating ?? 0) * 10) / 10,
+      count: r._count,
+    });
+  }
+  return map;
 }
 
 /** Ajoute la disponibilite pour une periode donnee a une liste de produits serialises. */
@@ -94,12 +153,16 @@ export async function withAvailability<T extends { id: string }>(
   return out;
 }
 
-export async function similarProducts(productId: string, categoryId: string | null) {
+export async function similarProducts(
+  productId: string,
+  categoryId: string | null,
+  locale: Locale = SOURCE_LOCALE,
+) {
   if (!categoryId) return [];
   const rows = await prisma.product.findMany({
     where: { categoryId, id: { not: productId }, published: true, kind: 'MACHINE' },
     include: productInclude,
     take: 4,
   });
-  return rows.map(serializeProductSummary);
+  return rows.map((r) => serializeProductSummary(r, locale));
 }

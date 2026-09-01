@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import { env } from './env.js';
 import { errorHandler, notFound } from './lib/http.js';
 import { uploadsRouter } from './routes/uploads.js';
+import { reviewsRouter } from './routes/reviews.js';
 import { authRouter } from './routes/auth.js';
 import { catalogRouter } from './routes/catalog.js';
 import { availabilityRouter } from './routes/availability.js';
@@ -42,6 +43,7 @@ export function createApp() {
 
   app.use('/api/auth', authRouter);
   app.use('/api/catalog', catalogRouter);
+  app.use('/api', reviewsRouter);
   app.use('/api/availability', availabilityRouter);
   app.use('/api/cart', cartRouter);
   app.use('/api/checkout', checkoutRouter);

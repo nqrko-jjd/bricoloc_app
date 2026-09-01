@@ -3,6 +3,7 @@ import {
   CUSTOMER_TYPES,
   FULFILMENT_MODES,
   PRODUCT_KINDS,
+  REVIEW_STATUSES,
   STAFF_ROLES,
   UNIT_STATES,
 } from './constants.js';
@@ -55,6 +56,7 @@ export const catalogQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(60).default(24),
   sort: z.enum(['relevance', 'price_asc', 'price_desc', 'name']).default('relevance'),
+  locale: z.enum(['fr', 'nl', 'en']).default('fr'),
 });
 
 export const availabilityCheckSchema = z.object({
@@ -227,6 +229,24 @@ export const upsertPromoSchema = z.object({
 export const upsertSettingSchema = z.object({
   key: z.string().min(1),
   value: z.any(),
+});
+
+/* ------------------------- Avis clients ------------------------- */
+
+export const createReviewSchema = z.object({
+  productSlug: z.string().min(1),
+  rating: z.number().int().min(1).max(5),
+  title: z.string().max(120).optional(),
+  body: z.string().min(10, '10 caractères minimum').max(2000),
+  /** Utilisé si l'auteur n'est pas connecté. */
+  authorName: z.string().min(2).max(60).optional(),
+  reservationNumber: z.string().optional(),
+});
+export type CreateReviewDTO = z.infer<typeof createReviewSchema>;
+
+export const moderateReviewSchema = z.object({
+  status: z.enum(REVIEW_STATUSES),
+  reply: z.string().max(1000).nullable().optional(),
 });
 
 export const upsertContentSchema = z.object({

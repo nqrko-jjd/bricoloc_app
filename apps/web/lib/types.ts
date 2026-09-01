@@ -13,6 +13,8 @@ export interface ProductSummary {
   slug: string;
   name: string;
   kind: string;
+  brand?: string | null;
+  supplier?: string;
   shortDescription: string | null;
   images: string[];
   image: string | null;
@@ -23,6 +25,8 @@ export interface ProductSummary {
   deposit: number;
   isConsumable: boolean;
   isDemo: boolean;
+  availabilityMode?: string;
+  deliveryPolicy?: string;
   totalStock: number;
   availability?: Availability | null;
 }
@@ -37,6 +41,12 @@ export interface ProductDetail extends ProductSummary {
   monthPrice: number | null;
   tiers: { minDays: number; perDay: number }[];
   proDiscountPct: number | null;
+  model?: string | null;
+  supplierRef?: string | null;
+  weightKg?: number | null;
+  bulky?: boolean;
+  seo?: { title: string | null; description: string | null };
+  rating?: { avg: number; count: number };
   recommendedAccessories: LinkedProduct[];
   consumables: LinkedProduct[];
   ppe: LinkedProduct[];

@@ -3,6 +3,7 @@ import { createReadStream, existsSync } from 'node:fs';
 import {
   SOURCE_LOCALE,
   createStaffSchema,
+  moderateReviewSchema,
   upsertCategorySchema,
   upsertContentSchema,
   upsertDeliveryZoneSchema,
@@ -92,7 +93,7 @@ adminRouter.get(
       include: productInclude,
       orderBy: { name: 'asc' },
     });
-    res.json({ products: rows.map(serializeProductDetail) });
+    res.json({ products: rows.map((r) => serializeProductDetail(r)) });
   }),
 );
 
@@ -487,6 +488,41 @@ adminRouter.post(
       { force: true },
     );
     res.json({ translated });
+  }),
+);
+
+/* -------------------------- Avis clients -------------------------- */
+adminRouter.get(
+  '/reviews',
+  h(async (req, res) => {
+    const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+    const rows = await prisma.review.findMany({
+      where: status ? { status } : {},
+      include: { product: { select: { slug: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+    res.json({ reviews: rows });
+  }),
+);
+
+adminRouter.patch(
+  '/reviews/:id',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    const data = moderateReviewSchema.parse(req.body);
+    const existing = await prisma.review.findUnique({ where: { id: req.params.id! } });
+    if (!existing) throw notFound('Avis introuvable');
+    const review = await prisma.review.update({
+      where: { id: existing.id },
+      data: {
+        status: data.status,
+        reply: data.reply === undefined ? undefined : data.reply,
+        publishedAt:
+          data.status === 'PUBLISHED' ? (existing.publishedAt ?? new Date()) : null,
+      },
+    });
+    res.json({ review });
   }),
 );
 

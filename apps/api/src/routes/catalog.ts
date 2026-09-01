@@ -1,20 +1,25 @@
 import { Router } from 'express';
-import { catalogQuerySchema } from '@bricoloc/shared';
+import { catalogQuerySchema, isLocale, type Locale } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { h, notFound } from '../lib/http.js';
 import {
   productInclude,
+  ratingsFor,
   serializeProductDetail,
   serializeProductSummary,
   similarProducts,
   withAvailability,
 } from '../lib/serialize.js';
 
+const qLocale = (req: { query: Record<string, unknown> }): Locale =>
+  isLocale(req.query.locale) ? req.query.locale : 'fr';
+
 export const catalogRouter = Router();
 
 catalogRouter.get(
   '/categories',
-  h(async (_req, res) => {
+  h(async (req, res) => {
+    const locale = qLocale(req);
     const cats = await prisma.category.findMany({ orderBy: { position: 'asc' } });
     const counts = await prisma.product.groupBy({
       by: ['categoryId'],
@@ -22,10 +27,24 @@ catalogRouter.get(
       _count: true,
     });
     res.json({
-      categories: cats.map((c) => ({
-        ...c,
-        productCount: counts.find((x) => x.categoryId === c.id)?._count ?? 0,
-      })),
+      categories: cats.map((c) => {
+        const i18n = c.i18n as Record<string, { nl?: string; en?: string }> | null;
+        const name =
+          locale !== 'fr' && i18n?.name?.[locale] ? i18n.name[locale]! : c.name;
+        const description =
+          locale !== 'fr' && i18n?.description?.[locale] ? i18n.description[locale]! : c.description;
+        return {
+          id: c.id,
+          slug: c.slug,
+          name,
+          description,
+          bolt: c.bolt,
+          image: c.image,
+          icon: c.icon,
+          position: c.position,
+          productCount: counts.find((x) => x.categoryId === c.id)?._count ?? 0,
+        };
+      }),
     });
   }),
 );
@@ -66,7 +85,7 @@ catalogRouter.get(
       take: q.pageSize,
     });
 
-    let items = rows.map(serializeProductSummary);
+    let items = rows.map((r) => serializeProductSummary(r, q.locale));
     let withAvail = await withAvailability(items, period);
 
     // Filtre "disponible sur toute la periode" quand des dates sont fournies.
@@ -95,7 +114,9 @@ catalogRouter.get(
       include: productInclude,
     });
     if (!p || !p.published) throw notFound('Produit introuvable');
-    const detail = serializeProductDetail(p);
+    const locale = qLocale(req);
+    const ratings = await ratingsFor([p.id]);
+    const detail = serializeProductDetail(p, locale, ratings.get(p.id) ?? { avg: 0, count: 0 });
 
     const period =
       req.query.start && req.query.end
@@ -105,7 +126,7 @@ catalogRouter.get(
 
     res.json({
       product: withAvail,
-      similar: await similarProducts(p.id, p.categoryId),
+      similar: await similarProducts(p.id, p.categoryId, locale),
     });
   }),
 );
@@ -122,6 +143,6 @@ catalogRouter.get(
       where: { slug: { in: slugs }, published: true },
       include: productInclude,
     });
-    res.json({ products: rows.map(serializeProductDetail) });
+    res.json({ products: rows.map((r) => serializeProductDetail(r)) });
   }),
 );

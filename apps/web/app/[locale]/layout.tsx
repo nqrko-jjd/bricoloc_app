@@ -82,7 +82,11 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={LOCALE_META[locale].htmlLang} className={`${display.variable} ${sans.variable}`}>
+    <html
+      lang={LOCALE_META[locale].htmlLang}
+      className={`${display.variable} ${sans.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
