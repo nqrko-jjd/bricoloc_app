@@ -198,6 +198,73 @@ export function computeRentalPrice(input: RentalPriceInput): RentalPriceResult {
   };
 }
 
+/* ----------------------- Livraison geolocalisee ----------------------- */
+
+export interface DeliveryConfig {
+  mode: 'BRACKETS' | 'PER_KM';
+  brackets: { maxKm: number; feeHT: number }[];
+  baseFeeHT: number;
+  perKmHT: number;
+  maxKm: number;
+  freeThresholdHT: number;
+}
+
+export interface DeliveryQuote {
+  served: boolean;
+  distanceKm: number;
+  feeHT: number;
+  free: boolean;
+  reason?: 'OUT_OF_RANGE' | 'FREE_THRESHOLD' | 'OK';
+}
+
+/**
+ * Frais de livraison a partir de la distance routiere depot -> client.
+ * `rentalHT` sert a appliquer la franchise (livraison offerte au-dela d'un montant).
+ */
+export function computeDeliveryFee(
+  distanceKm: number,
+  cfg: DeliveryConfig,
+  rentalHT = 0,
+): DeliveryQuote {
+  const km = Math.max(0, round2(distanceKm));
+  if (cfg.maxKm > 0 && km > cfg.maxKm) {
+    return { served: false, distanceKm: km, feeHT: 0, free: false, reason: 'OUT_OF_RANGE' };
+  }
+
+  let feeHT: number;
+  if (cfg.mode === 'PER_KM') {
+    feeHT = round2(cfg.baseFeeHT + km * cfg.perKmHT);
+  } else {
+    const sorted = [...cfg.brackets].sort((a, b) => a.maxKm - b.maxKm);
+    const hit = sorted.find((b) => km <= b.maxKm);
+    if (!hit) {
+      return { served: false, distanceKm: km, feeHT: 0, free: false, reason: 'OUT_OF_RANGE' };
+    }
+    feeHT = round2(hit.feeHT);
+  }
+
+  if (cfg.freeThresholdHT > 0 && rentalHT >= cfg.freeThresholdHT) {
+    return { served: true, distanceKm: km, feeHT: 0, free: true, reason: 'FREE_THRESHOLD' };
+  }
+  return { served: true, distanceKm: km, feeHT, free: false, reason: 'OK' };
+}
+
+/** Distance a vol d'oiseau (km) entre deux points WGS84. */
+export function haversineKm(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) *
+      Math.cos((b.lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return round2(2 * R * Math.asin(Math.sqrt(s)));
+}
+
 export interface CartTotalsInput {
   /** Lignes deja calculees (location HTVA hors caution). */
   rentalLinesHT: number[];

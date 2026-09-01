@@ -9,6 +9,8 @@ import { customAlphabet } from 'nanoid';
 import { CATEGORIES, DEFAULT_SETTINGS, STAFF_ROLES } from '@bricoloc/shared';
 import { translationEnabled } from '../src/lib/translate.js';
 import { syncContentTranslations } from '../src/lib/i18n-content.js';
+import { geocode } from '../src/lib/geo.js';
+import { setSetting } from '../src/lib/settings.js';
 
 const prisma = new PrismaClient();
 const qr = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 10);
@@ -915,6 +917,25 @@ async function main() {
       create: promo,
       update: {},
     });
+  }
+
+  // Dépôt Bricoloc : géocodage unique -> Setting delivery.depotLat/Lng.
+  {
+    const depotAddr = {
+      line1: 'Gieterijstraat 49',
+      postalCode: '1601',
+      city: 'Ruisbroek',
+      country: 'Belgium',
+    };
+    const g = await geocode(depotAddr).catch(() => null);
+    await setSetting('delivery', {
+      ...DEFAULT_SETTINGS.delivery,
+      depotLat: g?.lat ?? DEFAULT_SETTINGS.delivery.depotLat,
+      depotLng: g?.lng ?? DEFAULT_SETTINGS.delivery.depotLng,
+    });
+    console.log(
+      g ? `Dépôt géocodé : ${g.lat.toFixed(4)}, ${g.lng.toFixed(4)}` : 'Dépôt : coords de repli',
+    );
   }
 
   // Zones de livraison (prefixes de codes postaux belges - demo).

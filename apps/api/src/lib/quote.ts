@@ -9,6 +9,7 @@ import {
 } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { getSettings, pricingSettings, vatRate, type AppSettings } from './settings.js';
+import { quoteDelivery } from './delivery.js';
 
 export interface QuoteLineInput {
   product: Product;
@@ -37,7 +38,13 @@ export interface QuoteInput {
   periodEnd: Date;
   customerType: CustomerType;
   fulfilmentMode: 'PICKUP' | 'DELIVERY';
-  deliveryAddressPostalCode?: string | null;
+  deliveryAddress?: {
+    line1?: string;
+    line2?: string;
+    postalCode?: string;
+    city?: string;
+    country?: string;
+  } | null;
   promoCode?: string | null;
 }
 
@@ -65,40 +72,45 @@ function toPricing(p: Product): ProductPricing {
   };
 }
 
-/** Frais de livraison selon la zone (prefixe code postal) ou valeurs par defaut. */
+/**
+ * Frais de livraison géolocalisés : distance routière depuis le dépôt -> tarif
+ * (tranches de km ou au km, config admin). Repli sur le forfait de base si
+ * l'adresse ne peut pas être géocodée.
+ */
 export async function computeDeliveryFee(
-  postalCode: string | null | undefined,
+  address: QuoteInput['deliveryAddress'],
   rentalHT: number,
   settings: AppSettings,
-): Promise<{ feeHT: number; reason: string; served: boolean }> {
+): Promise<{ feeHT: number; reason: string; served: boolean; distanceKm?: number }> {
   const base = Number(settings.deliveryBaseFee ?? 25);
-  const freeThreshold = Number(settings.deliveryFreeThreshold ?? 250);
-  if (!postalCode) {
-    return { feeHT: base, reason: 'Tarif de livraison standard (demo)', served: true };
+  if (!address || (!address.postalCode && !address.line1)) {
+    return { feeHT: base, reason: 'Adresse incomplète — tarif provisoire', served: true };
   }
-  const zones = await prisma.deliveryZone.findMany({ where: { active: true } });
-  const zone = zones.find((z) =>
-    (z.postalPrefixes as string[]).some((pref) => postalCode.startsWith(pref)),
-  );
-  if (zones.length > 0 && !zone) {
+  const q = await quoteDelivery(address, rentalHT);
+  if (!q.geocoded) {
+    return { feeHT: base, reason: 'Adresse non localisée — tarif provisoire', served: true };
+  }
+  if (!q.served) {
     return {
       feeHT: 0,
-      reason: `Le code postal ${postalCode} est hors de la zone desservie.`,
       served: false,
+      distanceKm: q.distanceKm,
+      reason: `Hors zone de livraison (${q.distanceKm} km du dépôt). Contactez-nous pour un devis.`,
     };
   }
-  let fee = zone ? zone.baseFee : base;
-  if (rentalHT >= freeThreshold) {
+  if (q.free) {
     return {
       feeHT: 0,
-      reason: `Livraison offerte dès ${freeThreshold} € HTVA de location`,
       served: true,
+      distanceKm: q.distanceKm,
+      reason: `Livraison offerte (${q.distanceKm} km, franchise atteinte)`,
     };
   }
   return {
-    feeHT: round2(fee),
-    reason: zone ? `Zone : ${zone.name}` : 'Tarif de livraison standard (demo)',
+    feeHT: round2(q.feeHT),
     served: true,
+    distanceKm: q.distanceKm,
+    reason: `Livraison ${q.distanceKm} km depuis le dépôt`,
   };
 }
 
@@ -156,7 +168,7 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
   let deliveryFeeHT = 0;
   let deliveryReason: string | undefined;
   if (input.fulfilmentMode === 'DELIVERY') {
-    const d = await computeDeliveryFee(input.deliveryAddressPostalCode, rentalHT, settings);
+    const d = await computeDeliveryFee(input.deliveryAddress, rentalHT, settings);
     deliveryFeeHT = d.feeHT;
     deliveryReason = d.reason;
   }

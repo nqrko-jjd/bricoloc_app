@@ -3,6 +3,7 @@ import { BRAND } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { h } from '../lib/http.js';
 import { getSettings } from '../lib/settings.js';
+import { quoteDelivery } from '../lib/delivery.js';
 
 export const publicRouter = Router();
 
@@ -68,19 +69,29 @@ publicRouter.get(
   }),
 );
 
+/**
+ * Devis de livraison géolocalisé : adresse client -> distance depuis le dépôt ->
+ * tarif (tranches de km ou au km, config admin). `rentalHT` applique la franchise.
+ */
+publicRouter.post(
+  '/delivery/quote',
+  h(async (req, res) => {
+    const { line1, line2, postalCode, city, country, rentalHT } = req.body ?? {};
+    const quote = await quoteDelivery(
+      { line1, line2, postalCode, city, country },
+      Number(rentalHT) || 0,
+    );
+    res.json(quote);
+  }),
+);
+
+/** Compat : ancien contrôle par préfixe de code postal (secours). */
 publicRouter.post(
   '/delivery/check',
   h(async (req, res) => {
     const postalCode = String(req.body?.postalCode ?? '');
-    const zones = await prisma.deliveryZone.findMany({ where: { active: true } });
-    const zone = zones.find((z) =>
-      (z.postalPrefixes as string[]).some((p) => postalCode.startsWith(p)),
-    );
-    res.json({
-      postalCode,
-      served: zones.length === 0 ? true : Boolean(zone),
-      zone: zone ? { name: zone.name, baseFee: zone.baseFee, perKm: zone.perKm } : null,
-    });
+    const quote = await quoteDelivery({ postalCode }, 0);
+    res.json({ postalCode, served: quote.served, distanceKm: quote.distanceKm, feeHT: quote.feeHT });
   }),
 );
 

@@ -46,10 +46,34 @@ export const DEFAULT_SETTINGS = {
   lateFeeMultiplier: 1.5,
   /** Delai (heures) de preparation minimal avant un retrait. */
   minLeadTimeHours: 2,
-  /** Frais de livraison de demo. */
+  /** Frais de livraison (repli si le calcul geo echoue). */
   deliveryBaseFee: 25,
   deliveryPerKm: 1.2,
   deliveryFreeThreshold: 250, // location HTVA au-dela de laquelle la livraison est offerte
+  /** Livraison geolocalisee (depuis l'adresse client). Editable en admin. */
+  delivery: {
+    /** Adresse du depot Bricoloc (Ruisbroek / Sint-Pieters-Leeuw). Coords OSM verifiees. */
+    depotAddress: 'Gieterijstraat 49, 1601 Ruisbroek (Sint-Pieters-Leeuw)',
+    depotLat: 50.7921009,
+    depotLng: 4.2967424,
+    /** BRACKETS = tranches de km ; PER_KM = forfait de base + N EUR/km. */
+    mode: 'BRACKETS' as 'BRACKETS' | 'PER_KM',
+    /** Tranches : jusqu'a maxKm -> feeHT. Trie par maxKm croissant. */
+    brackets: [
+      { maxKm: 15, feeHT: 25 },
+      { maxKm: 30, feeHT: 40 },
+      { maxKm: 50, feeHT: 65 },
+    ],
+    /** Mode PER_KM. */
+    baseFeeHT: 20,
+    perKmHT: 1.2,
+    /** Distance routiere max desservie (au-dela : sur devis / hors zone). */
+    maxKm: 50,
+    /** Location HTVA au-dela de laquelle la livraison est offerte (0 = jamais). */
+    freeThresholdHT: 350,
+    /** Facteur applique a la distance a vol d'oiseau si le routage echoue. */
+    detourFactor: 1.3,
+  },
   cleaningFeeDefault: 20,
   /** Reduction longue duree appliquee automatiquement (paliers). */
   proDiscountPctDefault: 0.1,

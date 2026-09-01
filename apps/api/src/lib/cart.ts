@@ -96,8 +96,7 @@ export async function serializeCart(sessionKey: string, userId?: string) {
       periodEnd: period.end,
       customerType,
       fulfilmentMode: (cart.fulfilmentMode as 'PICKUP' | 'DELIVERY') ?? 'PICKUP',
-      deliveryAddressPostalCode:
-        (cart.address as { postalCode?: string } | null)?.postalCode ?? null,
+      deliveryAddress: (cart.address as Record<string, string> | null) ?? null,
       promoCode: cart.promoCode,
     });
   }

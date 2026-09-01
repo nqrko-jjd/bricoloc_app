@@ -1,6 +1,6 @@
 'use client';
 import { Link } from '@/i18n/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
 import { api, clientApi } from '@/lib/api';
 import { useCart, useSession } from '@/lib/providers';
@@ -32,6 +32,14 @@ export default function CommandePage() {
     isConstructionSite: false,
   });
   const [slot, setSlot] = useState('Matin (8h-12h)');
+  const [delivQuote, setDelivQuote] = useState<{
+    served: boolean;
+    distanceKm: number;
+    feeHT: number;
+    free: boolean;
+    geocoded: boolean;
+  } | null>(null);
+  const [quoting, setQuoting] = useState(false);
 
   const [authMode, setAuthMode] = useState<'login' | 'create' | 'guest'>('create');
   const [contact, setContact] = useState({
@@ -113,17 +121,51 @@ export default function CommandePage() {
     }
   }
 
+  // Devis livraison géolocalisé dès que l'adresse est complète.
+  useEffect(() => {
+    if (mode !== 'DELIVERY' || !addr.postalCode || !addr.city) {
+      setDelivQuote(null);
+      return;
+    }
+    const id = setTimeout(async () => {
+      setQuoting(true);
+      try {
+        const q = await api<typeof delivQuote & object>('/api/public/delivery/quote', {
+          method: 'POST',
+          body: {
+            line1: addr.line1,
+            postalCode: addr.postalCode,
+            city: addr.city,
+            country: 'BE',
+            rentalHT: cart?.quote?.totals?.rentalHT ?? 0,
+          },
+        });
+        setDelivQuote(q as typeof delivQuote);
+      } catch {
+        setDelivQuote(null);
+      } finally {
+        setQuoting(false);
+      }
+    }, 500);
+    return () => clearTimeout(id);
+  }, [mode, addr.line1, addr.postalCode, addr.city, cart?.quote?.totals?.rentalHT]);
+
   async function saveFulfil() {
     setBusy(true);
     setError('');
     try {
       if (mode === 'DELIVERY') {
-        const check = await api<{ served: boolean }>('/api/public/delivery/check', {
-          method: 'POST',
-          body: { postalCode: addr.postalCode },
-        });
-        if (!check.served) {
-          setError(`Le code postal ${addr.postalCode} est hors de la zone de livraison.`);
+        const q = await api<{ served: boolean; distanceKm: number }>(
+          '/api/public/delivery/quote',
+          {
+            method: 'POST',
+            body: { line1: addr.line1, postalCode: addr.postalCode, city: addr.city, country: 'BE' },
+          },
+        );
+        if (!q.served) {
+          setError(
+            `Adresse hors de la zone de livraison (${q.distanceKm} km du dépôt). Contactez-nous pour un devis.`,
+          );
           setBusy(false);
           return;
         }
@@ -288,6 +330,23 @@ export default function CommandePage() {
                       />
                     </div>
                   </div>
+                  {quoting && <p className="small muted">Calcul du tarif de livraison…</p>}
+                  {delivQuote && !quoting && (
+                    <div
+                      className={`alert ${delivQuote.served ? (delivQuote.free ? 'alert-ok' : 'alert-info') : 'alert-warn'}`}
+                    >
+                      {!delivQuote.served ? (
+                        <>Hors zone de livraison ({delivQuote.distanceKm} km du dépôt). Contactez-nous pour un devis.</>
+                      ) : delivQuote.free ? (
+                        <>Livraison offerte 🎉 ({delivQuote.distanceKm} km — franchise atteinte)</>
+                      ) : (
+                        <>
+                          Livraison : <strong>{formatEUR(delivQuote.feeHT)}</strong> HTVA —{' '}
+                          {delivQuote.distanceKm} km depuis le dépôt
+                        </>
+                      )}
+                    </div>
+                  )}
                   <label className="row" style={{ gap: 8 }}>
                     <input
                       type="checkbox"

@@ -98,7 +98,7 @@ checkoutRouter.post(
     }
     if (data.fulfilment.mode === 'DELIVERY') {
       if (!deliveryAddress?.postalCode) throw badRequest('Adresse de livraison requise');
-      const d = await computeDeliveryFee(deliveryAddress.postalCode, 0, settings);
+      const d = await computeDeliveryFee(deliveryAddress, 0, settings);
       if (!d.served) throw badRequest(d.reason);
     }
 
@@ -109,7 +109,7 @@ checkoutRouter.post(
       periodEnd: end,
       customerType,
       fulfilmentMode: data.fulfilment.mode,
-      deliveryAddressPostalCode: deliveryAddress?.postalCode ?? null,
+      deliveryAddress: deliveryAddress ?? null,
       promoCode: data.promoCode ?? cart.promoCode,
     });
 
