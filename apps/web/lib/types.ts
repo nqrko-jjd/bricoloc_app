@@ -62,6 +62,8 @@ export interface Category {
   name: string;
   bolt: string | null;
   description: string | null;
+  image?: string | null;
+  icon?: string | null;
   productCount?: number;
 }
 

@@ -7,6 +7,8 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { customAlphabet } from 'nanoid';
 import { CATEGORIES, DEFAULT_SETTINGS, STAFF_ROLES } from '@bricoloc/shared';
+import { translationEnabled } from '../src/lib/translate.js';
+import { syncContentTranslations } from '../src/lib/i18n-content.js';
 
 const prisma = new PrismaClient();
 const qr = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 10);
@@ -631,6 +633,64 @@ const CONTENT: { key: string; title: string; body: string }[] = [
     title: 'Conditions générales de location (extrait démo)',
     body: 'Le locataire s’engage à restituer le matériel dans l’état où il l’a reçu, nettoyé, avec tous les accessoires. Toute détérioration ou pièce manquante est facturée. Document de démonstration.',
   },
+
+  /* ---- Blocs éditables de la page d'accueil (auto-traduits NL/EN) ---- */
+  { key: 'home.hero.title', title: '', body: 'Le bon outil. Au bon moment.' },
+  {
+    key: 'home.hero.subtitle',
+    title: '',
+    body: 'Louez des machines et de l’outillage professionnel, contrôlé et entretenu. Réservation en ligne 24h/24, retrait rapide en Click & Collect ou livraison sur chantier.',
+  },
+  { key: 'home.help.subtitle', title: '', body: 'Choisissez votre chantier, on vous montre le bon matériel.' },
+  {
+    key: 'home.weekend.text',
+    title: '',
+    body: 'Retrait le vendredi ou samedi, retour le lundi matin : vous ne payez qu’une journée.',
+  },
+  {
+    key: 'home.step1.text',
+    title: '',
+    body: 'Une seule fois, pour toute la commande. On vérifie la disponibilité de tout le matériel en même temps.',
+  },
+  {
+    key: 'home.step2.text',
+    title: '',
+    body: 'Machines, accessoires et consommables adaptés. Retrait au dépôt ou livraison sur chantier.',
+  },
+  {
+    key: 'home.step3.text',
+    title: '',
+    body: 'En ligne ou à l’enlèvement pour un Click & Collect. Votre matériel est prêt, contrôlé et entretenu.',
+  },
+  {
+    key: 'home.packs.text',
+    title: '',
+    body: 'Des ensembles prêts à l’emploi, pensés pour les particuliers : une tâche, un pack, un prix.',
+  },
+  { key: 'home.advice.title', title: 'Une question ? Une panne ?', body: 'Notre équipe vous répond et vous conseille sur le bon outil.' },
+  {
+    key: 'home.advice.text',
+    title: 'Une question ? Une panne ?',
+    body: 'Une question sur le bon outil, une panne pendant la location, un accessoire manquant ? Notre équipe technique répond vite.',
+  },
+  { key: 'home.strength.1', title: '', body: 'Réservation en ligne, à toute heure' },
+  { key: 'home.strength.2', title: '', body: 'Langues : français, néerlandais, anglais' },
+  { key: 'home.strength.3', title: '', body: 'Une seule date de location pour toute la commande' },
+  { key: 'home.strength.4', title: '', body: 'Matériel suivi à l’exemplaire, entretenu et contrôlé' },
+  { key: 'home.cta.title', title: 'Prêt à démarrer votre chantier ?', body: 'Réservez le bon matériel en quelques minutes.' },
+  {
+    key: 'home.cta.text',
+    title: 'Prêt à démarrer votre chantier ?',
+    body: 'Des centaines de machines professionnelles, réservables en ligne 24h/24, en Click & Collect ou en livraison.',
+  },
+  { key: 'home.task.demolir', title: '', body: 'Démolir, percer' },
+  { key: 'home.task.beton', title: '', body: 'Béton & pierre' },
+  { key: 'home.task.bois', title: '', body: 'Travailler le bois' },
+  { key: 'home.task.peindre', title: '', body: 'Peindre & enduire' },
+  { key: 'home.task.poncer', title: '', body: 'Poncer' },
+  { key: 'home.task.chauffer', title: '', body: 'Chauffer & assécher' },
+  { key: 'home.task.jardin', title: '', body: 'Jardin & extérieur' },
+  { key: 'home.task.nettoyer', title: '', body: 'Nettoyer' },
 ];
 
 async function main() {
@@ -832,9 +892,18 @@ async function main() {
   for (const c of CONTENT) {
     await prisma.content.upsert({
       where: { key_locale: { key: c.key, locale: 'fr' } },
-      create: { key: c.key, locale: 'fr', title: c.title, body: c.body },
-      update: { title: c.title, body: c.body },
+      create: { key: c.key, locale: 'fr', title: c.title || null, body: c.body },
+      update: { title: c.title || null, body: c.body },
     });
+  }
+
+  // Traduction auto NL/EN des contenus (si DEEPL_API_KEY présente).
+  if (translationEnabled()) {
+    process.stdout.write('Traduction DeepL des contenus (NL/EN)...');
+    for (const c of CONTENT) {
+      await syncContentTranslations({ key: c.key, title: c.title || null, body: c.body });
+    }
+    console.log(' ok');
   }
 
   const counts = {

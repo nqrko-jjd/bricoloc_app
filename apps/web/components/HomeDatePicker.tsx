@@ -1,12 +1,14 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import { useCart } from '@/lib/providers';
 import { fromLocalInput, toLocalInput, defaultPeriod } from '@/lib/dates';
 
 export function HomeDatePicker() {
   const { setPeriod, setFulfilment } = useCart();
   const router = useRouter();
+  const t = useTranslations('search');
   const d = defaultPeriod();
   const [start, setStart] = useState(toLocalInput(d.start));
   const [end, setEnd] = useState(toLocalInput(d.end));
@@ -28,33 +30,31 @@ export function HomeDatePicker() {
 
   return (
     <div className="datepicker-card">
-      <strong style={{ color: 'var(--loc)' }}>Je connais mes dates</strong>
+      <strong style={{ color: 'var(--navy)' }}>{t('title')}</strong>
       <div className="field-2">
         <div className="field">
-          <label>Date &amp; heure de début</label>
+          <label>{t('startLabel')}</label>
           <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
         </div>
         <div className="field">
-          <label>Date &amp; heure de retour</label>
+          <label>{t('endLabel')}</label>
           <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
         </div>
       </div>
       <div className="field">
-        <label>Retrait ou livraison</label>
+        <label>{t('modeLabel')}</label>
         <select value={mode} onChange={(e) => setMode(e.target.value as 'PICKUP' | 'DELIVERY')}>
-          <option value="PICKUP">Click &amp; Collect (retrait comptoir)</option>
-          <option value="DELIVERY">Livraison à domicile / chantier</option>
+          <option value="PICKUP">{t('modePickup')}</option>
+          <option value="DELIVERY">{t('modeDelivery')}</option>
         </select>
       </div>
       <button className="btn btn-primary btn-lg" disabled={busy} onClick={() => go(true)}>
-        Voir les machines disponibles
+        {t('submit')}
       </button>
       <button className="btn btn-ghost" disabled={busy} onClick={() => go(false)}>
-        Je préfère d&apos;abord choisir mes outils
+        {t('skip')}
       </button>
-      <p className="small muted center">
-        Vos dates restent mémorisées sur le site, l&apos;appli mobile et la borne.
-      </p>
+      <p className="small muted center">{t('note')}</p>
     </div>
   );
 }

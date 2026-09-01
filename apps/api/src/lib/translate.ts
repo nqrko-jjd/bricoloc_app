@@ -30,6 +30,22 @@ interface DeeplResponse {
   translations: { text: string; detected_source_language: string }[];
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Sérialise les appels DeepL (l'offre gratuite plafonne la concurrence) et
+ * espace les requêtes, pour éviter les 429.
+ */
+let deeplChain: Promise<unknown> = Promise.resolve();
+function withDeeplQueue<T>(fn: () => Promise<T>): Promise<T> {
+  const run = deeplChain.then(fn, fn);
+  deeplChain = run.then(
+    () => sleep(120),
+    () => sleep(120),
+  );
+  return run;
+}
+
 /**
  * Traduit un lot de segments FR -> `target`. Respecte l'ordre.
  * `tagHandling: 'html'` pour préserver un balisage simple dans les contenus.
@@ -48,19 +64,28 @@ export async function deeplTranslate(
   body.set('target_lang', LOCALE_META[target].deepl);
   if (opts.html) body.set('tag_handling', 'html');
 
-  const res = await fetch(`${env.deeplApiHost}/v2/translate`, {
-    method: 'POST',
-    headers: {
-      Authorization: `DeepL-Auth-Key ${env.deeplApiKey}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body,
+  return withDeeplQueue(async () => {
+    for (let attempt = 0; ; attempt++) {
+      const res = await fetch(`${env.deeplApiHost}/v2/translate`, {
+        method: 'POST',
+        headers: {
+          Authorization: `DeepL-Auth-Key ${env.deeplApiKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body,
+      });
+      if (res.ok) {
+        const json = (await res.json()) as DeeplResponse;
+        return json.translations.map((t) => t.text);
+      }
+      // 429 / 529 = surcharge : back-off exponentiel (max 5 essais).
+      if ((res.status === 429 || res.status === 529) && attempt < 5) {
+        await sleep(500 * 2 ** attempt);
+        continue;
+      }
+      throw new Error(`DeepL ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    }
   });
-  if (!res.ok) {
-    throw new Error(`DeepL ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  }
-  const json = (await res.json()) as DeeplResponse;
-  return json.translations.map((t) => t.text);
 }
 
 /** Traduit un seul segment avec cache mémoire + base. */

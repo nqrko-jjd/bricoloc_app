@@ -43,8 +43,28 @@ publicRouter.get(
 
 publicRouter.get(
   '/content',
-  h(async (_req, res) => {
-    res.json({ content: await prisma.content.findMany() });
+  h(async (req, res) => {
+    const prefix = typeof req.query.prefix === 'string' ? req.query.prefix : undefined;
+    const locale = typeof req.query.locale === 'string' ? req.query.locale : undefined;
+
+    // Mode "carte" : ?prefix=home.&locale=nl -> { "home.hero.title": "…", … } avec repli FR.
+    if (prefix && locale) {
+      const rows = await prisma.content.findMany({
+        where: { key: { startsWith: prefix }, locale: { in: [locale, 'fr'] } },
+      });
+      const map: Record<string, { title: string | null; body: string; format: string }> = {};
+      for (const r of rows) {
+        const cur = map[r.key];
+        // priorité à la locale demandée
+        if (!cur || r.locale === locale) {
+          map[r.key] = { title: r.title, body: r.body, format: r.format };
+        }
+      }
+      return res.json({ locale, content: map });
+    }
+
+    const where = prefix ? { key: { startsWith: prefix } } : {};
+    res.json({ content: await prisma.content.findMany({ where }) });
   }),
 );
 

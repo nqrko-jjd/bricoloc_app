@@ -83,6 +83,13 @@ export default async function LocaleLayout({
 
   return (
     <html lang={LOCALE_META[locale].htmlLang} className={`${display.variable} ${sans.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "document.documentElement.classList.add('js')",
+          }}
+        />
+      </head>
       <body>
         <NextIntlClientProvider>
           <Providers>{children}</Providers>

@@ -2,6 +2,7 @@ import { setRequestLocale } from 'next-intl/server';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { DateRangeBar } from '@/components/DateRangeBar';
+import { Reveal } from '@/components/Reveal';
 
 export default async function SiteLayout({
   children,
@@ -18,6 +19,7 @@ export default async function SiteLayout({
       <DateRangeBar />
       <main>{children}</main>
       <Footer />
+      <Reveal />
     </>
   );
 }
