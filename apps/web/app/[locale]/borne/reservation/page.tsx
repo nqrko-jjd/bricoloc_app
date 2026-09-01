@@ -1,6 +1,6 @@
 'use client';
 import { Suspense, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { formatDateTimeBE } from '@bricoloc/shared';
 import { api } from '@/lib/api';
 import { OnScreenKeyboard } from '@/components/OnScreenKeyboard';

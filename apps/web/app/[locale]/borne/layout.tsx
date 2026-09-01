@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { resetKioskSession } from '@/lib/kiosk';
 
 const IDLE_MS = 90_000;
