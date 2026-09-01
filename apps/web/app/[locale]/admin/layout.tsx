@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { usePathname } from 'next/navigation';
 import { StaffProvider, useStaff } from '@/lib/staff';
@@ -24,39 +25,65 @@ const NAV = [
 function Shell({ children }: { children: React.ReactNode }) {
   const { staff, loading, logout } = useStaff();
   const pathname = usePathname();
+  const [navOpen, setNavOpen] = useState(false);
 
-  if (loading) return <div className="section container">Chargement…</div>;
+  useEffect(() => setNavOpen(false), [pathname]);
+
+  if (loading)
+    return (
+      <div className="section container">
+        <span className="spinner" /> Chargement…
+      </div>
+    );
   if (!staff) return <StaffLogin />;
+
+  const current = NAV.find(([href]) => href === pathname)?.[1] ?? 'Back-office';
+
+  const sideContent = (
+    <>
+      <div style={{ padding: '4px 12px 14px' }}>
+        <Logo href="/admin" onDark />
+        <div className="small" style={{ color: '#8fa3c4', marginTop: 4 }}>
+          {staff.name} · {staff.role}
+        </div>
+      </div>
+      {NAV.map(([href, label]) => (
+        <Link key={href} href={href} className={pathname === href ? 'active' : ''}>
+          {label}
+        </Link>
+      ))}
+      <button className="btn btn-ghost btn-sm" style={{ margin: '14px 12px' }} onClick={logout}>
+        Déconnexion
+      </button>
+      <Link href="/" className="small" style={{ padding: '0 12px' }}>
+        ← Retour au site
+      </Link>
+    </>
+  );
 
   return (
     <div className="admin-shell">
-      <aside className="admin-side">
-        <div style={{ padding: '4px 12px 14px' }}>
-          <Logo href="/admin" onDark />
-          <div className="small" style={{ color: '#8fa3c4', marginTop: 4 }}>
-            {staff.name} · {staff.role}
-          </div>
-        </div>
-        {NAV.map(([href, label]) => (
-          <Link
-            key={href}
-            href={href}
-            className={pathname === href ? 'active' : ''}
-          >
-            {label}
-          </Link>
-        ))}
+      {/* Barre supérieure mobile */}
+      <div className="admin-topbar">
         <button
-          className="btn btn-ghost btn-sm"
-          style={{ margin: '14px 12px' }}
-          onClick={logout}
+          className="burger burger--light"
+          aria-label="Menu"
+          aria-expanded={navOpen}
+          onClick={() => setNavOpen((v) => !v)}
         >
-          Déconnexion
+          <span />
+          <span />
+          <span />
         </button>
-        <Link href="/" className="small" style={{ padding: '0 12px' }}>
-          ← Retour au site
-        </Link>
-      </aside>
+        <strong>{current}</strong>
+      </div>
+
+      <div
+        className={`admin-side__backdrop${navOpen ? ' is-open' : ''}`}
+        onClick={() => setNavOpen(false)}
+        aria-hidden
+      />
+      <aside className={`admin-side${navOpen ? ' is-open' : ''}`}>{sideContent}</aside>
       <main className="admin-main">{children}</main>
     </div>
   );

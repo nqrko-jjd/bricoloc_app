@@ -487,11 +487,48 @@ button { font-family: inherit; }
    Coquille admin
    ========================================================================= */
 .admin-shell { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
-.admin-side { background: var(--navy-deep); color: #c8d2e4; padding: 20px 12px; }
+.admin-side {
+  background: var(--navy-deep); color: #c8d2e4; padding: 20px 12px;
+  display: flex; flex-direction: column;
+}
 .admin-side a { display: block; padding: 9px 12px; border-radius: 8px; color: #c8d2e4; font-weight: 600; font-size: 0.9rem; }
 .admin-side a:hover, .admin-side a.active { background: rgba(255, 255, 255, 0.12); color: #fff; text-decoration: none; }
-.admin-main { padding: 26px; background: var(--ground); }
-@media (max-width: 800px) { .admin-shell { grid-template-columns: 1fr; } .admin-side { display: flex; gap: 6px; overflow-x: auto; } }
+.admin-main { padding: 26px; background: var(--ground); min-width: 0; }
+.admin-topbar { display: none; }
+.admin-side__backdrop { display: none; }
+.burger--light span { background: #fff; }
+
+@media (max-width: 900px) {
+  .admin-shell { grid-template-columns: 1fr; }
+  .admin-topbar {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--navy-deep); color: #fff; padding: 10px 14px;
+    position: sticky; top: 0; z-index: 60;
+  }
+  .admin-topbar strong { font-family: var(--font-display); }
+  .admin-side {
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 80; width: min(280px, 84vw);
+    transform: translateX(-100%); transition: transform var(--dur-reveal) var(--ease-out);
+    overflow-y: auto;
+  }
+  .admin-side.is-open { transform: translateX(0); }
+  .admin-side__backdrop {
+    display: block; position: fixed; inset: 0; z-index: 79; background: rgba(0, 0, 0, 0.4);
+    opacity: 0; pointer-events: none; transition: opacity var(--dur-reveal) var(--ease-out);
+  }
+  .admin-side__backdrop.is-open { opacity: 1; pointer-events: auto; }
+  .admin-main { padding: 16px; }
+}
+
+/* Les tableaux admin ne débordent jamais la page */
+.admin-main table { min-width: 640px; }
+.admin-main .table-wrap, .admin-main .card.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+@media (max-width: 900px) {
+  .admin-main .card > table:only-child,
+  .admin-main .card-body > table { display: block; overflow-x: auto; }
+  .admin-main .two-col { grid-template-columns: 1fr; }
+  .admin-main .field-2 { grid-template-columns: 1fr; }
+}
 
 /* Zone de dépôt d'images (back-office) */
 .dropzone-wrap { display: flex; flex-direction: column; gap: 12px; }
