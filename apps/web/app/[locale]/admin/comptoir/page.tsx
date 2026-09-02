@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -89,12 +90,25 @@ export default function ComptoirPage() {
   const [result, setResult] = useState<string>('');
   const [board, setBoard] = useState<Board | null>(null);
 
+  const searchParams = useSearchParams();
+  const autoScanned = useRef(false);
+
   async function loadBoard() {
     setBoard(await staffApi<Board>('/api/ops/board').catch(() => null));
   }
   useEffect(() => {
     loadBoard();
   }, []);
+
+  // Arrivée depuis le terminal Zebra : /admin/comptoir?res=BRL-…
+  useEffect(() => {
+    const res = searchParams.get('res');
+    if (res && !autoScanned.current) {
+      autoScanned.current = true;
+      doScan(res);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // pickup state
   const [pickedUnits, setPickedUnits] = useState<Record<string, boolean>>({});
