@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -130,17 +130,17 @@ export default function CatalogueScreen() {
       </View>
 
       {/* Chips */}
-      <FlatList
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={chips}
-        keyExtractor={(c) => c.slug || 'all'}
-        style={{ marginTop: 14, flexGrow: 0 }}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
-        renderItem={({ item }) => {
+        style={{ marginTop: 14, flexGrow: 0, flexShrink: 0 }}
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 8, paddingVertical: 2 }}
+      >
+        {chips.map((item) => {
           const active = cat === item.slug;
           return (
             <Pressable
+              key={item.slug || 'all'}
               onPress={() => setCat(item.slug)}
               style={{
                 backgroundColor: active ? C.loc : C.white,
@@ -148,7 +148,8 @@ export default function CatalogueScreen() {
                 borderColor: active ? C.loc : C.border,
                 borderRadius: R.pill,
                 paddingHorizontal: 15,
-                paddingVertical: 8,
+                paddingVertical: 9,
+                justifyContent: 'center',
               }}
             >
               <Text style={{ color: active ? C.white : C.ink, fontWeight: '700', fontSize: 13 }}>
@@ -156,8 +157,8 @@ export default function CatalogueScreen() {
               </Text>
             </Pressable>
           );
-        }}
-      />
+        })}
+      </ScrollView>
 
       {/* Grid */}
       <FlatList

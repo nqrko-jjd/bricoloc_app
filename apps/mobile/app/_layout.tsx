@@ -39,7 +39,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ title: 'Connexion' }} />
           <Stack.Screen name="register" options={{ title: 'Créer un compte' }} />
-          <Stack.Screen name="produit/[slug]" options={{ title: 'Fiche produit' }} />
+          <Stack.Screen name="produit/[slug]" options={{ headerShown: false }} />
           <Stack.Screen name="commande" options={{ title: 'Commande' }} />
           <Stack.Screen name="reservation/[id]" options={{ title: 'Réservation' }} />
           <Stack.Screen name="scan" options={{ title: 'Scanner', presentation: 'fullScreenModal', headerShown: false }} />

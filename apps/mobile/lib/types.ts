@@ -43,11 +43,12 @@ export interface LinkedProduct {
   name: string;
   quantity: number;
   dailyPrice: number;
+  weekPrice?: number | null;
+  monthPrice?: number | null;
   isConsumable: boolean;
   brand?: string | null;
-  supplierRef?: string | null;
-  supplierUrl?: string | null;
-  partSupplier?: string | null;
+  shortDescription?: string | null;
+  image?: string | null;
 }
 
 export interface CartItem {

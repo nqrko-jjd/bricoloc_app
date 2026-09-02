@@ -8,22 +8,27 @@ import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
 import { t as ti } from '@/lib/i18n';
 import { formatEUR } from '@/lib/format';
-import { H2, P, Card, Button } from '@/components/ui';
-import type { ProductDetail } from '@/lib/types';
+import { H2, P, Card, Button, ProductMiniCard } from '@/components/ui';
+import type { ProductDetail, ProductSummary } from '@/lib/types';
 
 export default function ProductScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { cart, addItem } = useStore();
   const router = useRouter();
   const [p, setP] = useState<ProductDetail | null>(null);
+  const [similar, setSimilar] = useState<ProductSummary[]>([]);
   const [qty, setQty] = useState(1);
   const [expanded, setExpanded] = useState(false);
-  const [extras, setExtras] = useState<Record<string, boolean>>({});
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
     const sp = cart?.period ? `?start=${cart.period.start}&end=${cart.period.end}` : '';
-    api<{ product: ProductDetail }>(`/api/catalog/products/${slug}${sp}`).then((r) => setP(r.product));
+    api<{ product: ProductDetail; similar: ProductSummary[] }>(
+      `/api/catalog/products/${slug}${sp}`,
+    ).then((r) => {
+      setP(r.product);
+      setSimilar(r.similar ?? []);
+    });
   }, [slug, cart?.period]);
 
   if (!p) {
@@ -34,11 +39,8 @@ export default function ProductScreen() {
     );
   }
 
-  const linked = [
-    ...p.recommendedAccessories.map((x) => ({ ...x, g: 'Accessoire' })),
-    ...p.consumables.filter((x) => x.dailyPrice > 0).map((x) => ({ ...x, g: 'Consommable' })),
-    ...p.ppe.map((x) => ({ ...x, g: 'Protection' })),
-  ];
+  const accessories = [...p.recommendedAccessories, ...p.ppe];
+  const consumables = p.consumables.filter((x) => x.dailyPrice > 0);
 
   const priceRows: { label: string; value: number }[] = p.isConsumable
     ? [{ label: ti('prod.priceUnit'), value: p.dailyPrice }]
@@ -52,7 +54,11 @@ export default function ProductScreen() {
 
   async function add() {
     await addItem(p!.id, qty);
-    for (const l of linked) if (extras[l.id]) await addItem(l.id, l.quantity || 1);
+    setMsg('Ajouté au panier');
+  }
+
+  async function quickAdd(id: string, quantity = 1) {
+    await addItem(id, quantity);
     setMsg('Ajouté au panier');
   }
 
@@ -155,40 +161,30 @@ export default function ProductScreen() {
             </Text>
           ) : null}
 
-          {linked.length > 0 && (
-            <View style={{ marginTop: 22 }}>
-              <Text style={{ fontWeight: '800', color: C.ink, marginBottom: 8 }}>
-                Consommables & accessoires adaptés
+          {accessories.length > 0 && (
+            <View style={{ marginTop: 24 }}>
+              <Text style={{ fontWeight: '800', color: C.ink, fontSize: 16, marginBottom: 4 }}>
+                Complétez votre location
               </Text>
-              {linked.map((l) => (
-                <Pressable
-                  key={l.id}
-                  onPress={() => setExtras((s) => ({ ...s, [l.id]: !s[l.id] }))}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 }}
-                >
-                  <View
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 6,
-                      borderWidth: 2,
-                      borderColor: extras[l.id] ? C.brico : C.border,
-                      backgroundColor: extras[l.id] ? C.brico : 'transparent',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {extras[l.id] && <Ionicons name="checkmark" size={14} color={C.white} />}
-                  </View>
-                  <Text style={{ flex: 1, color: C.ink }}>
-                    {l.name}
-                    <Text style={{ color: C.muted }}>
-                      {' '}
-                      · {formatEUR(l.dailyPrice)}
-                      {l.isConsumable ? '' : '/j'}
-                    </Text>
-                  </Text>
-                </Pressable>
+              <Text style={{ color: C.muted, marginBottom: 10 }}>
+                Les accessoires et protections adaptés à cette machine.
+              </Text>
+              {accessories.map((l) => (
+                <LinkedItem key={l.id} l={l} onAdd={() => quickAdd(l.id, l.quantity || 1)} />
+              ))}
+            </View>
+          )}
+
+          {consumables.length > 0 && (
+            <View style={{ marginTop: 24 }}>
+              <Text style={{ fontWeight: '800', color: C.ink, fontSize: 16, marginBottom: 4 }}>
+                Consommables
+              </Text>
+              <Text style={{ color: C.muted, marginBottom: 10 }}>
+                Disques, mèches, abrasifs… pensez-y pour votre chantier.
+              </Text>
+              {consumables.map((l) => (
+                <LinkedItem key={l.id} l={l} onAdd={() => quickAdd(l.id, l.quantity || 1)} />
               ))}
             </View>
           )}
@@ -209,6 +205,25 @@ export default function ProductScreen() {
           )}
 
           <Reviews slug={slug} />
+
+          {similar.length > 0 && (
+            <View style={{ marginTop: 24 }}>
+              <Text style={{ fontWeight: '800', color: C.ink, fontSize: 16, marginBottom: 10 }}>
+                Dans la même catégorie
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 12, paddingRight: 4 }}
+              >
+                {similar.map((s) => (
+                  <View key={s.id} style={{ width: 200 }}>
+                    <ProductMiniCard p={s} width="100%" />
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -285,6 +300,61 @@ export default function ProductScreen() {
         </Pressable>
       ) : null}
     </SafeAreaView>
+  );
+}
+
+function LinkedItem({
+  l,
+  onAdd,
+}: {
+  l: import('@/lib/types').LinkedProduct;
+  onAdd: () => void;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: C.border,
+      }}
+    >
+      <Image
+        source={{
+          uri: mediaUrl(l.image) ?? 'https://placehold.co/120x120/eeeef7/08065d/png?text=BRICOLOC',
+        }}
+        style={{ width: 52, height: 52, borderRadius: 10, backgroundColor: C.surface2 }}
+        resizeMode="contain"
+      />
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: C.ink, fontWeight: '600' }} numberOfLines={2}>
+          {l.brand ? `${l.brand} · ` : ''}
+          {l.name}
+        </Text>
+        <Text style={{ color: C.muted, marginTop: 2 }}>
+          {formatEUR(l.dailyPrice)}
+          {l.isConsumable ? ` ${ti('prod.priceUnit').toLowerCase()}` : '/j'}
+        </Text>
+      </View>
+      <Pressable
+        onPress={onAdd}
+        hitSlop={8}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 4,
+          backgroundColor: C.surface2,
+          borderRadius: R.pill,
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+        }}
+      >
+        <Ionicons name="add" size={16} color={C.locDeep} />
+        <Text style={{ color: C.locDeep, fontWeight: '800', fontSize: 13 }}>Ajouter</Text>
+      </Pressable>
+    </View>
   );
 }
 
