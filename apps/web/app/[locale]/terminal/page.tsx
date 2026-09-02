@@ -1,10 +1,10 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from '@/i18n/navigation';
-import { formatDateTimeBE } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { ScanField } from '@/components/admin/ScanField';
 import { StatusBadge } from '@/components/StatusBadge';
+import { CounterFlow, type CounterFlowHandle } from '@/components/counter/CounterFlow';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -16,12 +16,14 @@ const BUCKETS: { key: string; label: string; tone: string }[] = [
   { key: 'pendingSupplier', label: 'Attente fournisseur', tone: 'navy' },
 ];
 
+const FLOW_STATUSES = ['CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDING'];
+
 export default function TerminalPage() {
   const [board, setBoard] = useState<Record<string, any[]>>({});
-  const [res, setRes] = useState<any>(null);
+  const [scan, setScan] = useState<any>(null); // { reservation, paid, depositHeld } ou { type:'unit'|'product', ... }
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
-  const [scannedUnits, setScannedUnits] = useState<string[]>([]);
+  const flowRef = useRef<CounterFlowHandle>(null);
 
   const loadBoard = useCallback(async () => {
     try {
@@ -37,45 +39,42 @@ export default function TerminalPage() {
     return () => clearInterval(iv);
   }, [loadBoard]);
 
-  async function openReservation(id: string) {
+  const inFlow = scan?.reservation && FLOW_STATUSES.includes(scan.reservation.status);
+
+  async function openReservation(numberOrId: string) {
     setErr('');
     setMsg('');
-    setScannedUnits([]);
     try {
-      const r = await staffApi<{ reservation: any }>(`/api/admin/reservations/${id}`);
-      setRes({ type: 'reservation', ...r.reservation });
+      const r = await staffApi<any>(`/api/ops/scan/${encodeURIComponent(numberOrId)}`);
+      setScan({ ...r, type: 'reservation' });
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Introuvable');
     }
   }
 
-  async function scan(code: string) {
+  async function handleScan(code: string) {
     setErr('');
     setMsg('');
+    // Pendant un parcours, un scan d'exemplaire alimente l'affectation.
+    if (inFlow) {
+      try {
+        const r: any = await staffApi(`/api/ops/resolve/${encodeURIComponent(code)}`);
+        if (r.type === 'unit') {
+          flowRef.current?.feedScan(r.assetTag ?? code);
+          return;
+        }
+        if (r.type === 'reservation') return openReservation(r.number);
+      } catch {
+        flowRef.current?.feedScan(code);
+      }
+      return;
+    }
     try {
       const r: any = await staffApi(`/api/ops/resolve/${encodeURIComponent(code)}`);
-      // Si on est sur une réservation et qu'on scanne un exemplaire → on l'ajoute.
-      if (res?.type === 'reservation' && r.type === 'unit') {
-        setScannedUnits((u) => (u.includes(r.id) ? u : [...u, r.id]));
-        setMsg(`${r.assetTag} ajouté à ${res.number}`);
-        return;
-      }
-      if (r.type === 'reservation') return openReservation(r.id);
-      setRes(r);
-      setScannedUnits([]);
+      if (r.type === 'reservation') return openReservation(r.number);
+      setScan(r);
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Code inconnu');
-    }
-  }
-
-  async function setStatus(id: string, status: string) {
-    try {
-      await staffApi(`/api/ops/reservations/${id}/status`, { method: 'POST', body: { status } });
-      setMsg(status === 'READY' ? 'Marquée prête — client notifié' : 'En préparation');
-      await openReservation(id);
-      await loadBoard();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action refusée');
     }
   }
 
@@ -83,29 +82,28 @@ export default function TerminalPage() {
     try {
       await staffApi(`/api/admin/units/${id}`, { method: 'PATCH', body: { state } });
       setMsg(`Exemplaire → ${state}`);
-      setRes({ ...res, state });
+      setScan({ ...scan, state });
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Action refusée');
     }
   }
 
   function back() {
-    setRes(null);
+    setScan(null);
     setErr('');
     setMsg('');
-    setScannedUnits([]);
     loadBoard();
   }
 
   return (
     <main className="term">
-      <ScanField onScan={scan} placeholder="Scanner un code…" />
+      <ScanField onScan={handleScan} placeholder="Scanner un QR / code-barres…" />
 
       {err && <div className="term-flash term-flash--err">{err}</div>}
       {msg && <div className="term-flash term-flash--ok">{msg}</div>}
 
       {/* ─── Accueil : le board ─── */}
-      {!res && (
+      {!scan && (
         <div className="term-board">
           {BUCKETS.map((b) => {
             const rows = board[b.key] ?? [];
@@ -120,7 +118,7 @@ export default function TerminalPage() {
                   <ul>
                     {rows.slice(0, 8).map((r) => (
                       <li key={r.id}>
-                        <button className="term-row" onClick={() => openReservation(r.id)}>
+                        <button className="term-row" onClick={() => openReservation(r.number)}>
                           <span className="term-row__num">{r.number}</span>
                           <span className="term-row__cust">{r.customer}</span>
                           <span className="term-row__meta">
@@ -137,8 +135,19 @@ export default function TerminalPage() {
         </div>
       )}
 
-      {/* ─── Réservation ─── */}
-      {res?.type === 'reservation' && (
+      {/* ─── Parcours retrait / retour ─── */}
+      {inFlow && (
+        <CounterFlow
+          ref={flowRef}
+          scan={scan}
+          onReload={() => openReservation(scan.reservation.number)}
+          onDone={back}
+          onExit={back}
+        />
+      )}
+
+      {/* ─── Réservation hors parcours (brouillon, clôturée…) ─── */}
+      {scan?.reservation && !inFlow && (
         <div className="term-detail">
           <button className="term-back" onClick={back}>
             ← Retour
@@ -146,52 +155,21 @@ export default function TerminalPage() {
           <div className="term-card">
             <span className="eyebrow">Réservation</span>
             <h2>
-              {res.number} <StatusBadge status={res.status} />
+              {scan.reservation.number} <StatusBadge status={scan.reservation.status} />
             </h2>
             <p className="term-card__sub">
-              {res.user ? `${res.user.firstName} ${res.user.lastName}` : 'Invité'}
-              {res.user?.phone ? ` · ${res.user.phone}` : ''}
+              {scan.reservation.status === 'CLOSED'
+                ? 'Cette location est clôturée.'
+                : scan.reservation.status === 'CANCELLED'
+                  ? 'Cette réservation est annulée.'
+                  : 'Réservation pas encore confirmée (paiement en attente).'}
             </p>
-            <p className="term-card__sub">
-              {formatDateTimeBE(res.periodStart)} → {formatDateTimeBE(res.periodEnd)}
-            </p>
-
-            <ul className="term-items">
-              {(res.items ?? []).map((i: any) => {
-                const assigned = (i.units ?? []).map((u: any) => u.unit.assetTag);
-                return (
-                  <li key={i.id}>
-                    <strong>
-                      {i.quantity}× {i.nameSnapshot}
-                    </strong>
-                    {assigned.length > 0 && (
-                      <span className="term-items__tags"> {assigned.join(' · ')}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-
-            {scannedUnits.length > 0 && (
-              <p className="term-flash term-flash--ok">
-                {scannedUnits.length} exemplaire(s) scanné(s) — utilisez « Ouvrir au comptoir » pour
-                finaliser le retrait.
-              </p>
-            )}
-
             <div className="term-actions">
-              {(res.status === 'CONFIRMED' || res.status === 'PREPARING') && (
-                <button className="btn btn-outline btn-lg" onClick={() => setStatus(res.id, 'PREPARING')}>
-                  En préparation
-                </button>
-              )}
-              {res.status === 'PREPARING' && (
-                <button className="btn btn-primary btn-lg" onClick={() => setStatus(res.id, 'READY')}>
-                  Marquer prête
-                </button>
-              )}
-              <Link href={`/admin/comptoir?res=${res.number}`} className="btn btn-primary btn-lg">
-                Ouvrir au comptoir
+              <Link
+                href={`/admin/reservations/${scan.reservation.id}`}
+                className="btn btn-outline btn-lg"
+              >
+                Voir la fiche complète
               </Link>
             </div>
           </div>
@@ -199,34 +177,40 @@ export default function TerminalPage() {
       )}
 
       {/* ─── Exemplaire ─── */}
-      {res?.type === 'unit' && (
+      {scan?.type === 'unit' && (
         <div className="term-detail">
           <button className="term-back" onClick={back}>
             ← Retour
           </button>
           <div className="term-card">
             <span className="eyebrow">Exemplaire</span>
-            <h2>{res.assetTag}</h2>
-            <p className="term-card__sub">{res.product?.name}</p>
+            <h2>{scan.assetTag}</h2>
+            <p className="term-card__sub">{scan.product?.name}</p>
             <p className="term-card__sub">
-              État : <StatusBadge status={res.state} />
+              État : <StatusBadge status={scan.state} />
             </p>
-            {res.activeReservation && (
+            {scan.activeReservation && (
               <p className="term-card__sub">
                 Location en cours :{' '}
-                <button className="term-link" onClick={() => openReservation(res.activeReservation.id)}>
-                  {res.activeReservation.number}
+                <button
+                  className="term-link"
+                  onClick={() => openReservation(scan.activeReservation.number)}
+                >
+                  {scan.activeReservation.number}
                 </button>
               </p>
             )}
             <div className="term-actions">
-              <button className="btn btn-outline btn-lg" onClick={() => unitState(res.id, 'AVAILABLE')}>
+              <button className="btn btn-outline btn-lg" onClick={() => unitState(scan.id, 'AVAILABLE')}>
                 Disponible
               </button>
-              <button className="btn btn-outline btn-lg" onClick={() => unitState(res.id, 'MAINTENANCE')}>
+              <button
+                className="btn btn-outline btn-lg"
+                onClick={() => unitState(scan.id, 'MAINTENANCE')}
+              >
                 Maintenance
               </button>
-              <button className="btn btn-outline btn-lg" onClick={() => unitState(res.id, 'DAMAGED')}>
+              <button className="btn btn-outline btn-lg" onClick={() => unitState(scan.id, 'DAMAGED')}>
                 Endommagé
               </button>
             </div>
@@ -235,14 +219,14 @@ export default function TerminalPage() {
       )}
 
       {/* ─── Produit ─── */}
-      {res?.type === 'product' && (
+      {scan?.type === 'product' && (
         <div className="term-detail">
           <button className="term-back" onClick={back}>
             ← Retour
           </button>
           <div className="term-card">
             <span className="eyebrow">Produit</span>
-            <h2>{res.name}</h2>
+            <h2>{scan.name}</h2>
             <div className="term-actions">
               <Link href="/admin/exemplaires" className="btn btn-primary btn-lg">
                 Exemplaires & stock

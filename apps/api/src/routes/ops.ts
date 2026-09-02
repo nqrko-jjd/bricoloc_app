@@ -201,6 +201,45 @@ opsRouter.post(
   }),
 );
 
+/**
+ * Encaissement au comptoir (Click & Collect « à payer à l'enlèvement »).
+ * Marque le paiement RENTAL comme PAID et confirme la réservation.
+ */
+opsRouter.post(
+  '/reservations/:id/collect',
+  requireStaff('COMPTOIR', 'RESPONSABLE'),
+  h(async (req, res) => {
+    const method = String(req.body?.method ?? 'CASH').toUpperCase(); // CASH | CARD | BANCONTACT
+    if (!['CASH', 'CARD', 'BANCONTACT'].includes(method)) throw badRequest('Moyen de paiement inconnu');
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: req.params.id },
+      include: { payments: true },
+    });
+    if (!reservation) throw notFound();
+    const rental = reservation.payments.find((p) => p.kind === 'RENTAL');
+    if (!rental) throw badRequest('Aucun paiement de location sur cette réservation');
+    if (rental.status === 'PAID') return res.json({ alreadyPaid: true });
+
+    await prisma.payment.update({
+      where: { id: rental.id },
+      data: {
+        status: 'PAID',
+        provider: method === 'CASH' ? 'especes' : method.toLowerCase(),
+        meta: { collectedAtCounter: true, method, staffId: staffId(req), testMode: true } as never,
+      },
+    });
+    await prisma.reservation.update({
+      where: { id: reservation.id },
+      data: {
+        paymentMethod: method === 'CASH' ? 'ON_SITE_CASH' : 'ON_SITE_CARD',
+        paymentStatus: 'PAID',
+        ...(reservation.status === 'DRAFT' ? { status: 'CONFIRMED' } : {}),
+      },
+    });
+    res.json({ paid: true, method });
+  }),
+);
+
 /** Retrait : affecte les exemplaires, checklist, photos, signature -> location active. */
 opsRouter.post(
   '/pickup',

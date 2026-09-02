@@ -2031,3 +2031,95 @@ button { font-family: inherit; }
 .term-items__tags { color: var(--muted-fg); font-size: 0.85rem; font-weight: 600; }
 .term-actions { display: grid; gap: 10px; margin-top: 10px; }
 .term-actions .btn { width: 100%; min-height: 58px; font-size: 1.05rem; }
+
+/* =========================================================================
+   Parcours comptoir guidé (retrait / retour) — Zebra + PC comptoir
+   ========================================================================= */
+.cflow { display: flex; flex-direction: column; gap: 14px; }
+.cflow__top { display: flex; align-items: center; gap: 10px; }
+.cflow__top strong { font-size: 1.15rem; }
+
+.cflow__steps {
+  list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap;
+  font-size: 0.8rem; font-weight: 700; color: var(--muted-fg);
+}
+.cflow__steps li { display: flex; align-items: center; gap: 6px; opacity: 0.5; }
+.cflow__steps li span {
+  width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; background: var(--surface-2); font-size: 0.75rem;
+}
+.cflow__steps li.is-current { opacity: 1; color: var(--primary); }
+.cflow__steps li.is-current span { background: var(--primary); color: #fff; }
+.cflow__steps li.is-done { opacity: 1; }
+.cflow__steps li.is-done span { background: var(--navy); color: #fff; }
+
+.cflow__body {
+  display: flex; flex-direction: column; gap: 14px;
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r-md); padding: 18px;
+}
+.cflow__cust { margin: 0; font-size: 1.05rem; }
+.cflow__hint { margin: 0; font-weight: 700; }
+.cflow__lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.cflow__lines li {
+  display: flex; align-items: center; gap: 8px; padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cflow__pay { display: grid; gap: 8px; }
+.cflow__paychip {
+  padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem;
+}
+.cflow__paychip.is-ok { background: #e5f4ec; color: #1b7a4b; }
+.cflow__paychip.is-warn { background: var(--yellow-tint); color: #9a6b00; }
+.cflow__collect { background: var(--surface-2); border-radius: 12px; padding: 12px; }
+.cflow__collect p { margin: 0 0 8px; }
+.cflow__btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.cflow__btns .btn { flex: 1; min-width: 110px; }
+
+.cflow__actions { display: flex; gap: 10px; margin-top: 4px; }
+.cflow__actions .btn-lg { flex: 1; min-height: 56px; }
+.cflow__actions .btn-ghost { flex: 0 0 auto; }
+
+.cflow__unitline {
+  display: flex; flex-direction: column; gap: 6px; padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cflow__tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip--ok { background: #e5f4ec; color: #1b7a4b; border-color: transparent; }
+.chip--todo { background: var(--surface-2); color: var(--muted-fg); border-color: transparent; }
+.cflow__manual { display: flex; gap: 8px; }
+.cflow__manual input {
+  flex: 1; border: 1px solid var(--border); border-radius: 10px; padding: 12px; font: inherit;
+}
+
+.cflow__checks { display: grid; gap: 10px; }
+.cflow__check {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  border: 2px solid var(--border); background: #fff; border-radius: 14px;
+  padding: 14px 16px; font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+}
+.cflow__check.is-on { border-color: #1b7a4b; background: #e5f4ec; }
+.cflow__checkbox {
+  width: 26px; height: 26px; flex: 0 0 auto; border-radius: 8px;
+  border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+  color: #1b7a4b; font-weight: 900;
+}
+.cflow__check.is-on .cflow__checkbox { border-color: #1b7a4b; background: #fff; }
+
+.cflow__damages { background: var(--surface-2); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+.cflow__damage { display: flex; gap: 8px; }
+.cflow__damage input:first-child { flex: 1; }
+.cflow__damage input { border: 1px solid var(--border); border-radius: 8px; padding: 10px; font: inherit; }
+.cflow__damage input:last-child { width: 90px; }
+
+.cflow__done { align-items: center; text-align: center; gap: 12px; padding: 32px 18px; }
+.cflow__tick {
+  width: 64px; height: 64px; border-radius: 50%; background: #1b7a4b; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900;
+}
+.cflow__done h3 { margin: 0; }
+
+/* Pavé de signature */
+.sigpad { border: 2px dashed var(--border); border-radius: 14px; padding: 8px; background: #fff; }
+.sigpad canvas { width: 100%; display: block; border-radius: 8px; background: #fbfbfe; }
+.sigpad__foot { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
