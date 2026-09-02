@@ -746,57 +746,89 @@ button { font-family: inherit; }
 /* =========================================================================
    Borne tactile 16"
    ========================================================================= */
+/* ---- Borne : châssis + écran (style concept) ---- */
 .kiosk {
-  min-height: 100vh; background: var(--navy); color: #fff;
-  display: flex; flex-direction: column; align-items: center;
-  padding: 28px 40px 40px; text-align: center;
+  min-height: 100vh; background: #ededf5; color: var(--navy-deep);
+  padding: 20px; display: flex; flex-direction: column;
 }
-.kiosk h1 { color: #fff; }
+.kiosk h1 { color: var(--navy-deep); }
 .kiosk-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
 
-/* Barre d'étapes du parcours borne */
-.kiosk-stepbar {
-  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-  margin-bottom: 26px;
-}
+.kiosk-head { max-width: 1500px; width: 100%; margin: 0 auto 16px; display: flex; align-items: center; gap: 20px; }
+.kiosk-stepbar { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.kiosk-stepbar::-webkit-scrollbar { display: none; }
 .kiosk-stepbar__s {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
-  border-radius: var(--r-pill); padding: 8px 16px; font-size: 0.95rem; font-weight: 700;
+  white-space: nowrap; border-radius: var(--r-pill); padding: 9px 16px;
+  font-size: 0.85rem; font-weight: 800; background: #fff; color: var(--navy-deep); border: 1px solid var(--line);
 }
-.kiosk-stepbar__s b {
-  display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(255,255,255,0.14); font-size: 0.8rem;
-}
-.kiosk-stepbar__s.is-active { background: var(--primary); color: #fff; }
-.kiosk-stepbar__s.is-active b { background: rgba(255,255,255,0.25); }
+.kiosk-stepbar__s.is-active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-.kiosk-topbar {
-  width: 100%; max-width: 1100px; display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 40px;
+.kiosk-bezel {
+  max-width: 1500px; width: 100%; margin: 0 auto; flex: 1;
+  background: var(--navy); border-radius: 32px; padding: 14px;
 }
-.kiosk-hero { max-width: 900px; margin-bottom: 44px; }
-.kiosk-hero .kicker { font-size: 0.85rem; }
-.kiosk-hero h1 { font-size: clamp(2.6rem, 5vw, 4.5rem); margin: 14px 0; }
-.kiosk-hero h1 i { color: var(--primary); font-family: var(--font-serif); font-style: italic; font-weight: 400; }
-.kiosk-hero p { font-size: 1.3rem; color: #cfceec; margin: 0; }
+.kiosk-screen {
+  background: #f7f7fb; border-radius: 22px; height: 100%; min-height: 640px;
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.kiosk-screen__top {
+  min-height: 92px; padding: 12px 32px; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; background: #fff; border-bottom: 1px solid var(--line); flex-wrap: wrap;
+}
+.kiosk-screen__top .kiosk-logo .b { color: var(--primary); }
+.kiosk-screen__top .kiosk-logo .l { color: var(--navy-deep); }
+.kiosk-screen__actions { display: flex; align-items: center; gap: 10px; }
+.kiosk-help {
+  background: #eeeef7; border: none; border-radius: var(--r-pill); padding: 12px 18px;
+  font-weight: 800; cursor: pointer; color: var(--navy-deep);
+}
+.kiosk-cart {
+  background: var(--navy); color: #fff; border: none; border-radius: var(--r-pill); padding: 12px 18px;
+  font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+}
+.kiosk-cart span { background: var(--primary); border-radius: 50%; min-width: 22px; padding: 2px 6px; text-align: center; }
+.kiosk-screen .kiosk-langs button { color: var(--navy-deep); border-color: var(--line); min-height: 40px; min-width: 44px; }
+.kiosk-screen .kiosk-langs button.is-active { background: var(--navy); color: #fff; border-color: var(--navy); }
 
-.kiosk-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; width: 100%; max-width: 1000px; }
+.kiosk-screen__grid { flex: 1; display: grid; grid-template-columns: 0.9fr 1.1fr; min-height: 0; }
+@media (max-width: 900px) { .kiosk-screen__grid { grid-template-columns: 1fr; } }
+
+.kiosk-ask {
+  padding: clamp(26px, 4vw, 56px); display: flex; flex-direction: column; justify-content: center;
+}
+.kiosk-ask h1 { font-size: clamp(2.3rem, 4.4vw, 3.9rem); margin: 14px 0; }
+.kiosk-ask h1 i { color: var(--primary); }
+.kiosk-ask p { font-size: 1.1rem; color: var(--muted-fg); margin: 20px 0 0; }
+.kiosk-projet {
+  margin-top: 6px; background: var(--navy); color: #fff; border: none; border-radius: var(--r-lg);
+  padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  cursor: pointer; text-align: left;
+}
+.kiosk-projet strong { display: block; font-family: var(--font-display); font-weight: 900; font-size: 1.25rem; letter-spacing: -0.03em; }
+.kiosk-projet small { color: rgba(255,255,255,0.75); }
+.kiosk-projet > span:last-child { font-size: 1.5rem; }
+
+.kiosk-tiles {
+  background: #eeeef7; padding: clamp(18px, 3vw, 40px); overflow-y: auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-content: center;
+}
+.kiosk-tiles--projects { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 700px) { .kiosk-tiles, .kiosk-tiles--projects { grid-template-columns: 1fr 1fr; } }
 .kiosk-tile {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-  background: #fff; color: var(--navy-deep); border: none; border-radius: var(--r-lg);
-  padding: 32px 28px; cursor: pointer; text-align: left; min-height: 150px;
-  transition: transform 0.12s ease;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
+  background: #fff; color: var(--navy-deep); border: none; border-radius: 24px;
+  padding: 24px; cursor: pointer; text-align: left; transition: transform 0.12s ease;
 }
 .kiosk-tile:active { transform: scale(0.98); }
-.kiosk-tile__ic { font-size: 2rem; margin-bottom: 6px; }
-.kiosk-tile__t { font-family: var(--font-display); font-weight: 900; font-size: 1.7rem; letter-spacing: -0.03em; }
-.kiosk-tile__s { font-size: 1.05rem; color: var(--muted-fg); }
-.kiosk-tile--pack { grid-column: 1 / -1; background: var(--primary); color: #fff; flex-direction: row; align-items: center; gap: 20px; min-height: 120px; }
+.kiosk-tile__ic { font-size: 1.7rem; margin-bottom: 4px; }
+.kiosk-tile__t { font-family: var(--font-display); font-weight: 900; font-size: 1.25rem; letter-spacing: -0.03em; line-height: 1.05; }
+.kiosk-tile__s { font-size: 0.92rem; color: var(--muted-fg); }
+.kiosk-tile--pack { grid-column: 1 / -1; background: var(--primary); color: #fff; flex-direction: row; align-items: center; gap: 16px; }
 .kiosk-tile--pack .kiosk-tile__ic { margin: 0; }
+.kiosk-tile--pack > span:not(.kiosk-tile__ic) { display: flex; flex-direction: column; gap: 3px; }
 .kiosk-tile--pack .kiosk-tile__s { color: rgba(255,255,255,0.85); }
-.kiosk-tile--soft { background: var(--navy-soft); color: #fff; }
-.kiosk-tile--soft .kiosk-tile__s { color: rgba(255,255,255,0.75); }
+.kiosk-tile--navy { background: var(--navy); color: #fff; }
+.kiosk-tile--navy .kiosk-tile__s { color: rgba(255,255,255,0.75); }
 .kiosk-keyboard { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 720px; margin: 20px auto; }
 .kiosk-key { background: var(--surface); color: var(--navy); border: none; border-radius: 10px; padding: 18px 0; font-size: 1.3rem; font-weight: 800; cursor: pointer; }
 .kiosk-key.wide { grid-column: span 3; }
@@ -819,9 +851,11 @@ button { font-family: inherit; }
 
 .kiosk-scroll { justify-content: flex-start; overflow-y: auto; padding: 24px 32px 60px; }
 .kiosk-back {
-  align-self: flex-start; min-height: 56px; padding: 0 24px; border-radius: 14px; border: none;
-  background: rgba(255,255,255,0.14); color: #fff; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; cursor: pointer; margin-bottom: 18px;
+  min-height: 44px; padding: 0 4px; border-radius: 12px; border: none;
+  background: transparent; color: var(--navy-deep); font-weight: 800; font-size: 0.95rem; cursor: pointer;
 }
+.kiosk-back--inline { align-self: flex-start; margin-bottom: 12px; }
+.kiosk-scroll .kiosk-back { align-self: flex-start; min-height: 56px; padding: 0 20px; background: #fff; border: 1px solid var(--line); margin-bottom: 18px; font-size: 1.1rem; }
 .kiosk-panel { background: var(--surface); color: var(--ink); border-radius: 22px; padding: 28px 32px; max-width: 900px; width: 100%; margin-bottom: 18px; text-align: left; }
 .kiosk-panel h1 { color: var(--navy-deep); font-size: 1.9rem; margin: 0 0 14px; }
 .kiosk-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
