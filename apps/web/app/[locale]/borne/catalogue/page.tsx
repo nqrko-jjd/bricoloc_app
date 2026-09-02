@@ -254,8 +254,8 @@ function KioskCatalogue() {
       )}
 
       {step === 'cart' && cart && (
-        <div style={{ maxWidth: 720, width: '100%', marginTop: 20, color: 'var(--dark-gray)' }}>
-          <h1 style={{ color: '#fff' }}>Votre panier</h1>
+        <div style={{ marginTop: 12 }}>
+          <h1>Votre panier</h1>
           <div className="card card-pad">
             {cart.items.map((i) => (
               <div key={i.id} className="spread" style={{ padding: '8px 0' }}>
