@@ -12,11 +12,13 @@ interface Crumb {
  */
 export function PageHeader({
   title,
+  titleAccent,
   lead,
   breadcrumb,
   children,
 }: {
   title: string;
+  titleAccent?: string;
   lead?: string;
   breadcrumb?: Crumb[];
   children?: ReactNode;
@@ -34,7 +36,15 @@ export function PageHeader({
             ))}
           </nav>
         )}
-        <h1>{title}</h1>
+        <h1>
+          {title}
+          {titleAccent ? (
+            <>
+              {' '}
+              <em>{titleAccent}</em>
+            </>
+          ) : null}
+        </h1>
         {lead && <p className="page-header__lead measure">{lead}</p>}
         {children}
       </div>

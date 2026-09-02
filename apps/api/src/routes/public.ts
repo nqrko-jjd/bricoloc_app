@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { BRAND } from '@bricoloc/shared';
+import { BRAND, pickText, SOURCE_LOCALE, type I18nText, type Locale } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { h } from '../lib/http.js';
 import { getSettings } from '../lib/settings.js';
 import { quoteDelivery } from '../lib/delivery.js';
+import { serializeProductSummary, productInclude } from '../lib/serialize.js';
 
 export const publicRouter = Router();
 
@@ -117,6 +118,80 @@ publicRouter.post(
         slot: r.slot,
         items: r.items.map((i) => ({ name: i.nameSnapshot, quantity: i.quantity, kind: i.kind })),
       },
+    });
+  }),
+);
+
+/* -------------------- Magazine « Conseils & DIY » -------------------- */
+
+function guideField(
+  g: { title: string; excerpt: string; body: string; i18n: unknown },
+  field: 'title' | 'excerpt' | 'body',
+  locale: Locale,
+): string {
+  if (locale === SOURCE_LOCALE) return g[field];
+  const bag = (g.i18n as Record<string, I18nText> | null | undefined)?.[field];
+  return pickText(bag, locale, SOURCE_LOCALE) || g[field];
+}
+
+publicRouter.get(
+  '/guides',
+  h(async (req, res) => {
+    const locale = (String(req.query.locale ?? 'fr') as Locale) ?? 'fr';
+    const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+    const rows = await prisma.guide.findMany({
+      where: { published: true, ...(category ? { category } : {}) },
+      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+    });
+    res.json({
+      guides: rows.map((g) => ({
+        slug: g.slug,
+        category: g.category,
+        title: guideField(g, 'title', locale),
+        excerpt: guideField(g, 'excerpt', locale),
+        readMinutes: g.readMinutes,
+        tone: g.tone,
+        featured: g.featured,
+      })),
+      categories: [...new Set(rows.map((g) => g.category))],
+    });
+  }),
+);
+
+publicRouter.get(
+  '/guides/:slug',
+  h(async (req, res) => {
+    const locale = (String(req.query.locale ?? 'fr') as Locale) ?? 'fr';
+    const g = await prisma.guide.findFirst({
+      where: { slug: req.params.slug, published: true },
+    });
+    if (!g) return res.status(404).json({ error: { message: 'Guide introuvable' } });
+
+    const relSlugs = (g.relatedSlugs as string[] | null) ?? [];
+    const related = relSlugs.length
+      ? await prisma.product.findMany({
+          where: { slug: { in: relSlugs }, published: true },
+          include: productInclude,
+        })
+      : [];
+
+    const seo = (g.seo as { title?: I18nText; description?: I18nText } | null) ?? {};
+    res.json({
+      guide: {
+        slug: g.slug,
+        category: g.category,
+        title: guideField(g, 'title', locale),
+        excerpt: guideField(g, 'excerpt', locale),
+        body: guideField(g, 'body', locale),
+        readMinutes: g.readMinutes,
+        tone: g.tone,
+        updatedAt: g.updatedAt,
+        seo: {
+          title: pickText(seo.title, locale, SOURCE_LOCALE) || null,
+          description: pickText(seo.description, locale, SOURCE_LOCALE) || null,
+        },
+      },
+      related: related.map((p) => serializeProductSummary(p, locale)),
     });
   }),
 );

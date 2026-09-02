@@ -72,6 +72,22 @@ export interface LinkedProduct {
   partSupplier?: string | null;
 }
 
+export interface GuideSummary {
+  slug: string;
+  category: string;
+  title: string;
+  excerpt: string;
+  readMinutes: number;
+  tone: 'red' | 'navy' | 'light';
+  featured: boolean;
+}
+
+export interface GuideDetail extends Omit<GuideSummary, 'featured'> {
+  body: string;
+  updatedAt: string;
+  seo?: { title: string | null; description: string | null };
+}
+
 export interface Category {
   id: string;
   slug: string;

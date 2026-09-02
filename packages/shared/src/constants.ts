@@ -90,14 +90,14 @@ export const DEFAULT_SETTINGS = {
   },
   /** Revendeurs de consommables / accessoires (pieces adaptees aux machines). */
   partSuppliers: ['Cipac', 'Lecot', 'Sanimat Wavre', 'BMK'],
-  /** Coordonnees societe - FICTIVES, a completer en admin. */
+  /** Coordonnees societe. TVA / IBAN a confirmer en admin. */
   company: {
-    legalName: 'BRICOLOC SRL (demo)',
-    vatNumber: 'BE 0123.456.789 (demo)',
-    address: 'Rue de la Demo 1, 1000 Bruxelles (demo)',
-    phone: '+32 2 000 00 00 (demo)',
-    email: 'contact@bricoloc.example',
-    iban: 'BE00 0000 0000 0000 (demo)',
+    legalName: 'BRICOLOC',
+    vatNumber: 'BE 0000.000.000',
+    address: 'Gieterijstraat 49, 1601 Ruisbroek (Sint-Pieters-Leeuw)',
+    phone: '+32 2 887 77 88',
+    email: 'info@bricoloc.be',
+    iban: 'BE00 0000 0000 0000',
   },
 } as const;
 

@@ -2,53 +2,62 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
+const ADDRESS = 'Gieterijstraat 49, 1601 Ruisbroek (Sint-Pieters-Leeuw)';
+const PHONE = '+32 2 887 77 88';
+const EMAIL = 'info@bricoloc.be';
+
 export function Footer() {
   const t = useTranslations('nav');
   const tf = useTranslations('footer');
-  const tc = useTranslations('common');
+
   return (
     <footer className="site-footer">
       <div className="container">
-        <div className="cols">
-          <div>
-            <h4>BRICOLOC</h4>
-            <p className="small">{tc('tagline')}</p>
+        <p className="site-footer__slogan">
+          Louez mieux, <em>travaillez mieux.</em>
+        </p>
+
+        <div className="site-footer__grid">
+          <div className="site-footer__brand">
+            <p className="small">{tf('blurb')}</p>
+            <address className="site-footer__contact small">
+              {ADDRESS}
+              <br />
+              <a href={`tel:${PHONE.replace(/\s/g, '')}`}>{PHONE}</a> ·{' '}
+              <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+            </address>
             <LanguageSwitcher variant="footer" />
           </div>
-          <div>
+
+          <nav className="site-footer__col">
             <h4>{tf('rent')}</h4>
-            <Link href="/catalogue">{t('catalogue')}</Link>
-            <br />
+            <Link href="/catalogue">{t('rentTool')}</Link>
+            <Link href="/catalogue?kind=PACK">{t('bricopacks')}</Link>
             <Link href="/fonctionnement">{t('howItWorks')}</Link>
-            <br />
             <Link href="/pro">{tf('servicesPros')}</Link>
-          </div>
-          <div>
+          </nav>
+
+          <nav className="site-footer__col">
             <h4>{tf('pickupDelivery')}</h4>
             <Link href="/click-collect">{t('clickCollect')}</Link>
-            <br />
             <Link href="/livraison">{tf('deliverySite')}</Link>
-          </div>
-          <div>
-            <h4>{tf('help')}</h4>
-            <Link href="/faq">{t('faq')}</Link>
-            <br />
-            <Link href="/conseils">{t('advice')}</Link>
-            <br />
-            <Link href="/contact">{t('contact')}</Link>
-          </div>
-          <div>
-            <h4>{tf('info')}</h4>
-            <Link href="/legal">{t('legal')}</Link>
-            <br />
             <Link href="/borne">{t('kiosk')}</Link>
-            <br />
-            <Link href="/admin">{t('staffArea')}</Link>
-          </div>
+            <Link href="/application">{tf('app')}</Link>
+          </nav>
+
+          <nav className="site-footer__col">
+            <h4>{tf('help')}</h4>
+            <Link href="/conseils">{t('adviceDiy')}</Link>
+            <Link href="/faq">{t('faq')}</Link>
+            <Link href="/contact">{t('contact')}</Link>
+            <Link href="/legal">{t('legal')}</Link>
+          </nav>
         </div>
-        <p className="small" style={{ marginTop: 24, opacity: 0.7 }}>
-          {tf('rights', { year: new Date().getFullYear() })}
-        </p>
+
+        <div className="site-footer__bottom small">
+          <span>{tf('rights', { year: new Date().getFullYear() })}</span>
+          <Link href="/admin">{t('staffArea')}</Link>
+        </div>
       </div>
     </footer>
   );

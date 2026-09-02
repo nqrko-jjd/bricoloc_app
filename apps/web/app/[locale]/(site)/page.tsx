@@ -6,6 +6,7 @@ import { loadContent } from '@/lib/content';
 import type { Category, ProductSummary } from '@/lib/types';
 import { HomeDatePicker } from '@/components/HomeDatePicker';
 import { ProductCard } from '@/components/ProductCard';
+import { DegressivePricing } from '@/components/DegressivePricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,9 +38,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     api<{ categories: Category[] }>(`/api/catalog/categories?locale=${locale}`, {
       next: { revalidate: 120 },
     }),
-    api<{ products: ProductSummary[] }>(`/api/catalog/products?pageSize=8&sort=name&locale=${locale}`, {
-      next: { revalidate: 60 },
-    }),
+    api<{ products: ProductSummary[]; total: number }>(
+      `/api/catalog/products?pageSize=8&sort=name&locale=${locale}`,
+      { next: { revalidate: 60 } },
+    ),
     api<{ products: ProductSummary[] }>(
       `/api/catalog/products?kind=PACK&pageSize=6&locale=${locale}`,
       { next: { revalidate: 120 } },
@@ -47,6 +49,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     loadContent('home.', locale),
   ]);
   const popular = popularRes.products ?? [];
+  const toolCount = Math.max(10, Math.floor((popularRes.total ?? 80) / 10) * 10);
   const packs = packsRes.products ?? [];
   const catLink = (slug: string) =>
     categories.some((c) => c.slug === slug) ? `/catalogue?category=${slug}` : '/catalogue';
@@ -59,12 +62,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <div className="container home-hero__inner">
           <div className="home-hero__copy">
             <span className="eyebrow">{t('heroEyebrow')}</span>
-            <h1>{content.t('home.hero.title', 'Le bon outil. Au bon moment.')}</h1>
+            <h1>
+              {content.t('home.hero.title', t('heroTitle'))}{' '}
+              <em>{content.t('home.hero.accent', t('heroTitleAccent'))}</em>
+            </h1>
             <p className="home-hero__lead">
-              {content.t(
-                'home.hero.subtitle',
-                'Louez des machines et de l’outillage professionnel, contrôlé et entretenu. Réservation en ligne 24h/24, retrait rapide en Click & Collect ou livraison sur chantier.',
-              )}
+              {content.t('home.hero.subtitle', t('heroLead'))}
             </p>
             <div className="row">
               <Link href="/catalogue" className="btn btn-primary btn-lg">
@@ -74,6 +77,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {t('heroCtaPro')}
               </Link>
             </div>
+            <p className="home-hero__stat">
+              <strong>{t('statTools', { n: toolCount })}</strong> {t('statToolsSub')}
+            </p>
           </div>
           <div className="home-hero__search">
             <HomeDatePicker />
@@ -124,23 +130,34 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </section>
       )}
 
+      {/* ─────────────── PRIX DÉGRESSIFS ─────────────── */}
+      <section className="section container">
+        <div className="reveal">
+          <DegressivePricing />
+        </div>
+      </section>
+
       {/* ─────────────── CATÉGORIES (bento) ─────────────── */}
       <section className="section container">
         <div className="section-head reveal">
           <h2>{t('categoriesTitle')}</h2>
         </div>
-        <ul className="catbento">
+        <ul className="catgrid">
           {categories.map((c, i) => (
             <li
               key={c.slug}
-              className={`catbento__item reveal${i % 5 === 0 ? ' catbento__item--wide' : ''}`}
+              className="catgrid__item reveal"
               data-reveal-delay={i * 40}
-              style={c.image ? { backgroundImage: `url(${c.image})` } : undefined}
+              data-tone={['red', 'navy', 'light'][i % 3]}
             >
               <Link href={`/catalogue?category=${c.slug}`}>
-                <span className="catbento__name">{c.name}</span>
+                <span className="catgrid__num">{String(i + 1).padStart(2, '0')}</span>
+                <span className="catgrid__name">{c.name}</span>
+                <span className="catgrid__go" aria-hidden>
+                  →
+                </span>
                 {c.productCount ? (
-                  <span className="catbento__count">{c.productCount}</span>
+                  <span className="catgrid__count">{c.productCount}</span>
                 ) : null}
               </Link>
             </li>
@@ -227,23 +244,51 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* ─────────────── CONSEILS & SAV ─────────────── */}
+      {/* ─────────────── L'APPLICATION ─────────────── */}
       <section className="section container">
-        <div className="home-advice reveal">
-          <div>
-            <span className="eyebrow">{t('adviceTitle')}</span>
-            <h2>{content.title('home.advice.title', t('adviceTitle'))}</h2>
-            <p className="muted">{content.t('home.advice.text', t('adviceText'))}</p>
+        <div className="home-app reveal">
+          <div className="home-app__copy">
+            <span className="eyebrow">{t('appEyebrow')}</span>
+            <h2>
+              {t('appTitle')} <em>{t('appTitleAccent')}</em>
+            </h2>
+            <p className="muted">{t('appText')}</p>
+            <ul className="home-app__list">
+              <li>✓ {t('appF1')}</li>
+              <li>✓ {t('appF2')}</li>
+              <li>✓ {t('appF3')}</li>
+            </ul>
+            <Link href="/application" className="btn btn-secondary">
+              {t('appCta')}
+            </Link>
           </div>
-          <div className="row">
-            <Link href="/conseils" className="btn btn-outline">
-              {t('adviceCta')}
-            </Link>
-            <Link href="/contact" className="btn btn-ghost">
-              {t('contactCta')}
-            </Link>
+          <div className="home-app__visual" aria-hidden>
+            <div className="home-app__phone">
+              <span className="home-app__time">9:41</span>
+              <strong>BRICOLOC.</strong>
+              <p>De quoi avez-vous besoin aujourd’hui ?</p>
+              <div className="home-app__chips">
+                <span>⚙️ Forer</span>
+                <span>🪵 Bois</span>
+                <span>🎨 Peinture</span>
+              </div>
+              <div className="home-app__card">
+                <span>Ponceuse girafe</span>
+                <small>Disponible maintenant · 19,90 €</small>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
+
+      {/* ─────────────── TÉMOIGNAGE ─────────────── */}
+      <section className="section container">
+        <figure className="home-quote reveal">
+          <blockquote>“{t('testimonialQuote')}”</blockquote>
+          <figcaption>
+            {t('testimonialAuthor')} <span aria-hidden>★★★★★</span>
+          </figcaption>
+        </figure>
       </section>
 
       {/* ─────────────── POINTS FORTS ─────────────── */}

@@ -637,11 +637,12 @@ const CONTENT: { key: string; title: string; body: string }[] = [
   },
 
   /* ---- Blocs éditables de la page d'accueil (auto-traduits NL/EN) ---- */
-  { key: 'home.hero.title', title: '', body: 'Le bon outil. Au bon moment.' },
+  { key: 'home.hero.title', title: '', body: 'Le bon outil.' },
+  { key: 'home.hero.accent', title: '', body: 'Juste le temps qu’il faut.' },
   {
     key: 'home.hero.subtitle',
     title: '',
-    body: 'Louez des machines et de l’outillage professionnel, contrôlé et entretenu. Réservation en ligne 24h/24, retrait rapide en Click & Collect ou livraison sur chantier.',
+    body: 'Du matériel pro, vérifié et disponible aujourd’hui. Réservez en quelques clics, retirez en 2h ou faites-vous livrer partout en Belgique.',
   },
   { key: 'home.help.subtitle', title: '', body: 'Choisissez votre chantier, on vous montre le bon matériel.' },
   {

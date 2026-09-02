@@ -34,6 +34,26 @@ model Content {
   @@unique([key, locale])
 }
 
+/// Article du magazine « Conseils & DIY ». FR = source, i18n = NL/EN (DeepL).
+model Guide {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  category    String // peinture | bois | exterieur | carrelage | forer-casser | preparation
+  title       String
+  excerpt     String
+  body        String // paragraphes séparés par \n, sous-titres en "## "
+  readMinutes Int      @default(5)
+  tone        String   @default("navy") // red | navy | light — couleur du bloc de couverture
+  /// slugs de produits Bricoloc à mettre en avant dans l'article
+  relatedSlugs Json?
+  i18n        Json? // { title, excerpt, body } NL/EN
+  seo         Json?
+  published   Boolean  @default(true)
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 /// Cache de traduction DeepL : evite de re-traduire (et re-payer) les memes segments.
 model Translation {
   id         String   @id @default(cuid())
