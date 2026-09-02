@@ -324,6 +324,110 @@ adminRouter.delete(
   }),
 );
 
+/** Ajuste rapidement le stock d'un consommable (page Stock). */
+adminRouter.patch(
+  '/products/:slug/stock',
+  requireStaff('RESPONSABLE', 'TECHNICIEN', 'COMPTOIR'),
+  h(async (req, res) => {
+    const qty = Number(req.body?.stockQty);
+    if (!Number.isFinite(qty) || qty < 0) throw badRequest('Quantité invalide');
+    const product = await prisma.product.update({
+      where: { slug: req.params.slug },
+      data: { stockQty: Math.round(qty) },
+      select: { slug: true, stockQty: true },
+    });
+    res.json({ product });
+  }),
+);
+
+/* -------------------------- Stock (synthèse par machine) -------------------------- */
+adminRouter.get(
+  '/stock',
+  h(async (_req, res) => {
+    const now = new Date();
+    const [products, units, activeRU, maint] = await Promise.all([
+      prisma.product.findMany({
+        where: { kind: { in: ['MACHINE', 'ACCESSORY', 'PPE'] } },
+        include: { category: { select: { name: true, slug: true } } },
+        orderBy: [{ category: { position: 'asc' } }, { name: 'asc' }],
+      }),
+      prisma.productUnit.groupBy({ by: ['productId', 'state'], _count: { _all: true } }),
+      // Exemplaires réservés sur une période qui couvre maintenant, pas encore rendus.
+      prisma.reservationUnit.findMany({
+        where: {
+          returnedAt: null,
+          reservationItem: {
+            reservation: {
+              status: { in: ['CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDING'] },
+              periodStart: { lte: now },
+              periodEnd: { gte: now },
+            },
+          },
+        },
+        select: { unit: { select: { productId: true } } },
+      }),
+      prisma.maintenance.findMany({
+        where: {
+          status: { in: ['PLANNED', 'IN_PROGRESS'] },
+          OR: [{ endAt: null }, { endAt: { gte: now } }],
+          startAt: { lte: now },
+        },
+        select: { unit: { select: { productId: true } } },
+      }),
+    ]);
+
+    const stateMap = new Map<string, Record<string, number>>();
+    for (const g of units) {
+      const m = stateMap.get(g.productId) ?? {};
+      m[g.state] = g._count._all;
+      stateMap.set(g.productId, m);
+    }
+    const reservedNow = new Map<string, number>();
+    for (const r of activeRU)
+      reservedNow.set(r.unit.productId, (reservedNow.get(r.unit.productId) ?? 0) + 1);
+    const maintNow = new Map<string, number>();
+    for (const m of maint)
+      if (m.unit) maintNow.set(m.unit.productId, (maintNow.get(m.unit.productId) ?? 0) + 1);
+
+    const rows = products
+      .map((p) => {
+        const s = stateMap.get(p.id) ?? {};
+        const total = Object.values(s).reduce((a, b) => a + b, 0);
+        const rented = s.RENTED ?? 0;
+        const damaged = s.DAMAGED ?? 0;
+        const retired = s.RETIRED ?? 0;
+        const maintenance = (s.MAINTENANCE ?? 0) + (maintNow.get(p.id) ?? 0);
+        const reserved = reservedNow.get(p.id) ?? 0;
+        const availableNow = Math.max(0, (s.AVAILABLE ?? 0) - reserved);
+        return {
+          id: p.id,
+          slug: p.slug,
+          name: p.name,
+          kind: p.kind,
+          category: p.category?.name ?? null,
+          categorySlug: p.category?.slug ?? null,
+          published: p.published,
+          total,
+          availableNow,
+          reserved,
+          rented,
+          maintenance,
+          damaged,
+          retired,
+        };
+      })
+      .filter((r) => r.total > 0 || r.kind === 'MACHINE');
+
+    const consumables = await prisma.product.findMany({
+      where: { kind: 'CONSUMABLE' },
+      select: { id: true, slug: true, name: true, stockQty: true, dailyPrice: true, partSupplier: true, published: true },
+      orderBy: { name: 'asc' },
+    });
+
+    res.json({ machines: rows, consumables });
+  }),
+);
+
 /* -------------------------- Exemplaires -------------------------- */
 adminRouter.get(
   '/units',

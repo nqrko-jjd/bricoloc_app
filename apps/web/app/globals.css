@@ -2123,3 +2123,22 @@ button { font-family: inherit; }
 .sigpad { border: 2px dashed var(--border); border-radius: 14px; padding: 8px; background: #fff; }
 .sigpad canvas { width: 100%; display: block; border-radius: 8px; background: #fbfbfe; }
 .sigpad__foot { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+
+/* Stock & exemplaires */
+.stock-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.stockbar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-2); min-width: 120px; }
+.stockbar__seg { display: block; }
+.stockbar__seg.is-avail, .stockbar__key.is-avail::before { background: #1b7a4b; }
+.stockbar__seg.is-reserved, .stockbar__key.is-reserved::before { background: #d9a400; }
+.stockbar__seg.is-rented, .stockbar__key.is-rented::before { background: var(--navy); }
+.stockbar__seg.is-maint, .stockbar__key.is-maint::before { background: #7a5cff; }
+.stockbar__seg.is-hs, .stockbar__key.is-hs::before { background: #c0392b; }
+.stockbar__key { display: inline-flex; align-items: center; gap: 5px; color: var(--muted-fg); }
+.stockbar__key::before { content: ''; width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.stock-row { cursor: pointer; }
+.stock-row:hover { background: var(--surface-2); }
+.stock-row__caret { color: var(--muted-fg); font-size: 0.8rem; }
+.stock-row__bar { width: 180px; }
+.stock-detail > td { background: var(--surface-2); padding: 14px 18px; }
+.table--tight td { padding: 6px 8px; }
+.table .num { text-align: right; white-space: nowrap; }

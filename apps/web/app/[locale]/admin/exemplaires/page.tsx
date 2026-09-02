@@ -2,7 +2,31 @@
 import { Fragment, useEffect, useState } from 'react';
 import { formatDateBE } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
-import type { ProductDetail } from '@/lib/types';
+
+interface StockRow {
+  id: string;
+  slug: string;
+  name: string;
+  kind: string;
+  category: string | null;
+  published: boolean;
+  total: number;
+  availableNow: number;
+  reserved: number;
+  rented: number;
+  maintenance: number;
+  damaged: number;
+  retired: number;
+}
+interface ConsumableRow {
+  id: string;
+  slug: string;
+  name: string;
+  stockQty: number | null;
+  dailyPrice: number;
+  partSupplier: string | null;
+  published: boolean;
+}
 
 interface Unit {
   id: string;
@@ -135,188 +159,316 @@ function MaintenanceForm({
   );
 }
 
+function StockBar({ r }: { r: StockRow }) {
+  const seg = (n: number, cls: string) =>
+    n > 0 ? <span className={`stockbar__seg ${cls}`} style={{ flexGrow: n }} title={`${n}`} /> : null;
+  return (
+    <div className="stockbar">
+      {seg(r.availableNow, 'is-avail')}
+      {seg(r.reserved, 'is-reserved')}
+      {seg(r.rented, 'is-rented')}
+      {seg(r.maintenance, 'is-maint')}
+      {seg(r.damaged + r.retired, 'is-hs')}
+    </div>
+  );
+}
+
+function MachineRow({
+  r,
+  units,
+  onReload,
+  setMsg,
+}: {
+  r: StockRow;
+  units: Unit[];
+  onReload: () => Promise<void>;
+  setMsg: (s: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [maintFor, setMaintFor] = useState<string | null>(null);
+  const [addN, setAddN] = useState('2');
+  const mine = units.filter((u) => u.product.id === r.id);
+
+  async function bulkAdd() {
+    const n = Math.max(1, Math.min(50, Number(addN) || 1));
+    await staffApi('/api/admin/units/bulk', { method: 'POST', body: { productId: r.id, count: n } });
+    setMsg(`${n} exemplaire(s) ajouté(s) à « ${r.name} » — QR générés.`);
+    await onReload();
+  }
+
+  return (
+    <>
+      <tr className="stock-row" onClick={() => setOpen((v) => !v)}>
+        <td>
+          <span className="stock-row__caret">{open ? '▾' : '▸'}</span> {r.name}
+          {!r.published && <span className="badge" style={{ marginLeft: 6 }}>hors ligne</span>}
+        </td>
+        <td className="num">
+          <strong>{r.availableNow}</strong>
+          <span className="small muted"> / {r.total}</span>
+        </td>
+        <td className="stock-row__bar">
+          <StockBar r={r} />
+        </td>
+        <td className="small muted">
+          {r.rented ? `${r.rented} en location · ` : ''}
+          {r.reserved ? `${r.reserved} réservé · ` : ''}
+          {r.maintenance ? `${r.maintenance} entretien · ` : ''}
+          {r.damaged + r.retired ? `${r.damaged + r.retired} HS` : ''}
+          {!r.rented && !r.reserved && !r.maintenance && !r.damaged && !r.retired ? 'tout dispo' : ''}
+        </td>
+      </tr>
+      {open && (
+        <tr className="stock-detail">
+          <td colSpan={4}>
+            {r.total === 0 && (
+              <p className="small muted">Aucun exemplaire. Ajoutez-en ci-dessous.</p>
+            )}
+            {mine.length > 0 && (
+              <table className="table table--tight">
+                <tbody>
+                  {mine.map((u) => (
+                    <Fragment key={u.id}>
+                      <tr>
+                        <td>
+                          <strong>{u.assetTag}</strong>
+                          {u.serialNumber ? <span className="small muted"> · SN {u.serialNumber}</span> : null}
+                        </td>
+                        <td>
+                          <select
+                            defaultValue={u.state}
+                            onChange={async (e) => {
+                              await staffApi(`/api/admin/units/${u.id}`, {
+                                method: 'PATCH',
+                                body: { state: e.target.value },
+                              });
+                              setMsg(`${u.assetTag} → ${e.target.value}`);
+                              await onReload();
+                            }}
+                          >
+                            {STATES.map((s) => (
+                              <option key={s}>{s}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="small muted">
+                          {u.immobilisedUntil
+                            ? `immobilisé → ${formatDateBE(u.immobilisedUntil)}`
+                            : u.nextMaintenanceAt
+                              ? `entretien prévu ${formatDateBE(u.nextMaintenanceAt)}`
+                              : '—'}
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setMaintFor(maintFor === u.id ? null : u.id)}
+                          >
+                            {maintFor === u.id ? 'Fermer' : 'Entretien / réparation'}
+                          </button>
+                        </td>
+                      </tr>
+                      {maintFor === u.id && (
+                        <tr>
+                          <td colSpan={4}>
+                            <MaintenanceForm
+                              unitId={u.id}
+                              onDone={async () => {
+                                setMaintFor(null);
+                                await onReload();
+                              }}
+                              setMsg={setMsg}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <div className="row" style={{ marginTop: 10, gap: 8, alignItems: 'center' }}>
+              <span className="small">Ajouter</span>
+              <input
+                type="number"
+                value={addN}
+                onChange={(e) => setAddN(e.target.value)}
+                style={{ width: 64 }}
+              />
+              <button className="btn btn-outline btn-sm" onClick={bulkAdd}>
+                + exemplaires (QR auto)
+              </button>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
 export default function AdminExemplaires() {
+  const [tab, setTab] = useState<'machines' | 'consumables'>('machines');
+  const [stock, setStock] = useState<{ machines: StockRow[]; consumables: ConsumableRow[] }>({
+    machines: [],
+    consumables: [],
+  });
   const [units, setUnits] = useState<Unit[]>([]);
-  const [products, setProducts] = useState<ProductDetail[]>([]);
-  const [f, setF] = useState({ productId: '', assetTag: '', serialNumber: '' });
-  const [open, setOpen] = useState<string | null>(null);
+  const [filter, setFilter] = useState('');
   const [msg, setMsg] = useState('');
 
   async function load() {
-    const [u, p] = await Promise.all([
+    const [s, u] = await Promise.all([
+      staffApi<{ machines: StockRow[]; consumables: ConsumableRow[] }>('/api/admin/stock'),
       staffApi<{ units: Unit[] }>('/api/admin/units'),
-      staffApi<{ products: ProductDetail[] }>('/api/admin/products?kind=MACHINE'),
     ]);
+    setStock(s);
     setUnits(u.units);
-    setProducts(p.products);
   }
   useEffect(() => {
     load();
   }, []);
 
+  const machines = stock.machines.filter(
+    (m) => !filter || m.name.toLowerCase().includes(filter.toLowerCase()),
+  );
+  const byCat = new Map<string, StockRow[]>();
+  for (const m of machines) {
+    const k = m.category ?? 'Sans catégorie';
+    byCat.set(k, [...(byCat.get(k) ?? []), m]);
+  }
+
+  const totAvail = machines.reduce((a, m) => a + m.availableNow, 0);
+  const totUnits = machines.reduce((a, m) => a + m.total, 0);
+
   return (
     <div className="stack">
-      <h1>Exemplaires &amp; maintenance</h1>
+      <h1>Stock &amp; exemplaires</h1>
       {msg && <div className="alert alert-info">{msg}</div>}
 
-      <form
-        className="card card-pad row"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          try {
-            await staffApi('/api/admin/units', { method: 'POST', body: f });
-            setMsg(`Exemplaire ${f.assetTag} enregistré (QR généré).`);
-            setF({ productId: '', assetTag: '', serialNumber: '' });
-            await load();
-          } catch (err) {
-            setMsg(err instanceof Error ? err.message : 'Erreur');
-          }
-        }}
-      >
-        <div className="field">
-          <label>Machine</label>
-          <select
-            value={f.productId}
-            onChange={(e) => setF({ ...f, productId: e.target.value })}
-            required
-          >
-            <option value="">—</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Identifiant (asset tag)</label>
-          <input
-            value={f.assetTag}
-            onChange={(e) => setF({ ...f, assetTag: e.target.value })}
-            required
-          />
-        </div>
-        <div className="field">
-          <label>N° de série</label>
-          <input
-            value={f.serialNumber}
-            onChange={(e) => setF({ ...f, serialNumber: e.target.value })}
-          />
-        </div>
-        <button className="btn btn-primary btn-sm">Ajouter</button>
-      </form>
-
-      <div className="card card-body table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Tag</th>
-              <th>Machine</th>
-              <th>N° série</th>
-              <th>QR</th>
-              <th>État</th>
-              <th>Prochaine maintenance</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {units.map((u) => (
-              <Fragment key={u.id}>
-                <tr
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setOpen(u.id);
-                  }}
-                >
-                  <td>{u.assetTag}</td>
-                  <td>{u.product.name}</td>
-                  <td className="small">{u.serialNumber ?? '—'}</td>
-                  <td className="small">{u.qrToken.slice(0, 10)}…</td>
-                  <td>
-                    <select
-                      defaultValue={u.state}
-                      onChange={async (e) => {
-                        await staffApi(`/api/admin/units/${u.id}`, {
-                          method: 'PATCH',
-                          body: { state: e.target.value },
-                        });
-                        setMsg(`${u.assetTag} → ${e.target.value}`);
-                        await load();
-                      }}
-                    >
-                      {STATES.map((s) => (
-                        <option key={s}>{s}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="small">
-                    {u.immobilisedUntil
-                      ? `immobilisé jusqu’au ${formatDateBE(u.immobilisedUntil)}`
-                      : u.nextMaintenanceAt
-                        ? formatDateBE(u.nextMaintenanceAt)
-                        : '—'}
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => setOpen(open === u.id ? null : u.id)}
-                    >
-                      {open === u.id ? 'Fermer' : 'Actions'}
-                    </button>
-                  </td>
-                </tr>
-                {open === u.id && (
-                  <tr>
-                    <td colSpan={7} style={{ background: 'var(--bg-alt)' }}>
-                      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                        <div>
-                          <strong className="small">Locations</strong>
-                          <ul className="small">
-                            {u.reservationUnits.map((ru, i) => (
-                              <li key={i}>
-                                {ru.reservationItem.reservation.number} —{' '}
-                                {ru.returnedAt ? 'rendu' : 'en cours'}
-                              </li>
-                            ))}
-                            {u.reservationUnits.length === 0 && <li>—</li>}
-                          </ul>
-                        </div>
-                        <div>
-                          <strong className="small">Dommages</strong>
-                          <ul className="small">
-                            {u.damages.map((d, i) => (
-                              <li key={i}>
-                                {d.description} ({d.feeHT} €){d.resolved ? ' ✔' : ''}
-                              </li>
-                            ))}
-                            {u.damages.length === 0 && <li>—</li>}
-                          </ul>
-                        </div>
-                        <div>
-                          <strong className="small">Entretiens / réparations</strong>
-                          <ul className="small">
-                            {u.maintenances.map((m, i) => (
-                              <li key={i}>
-                                {formatDateBE(m.performedAt)} — {m.type} : {m.description}
-                                {m.startAt && m.endAt
-                                  ? ` (${formatDateBE(m.startAt)}→${formatDateBE(m.endAt)})`
-                                  : ''}
-                              </li>
-                            ))}
-                            {u.maintenances.length === 0 && <li>—</li>}
-                          </ul>
-                        </div>
-                      </div>
-
-                      <MaintenanceForm unitId={u.id} onDone={load} setMsg={setMsg} />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
-            ))}
-          </tbody>
-        </table>
+      <div className="chips">
+        <button
+          className={`chip${tab === 'machines' ? ' active' : ''}`}
+          onClick={() => setTab('machines')}
+        >
+          Machines &amp; accessoires
+        </button>
+        <button
+          className={`chip${tab === 'consumables' ? ' active' : ''}`}
+          onClick={() => setTab('consumables')}
+        >
+          Consommables
+        </button>
       </div>
+
+      {tab === 'machines' && (
+        <>
+          <div className="stock-legend small">
+            <span>
+              <b>{totAvail}</b> disponibles aujourd’hui sur <b>{totUnits}</b> exemplaires
+            </span>
+            <span className="stockbar__key is-avail">dispo</span>
+            <span className="stockbar__key is-reserved">réservé</span>
+            <span className="stockbar__key is-rented">en location</span>
+            <span className="stockbar__key is-maint">entretien</span>
+            <span className="stockbar__key is-hs">HS / retiré</span>
+          </div>
+          <input
+            placeholder="Filtrer une machine…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            style={{ maxWidth: 320 }}
+          />
+          {[...byCat.entries()].map(([cat, rows]) => (
+            <div key={cat} className="card card-body table-wrap">
+              <h3 style={{ margin: '0 0 8px' }}>{cat}</h3>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Machine</th>
+                    <th className="num">Dispo</th>
+                    <th>Répartition</th>
+                    <th>Détail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <MachineRow key={r.id} r={r} units={units} onReload={load} setMsg={setMsg} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </>
+      )}
+
+      {tab === 'consumables' && (
+        <div className="card card-body table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Consommable</th>
+                <th>Fournisseur</th>
+                <th className="num">Prix unité</th>
+                <th className="num">Stock</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {stock.consumables.map((c) => (
+                <ConsumableStockRow key={c.id} c={c} setMsg={setMsg} onReload={load} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
+  );
+}
+
+function ConsumableStockRow({
+  c,
+  setMsg,
+  onReload,
+}: {
+  c: ConsumableRow;
+  setMsg: (s: string) => void;
+  onReload: () => Promise<void>;
+}) {
+  const [qty, setQty] = useState(c.stockQty != null ? String(c.stockQty) : '');
+  const dirty = qty !== (c.stockQty != null ? String(c.stockQty) : '');
+  return (
+    <tr>
+      <td>
+        {c.name}
+        {!c.published && <span className="badge" style={{ marginLeft: 6 }}>hors ligne</span>}
+      </td>
+      <td className="small muted">{c.partSupplier ?? '—'}</td>
+      <td className="num">{c.dailyPrice ? `${c.dailyPrice.toFixed(2)} €` : '—'}</td>
+      <td className="num">
+        <input
+          type="number"
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+          style={{ width: 72 }}
+          placeholder="—"
+        />
+      </td>
+      <td>
+        {dirty && (
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={async () => {
+              await staffApi(`/api/admin/products/${c.slug}/stock`, {
+                method: 'PATCH',
+                body: { stockQty: Number(qty) || 0 },
+              });
+              setMsg(`Stock « ${c.name} » → ${qty || 0}`);
+              await onReload();
+            }}
+          >
+            Enregistrer
+          </button>
+        )}
+      </td>
+    </tr>
   );
 }
