@@ -1,11 +1,12 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from '@/i18n/navigation';
-import { staffApi } from '@/lib/staff';
+import { staffApi, useStaff } from '@/lib/staff';
 import { ScanField } from '@/components/admin/ScanField';
 import { StatusBadge } from '@/components/StatusBadge';
 import { CounterFlow, type CounterFlowHandle } from '@/components/counter/CounterFlow';
 import { TerminalStock, type TerminalStockHandle } from '@/components/terminal/TerminalStock';
+import { TerminalRepairs, type TerminalRepairsHandle } from '@/components/terminal/TerminalRepairs';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -18,19 +19,37 @@ const BUCKETS: { key: string; label: string; tone: string }[] = [
 ];
 
 const FLOW_STATUSES = ['CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDING'];
+type View = 'home' | 'counter' | 'stock' | 'inventory' | 'repairs';
 
 export default function TerminalPage() {
+  const { staff } = useStaff();
+  const [view, setView] = useState<View>('home');
   const [board, setBoard] = useState<Record<string, any[]>>({});
-  const [scan, setScan] = useState<any>(null); // { reservation, paid, depositHeld } ou { type:'unit'|'product', ... }
+  const [counts, setCounts] = useState({ counter: 0, repairs: 0 });
+  const [scan, setScan] = useState<any>(null);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
-  const [mode, setMode] = useState<'counter' | 'stock'>('counter');
   const flowRef = useRef<CounterFlowHandle>(null);
   const stockRef = useRef<TerminalStockHandle>(null);
+  const repairsRef = useRef<TerminalRepairsHandle>(null);
 
   const loadBoard = useCallback(async () => {
     try {
-      setBoard(await staffApi('/api/ops/board'));
+      const b: Record<string, any[]> = await staffApi('/api/ops/board');
+      setBoard(b);
+      setCounts((c) => ({
+        ...c,
+        counter: (b.toPrepare?.length ?? 0) + (b.ready?.length ?? 0) + (b.out?.length ?? 0) + (b.overdue?.length ?? 0),
+      }));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const loadRepairCount = useCallback(async () => {
+    try {
+      const s = await staffApi<{ machines: any[] }>('/api/admin/stock');
+      const n = s.machines.reduce((a, m) => a + (m.damaged ?? 0) + (m.maintenance ?? 0), 0);
+      setCounts((c) => ({ ...c, repairs: n }));
     } catch {
       /* ignore */
     }
@@ -38,102 +57,114 @@ export default function TerminalPage() {
 
   useEffect(() => {
     loadBoard();
+    loadRepairCount();
     const iv = setInterval(loadBoard, 20_000);
     return () => clearInterval(iv);
-  }, [loadBoard]);
+  }, [loadBoard, loadRepairCount]);
 
   const inFlow = scan?.reservation && FLOW_STATUSES.includes(scan.reservation.status);
 
-  async function openReservation(numberOrId: string) {
+  const openReservation = useCallback(async (numberOrId: string) => {
     setErr('');
     setMsg('');
     try {
       const r = await staffApi<any>(`/api/ops/scan/${encodeURIComponent(numberOrId)}`);
       setScan({ ...r, type: 'reservation' });
+      setView('counter');
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Introuvable');
     }
-  }
+  }, []);
 
   async function handleScan(code: string) {
     setErr('');
     setMsg('');
-    if (mode === 'stock') {
-      stockRef.current?.feedScan(code);
-      return;
-    }
-    // Pendant un parcours, un scan d'exemplaire alimente l'affectation.
-    if (inFlow) {
+    if (view === 'stock' || view === 'inventory') return stockRef.current?.feedScan(code);
+    if (view === 'repairs') return repairsRef.current?.feedScan(code);
+    if (view === 'counter' && inFlow) {
       try {
         const r: any = await staffApi(`/api/ops/resolve/${encodeURIComponent(code)}`);
-        if (r.type === 'unit') {
-          flowRef.current?.feedScan(r.assetTag ?? code);
-          return;
-        }
+        if (r.type === 'unit') return flowRef.current?.feedScan(r.assetTag ?? code);
         if (r.type === 'reservation') return openReservation(r.number);
       } catch {
         flowRef.current?.feedScan(code);
       }
       return;
     }
+    // home ou board : on résout
     try {
       const r: any = await staffApi(`/api/ops/resolve/${encodeURIComponent(code)}`);
       if (r.type === 'reservation') return openReservation(r.number);
-      setScan(r);
+      if (r.type === 'unit') {
+        setScan(r);
+        setView('stock');
+        setTimeout(() => stockRef.current?.feedScan(r.assetTag ?? code), 50);
+        return;
+      }
+      if (r.type === 'product') {
+        setView('stock');
+        setTimeout(() => stockRef.current?.feedScan(code), 50);
+        return;
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Code inconnu');
     }
   }
 
-  async function unitState(id: string, state: string) {
-    try {
-      await staffApi(`/api/admin/units/${id}`, { method: 'PATCH', body: { state } });
-      setMsg(`Exemplaire → ${state}`);
-      setScan({ ...scan, state });
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action refusée');
-    }
-  }
-
-  function back() {
+  function home() {
     setScan(null);
     setErr('');
     setMsg('');
+    setView('home');
     loadBoard();
+    loadRepairCount();
   }
+
+  const TILES: { key: View; label: string; icon: string; badge?: number; tone: string }[] = [
+    { key: 'counter', label: 'Comptoir\nretrait / retour', icon: '🛒', badge: counts.counter, tone: 'navy' },
+    { key: 'stock', label: 'Stock\nmachines & consommables', icon: '📦', tone: 'plain' },
+    { key: 'repairs', label: 'Réparations\n& maintenance', icon: '🔧', badge: counts.repairs, tone: 'warn' },
+    { key: 'inventory', label: 'Inventaire', icon: '📋', tone: 'plain' },
+  ];
 
   return (
     <main className="term">
-      <div className="term-modes">
-        <button
-          className={mode === 'counter' ? 'is-on' : ''}
-          onClick={() => {
-            setMode('counter');
-            setScan(null);
-          }}
-        >
-          Comptoir
+      {view !== 'home' && (
+        <button className="term-home-btn" onClick={home}>
+          ← Accueil
         </button>
-        <button
-          className={mode === 'stock' ? 'is-on' : ''}
-          onClick={() => {
-            setMode('stock');
-            setScan(null);
-          }}
-        >
-          Stock / inventaire
-        </button>
-      </div>
+      )}
 
       <ScanField onScan={handleScan} placeholder="Scanner un QR / code-barres…" />
 
       {err && <div className="term-flash term-flash--err">{err}</div>}
       {msg && <div className="term-flash term-flash--ok">{msg}</div>}
 
-      {mode === 'stock' && <TerminalStock ref={stockRef} setFlash={setMsg} />}
+      {/* ─────────── ACCUEIL : grosses touches ─────────── */}
+      {view === 'home' && (
+        <>
+          <p className="term-hello">Bonjour {staff?.name?.split(' ')[0] ?? ''} — que faites-vous ?</p>
+          <div className="term-tiles">
+            {TILES.map((t) => (
+              <button
+                key={t.key}
+                className={`term-tile term-tile--${t.tone}`}
+                onClick={() => {
+                  setScan(null);
+                  setView(t.key);
+                }}
+              >
+                <span className="term-tile__icon">{t.icon}</span>
+                <span className="term-tile__label">{t.label}</span>
+                {t.badge ? <span className="term-tile__badge">{t.badge}</span> : null}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
-      {/* ─── Accueil : le board ─── */}
-      {mode === 'counter' && !scan && (
+      {/* ─────────── COMPTOIR ─────────── */}
+      {view === 'counter' && !inFlow && (
         <div className="term-board">
           {BUCKETS.map((b) => {
             const rows = board[b.key] ?? [];
@@ -165,23 +196,26 @@ export default function TerminalPage() {
         </div>
       )}
 
-      {/* ─── Parcours retrait / retour ─── */}
-      {inFlow && (
+      {view === 'counter' && inFlow && (
         <CounterFlow
           ref={flowRef}
           scan={scan}
           onReload={() => openReservation(scan.reservation.number)}
-          onDone={back}
-          onExit={back}
+          onDone={() => {
+            setScan(null);
+            setView('counter');
+            loadBoard();
+          }}
+          onExit={() => {
+            setScan(null);
+            setView('counter');
+            loadBoard();
+          }}
         />
       )}
 
-      {/* ─── Réservation hors parcours (brouillon, clôturée…) ─── */}
-      {scan?.reservation && !inFlow && (
+      {view === 'counter' && scan?.reservation && !inFlow && (
         <div className="term-detail">
-          <button className="term-back" onClick={back}>
-            ← Retour
-          </button>
           <div className="term-card">
             <span className="eyebrow">Réservation</span>
             <h2>
@@ -189,16 +223,13 @@ export default function TerminalPage() {
             </h2>
             <p className="term-card__sub">
               {scan.reservation.status === 'CLOSED'
-                ? 'Cette location est clôturée.'
+                ? 'Location clôturée.'
                 : scan.reservation.status === 'CANCELLED'
-                  ? 'Cette réservation est annulée.'
-                  : 'Réservation pas encore confirmée (paiement en attente).'}
+                  ? 'Réservation annulée.'
+                  : 'Pas encore confirmée (paiement en attente).'}
             </p>
             <div className="term-actions">
-              <Link
-                href={`/admin/reservations/${scan.reservation.id}`}
-                className="btn btn-outline btn-lg"
-              >
+              <Link href={`/admin/reservations/${scan.reservation.id}`} className="btn btn-outline btn-lg">
                 Voir la fiche complète
               </Link>
             </div>
@@ -206,67 +237,20 @@ export default function TerminalPage() {
         </div>
       )}
 
-      {/* ─── Exemplaire ─── */}
-      {scan?.type === 'unit' && (
-        <div className="term-detail">
-          <button className="term-back" onClick={back}>
-            ← Retour
-          </button>
-          <div className="term-card">
-            <span className="eyebrow">Exemplaire</span>
-            <h2>{scan.assetTag}</h2>
-            <p className="term-card__sub">{scan.product?.name}</p>
-            <p className="term-card__sub">
-              État : <StatusBadge status={scan.state} />
-            </p>
-            {scan.activeReservation && (
-              <p className="term-card__sub">
-                Location en cours :{' '}
-                <button
-                  className="term-link"
-                  onClick={() => openReservation(scan.activeReservation.number)}
-                >
-                  {scan.activeReservation.number}
-                </button>
-              </p>
-            )}
-            <div className="term-actions">
-              <button className="btn btn-outline btn-lg" onClick={() => unitState(scan.id, 'AVAILABLE')}>
-                Disponible
-              </button>
-              <button
-                className="btn btn-outline btn-lg"
-                onClick={() => unitState(scan.id, 'MAINTENANCE')}
-              >
-                Maintenance
-              </button>
-              <button className="btn btn-outline btn-lg" onClick={() => unitState(scan.id, 'DAMAGED')}>
-                Endommagé
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* ─────────── STOCK / INVENTAIRE ─────────── */}
+      {(view === 'stock' || view === 'inventory') && (
+        <TerminalStock ref={stockRef} setFlash={setMsg} startInventory={view === 'inventory'} />
       )}
 
-      {/* ─── Produit ─── */}
-      {scan?.type === 'product' && (
-        <div className="term-detail">
-          <button className="term-back" onClick={back}>
-            ← Retour
-          </button>
-          <div className="term-card">
-            <span className="eyebrow">Produit</span>
-            <h2>{scan.name}</h2>
-            <div className="term-actions">
-              <Link href="/admin/exemplaires" className="btn btn-primary btn-lg">
-                Exemplaires & stock
-              </Link>
-              <Link href="/admin/etiquettes" className="btn btn-outline btn-lg">
-                Imprimer des étiquettes
-              </Link>
-            </div>
-          </div>
-        </div>
+      {/* ─────────── RÉPARATIONS ─────────── */}
+      {view === 'repairs' && (
+        <TerminalRepairs
+          ref={repairsRef}
+          setFlash={setMsg}
+          onChange={() => {
+            loadRepairCount();
+          }}
+        />
       )}
     </main>
   );

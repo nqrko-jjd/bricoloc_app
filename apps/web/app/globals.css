@@ -2225,3 +2225,52 @@ button { font-family: inherit; }
 .gantt-bar span { color: #fff; }
 .gantt-bar:hover { filter: brightness(1.08); text-decoration: none; }
 .gantt-today { position: absolute; top: 0; bottom: 0; width: 2px; background: #c0392b; z-index: 1; }
+
+/* Terminal — accueil à grosses touches + sous-pages */
+.term-home-btn {
+  align-self: flex-start; border: 0; background: transparent; color: var(--navy);
+  font-weight: 800; font-size: 1rem; padding: 6px 0; cursor: pointer;
+}
+.term-hello { font-size: 1.15rem; font-weight: 800; color: var(--navy-deep); margin: 4px 0 2px; }
+.term-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.term-tile {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  border: 0; border-radius: 20px; padding: 22px 18px; min-height: 128px; cursor: pointer;
+  background: #fff; box-shadow: 0 10px 26px -14px rgba(8,6,93,0.25); text-align: left;
+}
+.term-tile--navy { background: var(--navy); color: #fff; }
+.term-tile--warn { background: var(--yellow-tint); }
+.term-tile__icon { font-size: 2rem; line-height: 1; }
+.term-tile__label { font-weight: 800; font-size: 1.02rem; white-space: pre-line; line-height: 1.15; }
+.term-tile__badge {
+  position: absolute; top: 14px; right: 14px; min-width: 30px; height: 30px; padding: 0 8px;
+  border-radius: 15px; background: var(--primary); color: #fff; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.term-page { display: flex; flex-direction: column; gap: 12px; }
+.term-page__head { display: flex; align-items: center; justify-content: space-between; }
+.term-page__head h2 { margin: 0; }
+.term-note { margin: 0; color: var(--muted-fg); }
+.term-back { align-self: flex-start; border: 0; background: transparent; color: var(--navy); font-weight: 800; cursor: pointer; padding: 4px 0; }
+.term-tabs { display: flex; gap: 8px; }
+.term-tabs button {
+  flex: 1; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff;
+  font-weight: 800; color: var(--muted-fg); cursor: pointer;
+}
+.term-tabs button.is-on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.term-input { width: 100%; padding: 14px; border: 1px solid var(--line); border-radius: 12px; font: inherit; }
+.term-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.term-list__row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 15px 6px; border-bottom: 1px solid var(--line); font-size: 1rem;
+}
+.term-list__row--tap { cursor: pointer; }
+.term-list__row--tap:active { background: var(--surface-2); }
+.term-tag {
+  font-size: 0.8rem; font-weight: 700; color: var(--muted-fg);
+  background: var(--surface-2); border-radius: 999px; padding: 4px 10px;
+}
+.term-btns { display: flex; flex-direction: column; gap: 10px; }
+.term-btns .btn { width: 100%; min-height: 60px; font-size: 1.05rem; }
+.term-wide { width: 100%; }
