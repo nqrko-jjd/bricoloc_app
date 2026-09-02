@@ -1244,3 +1244,80 @@ adminRouter.get(
     });
   }),
 );
+
+/* -------------------------- Magazine « Conseils » -------------------------- */
+adminRouter.get(
+  '/guides',
+  h(async (_req, res) => {
+    res.json({
+      guides: await prisma.guide.findMany({ orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }] }),
+    });
+  }),
+);
+
+adminRouter.post(
+  '/guides',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    const b = req.body ?? {};
+    if (!b.slug || !b.title) throw badRequest('slug et titre requis');
+    const guide = await prisma.guide.upsert({
+      where: { slug: String(b.slug) },
+      create: {
+        slug: String(b.slug),
+        category: String(b.category ?? 'preparation'),
+        title: String(b.title),
+        excerpt: String(b.excerpt ?? ''),
+        body: String(b.body ?? ''),
+        readMinutes: Number(b.readMinutes ?? 5),
+        tone: ['red', 'navy', 'light'].includes(b.tone) ? b.tone : 'navy',
+        relatedSlugs: Array.isArray(b.relatedSlugs) ? b.relatedSlugs : [],
+        featured: Boolean(b.featured),
+        published: b.published === undefined ? true : Boolean(b.published),
+      },
+      update: {
+        category: String(b.category ?? 'preparation'),
+        title: String(b.title),
+        excerpt: String(b.excerpt ?? ''),
+        body: String(b.body ?? ''),
+        readMinutes: Number(b.readMinutes ?? 5),
+        tone: ['red', 'navy', 'light'].includes(b.tone) ? b.tone : 'navy',
+        relatedSlugs: Array.isArray(b.relatedSlugs) ? b.relatedSlugs : [],
+        featured: Boolean(b.featured),
+        published: b.published === undefined ? true : Boolean(b.published),
+        // le texte FR a changé : on efface les traductions pour re-générer
+        ...(b.retranslate ? { i18n: {} } : {}),
+      },
+    });
+    res.json({ guide });
+  }),
+);
+
+adminRouter.post(
+  '/guides/:slug/retranslate',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    const g = await prisma.guide.findUnique({ where: { slug: req.params.slug! } });
+    if (!g) throw notFound();
+    const { translateFields } = await import('../lib/translate.js');
+    const i18n = await translateFields(
+      { title: g.title, excerpt: g.excerpt, body: g.body },
+      (g.i18n as never) ?? {},
+      { force: true },
+    );
+    const guide = await prisma.guide.update({
+      where: { id: g.id },
+      data: { i18n: i18n as never },
+    });
+    res.json({ guide });
+  }),
+);
+
+adminRouter.delete(
+  '/guides/:slug',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    await prisma.guide.delete({ where: { slug: req.params.slug! } }).catch(() => {});
+    res.status(204).end();
+  }),
+);

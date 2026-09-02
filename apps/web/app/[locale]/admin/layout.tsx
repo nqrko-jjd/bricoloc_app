@@ -18,6 +18,7 @@ const NAV = [
   ['/admin/promotions', 'Promotions'],
   ['/admin/zones', 'Livraison'],
   ['/admin/contenus', 'Contenus & avis'],
+  ['/admin/conseils', 'Magazine Conseils'],
   ['/admin/parametres', 'Paramètres'],
   ['/admin/equipe', 'Équipe'],
 ];
