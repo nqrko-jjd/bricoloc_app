@@ -52,7 +52,7 @@
     "app": "L'application"
   },
   "catalogue": {
-    "title": "Catalogue",
+    "title": "Tout l’outillage,",
     "subtitle": "Parcourez librement. Vous indiquerez vos dates avant de valider le panier.",
     "subtitleDated": "Disponibilités et prix calculés pour la période choisie.",
     "search": "Recherche",
@@ -86,7 +86,8 @@
     "availOk": "Disponible",
     "availPartial": "{available} dispo sur {requested} demandé(s)",
     "availNearby": "Indispo — libre dès le {date}",
-    "availNone": "Indisponible sur la période"
+    "availNone": "Indisponible sur la période",
+    "titleAccent": "à la journée."
   },
   "product": {
     "breadcrumbCatalogue": "Catalogue",

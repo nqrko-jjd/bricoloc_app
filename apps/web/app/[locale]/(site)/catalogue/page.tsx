@@ -68,7 +68,11 @@ function CatalogueInner() {
 
   return (
     <>
-      <PageHeader title={t('title')} lead={cart?.period ? t('subtitleDated') : t('subtitle')} />
+      <PageHeader
+        title={t('title')}
+        titleAccent={t('titleAccent')}
+        lead={cart?.period ? t('subtitleDated') : t('subtitle')}
+      />
       <div className="container page-body">
       <div className="card card-body" style={{ marginBottom: '18px' }}>
         <div className="filters">

@@ -225,7 +225,7 @@
     "partsBuyAt": "Bekijk bij {shop}"
   },
   "catalogue": {
-    "title": "Catalogus",
+    "title": "Al het gereedschap,",
     "subtitle": "Bekijk het aanbod op uw gemak. U vult uw data in voordat u het winkelmandje bevestigt.",
     "subtitleDated": "Beschikbaarheid en prijzen berekend voor de geselecteerde periode.",
     "search": "Zoeken",
@@ -259,7 +259,8 @@
     "availOk": "Beschikbaar",
     "availPartial": "{available} beschikbaar van {requested} gevraagd",
     "availNearby": "Niet beschikbaar — vrij vanaf {date}",
-    "availNone": "Niet beschikbaar in deze periode"
+    "availNone": "Niet beschikbaar in deze periode",
+    "titleAccent": "per dag."
   },
   "topbar": {
     "cc": "Click & Collect in 2u",

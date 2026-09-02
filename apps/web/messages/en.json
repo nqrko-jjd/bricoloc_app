@@ -225,7 +225,7 @@
     "partsBuyAt": "View at {shop}"
   },
   "catalogue": {
-    "title": "Catalogue",
+    "title": "Every tool,",
     "subtitle": "Browse at your leisure. You’ll need to enter your dates before confirming your basket.",
     "subtitleDated": "Availability and prices calculated for the selected period.",
     "search": "Search",
@@ -259,7 +259,8 @@
     "availOk": "Available",
     "availPartial": "{available} available on {requested} requested",
     "availNearby": "Unavailable — available from {date}",
-    "availNone": "Unavailable during this period"
+    "availNone": "Unavailable during this period",
+    "titleAccent": "by the day."
   },
   "topbar": {
     "cc": "Click & Collect in 2h",

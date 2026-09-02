@@ -81,7 +81,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       {/* ─────────────── CONFIANCE ─────────────── */}
-      <div className="ctrust">
+      <div className="ctrust reveal">
         <div>
           <IClock /> {t('trustDispo')}
         </div>
@@ -109,7 +109,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {t('exploreCta', { count: toolCount })} <IArrowUpRight />
           </Link>
         </div>
-        <div className="ccats">
+        <div className="ccats reveal">
           {cats.map((c, i) => {
             const Icon = CATEGORY_ICON[c.slug] ?? Sparkles;
             return (
@@ -143,7 +143,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('seeAll')} <IArrowUpRight />
             </Link>
           </div>
-          <div className="ctools">
+          <div className="ctools reveal">
             {popular.map((p, i) => (
               <Link key={p.id} href={`/produits/${p.slug}`} className="ctool">
                 <div className="ctool__top">
@@ -177,7 +177,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* ─────────────── PRIX DÉGRESSIFS ─────────────── */}
       <section className="csection" style={{ paddingBlock: 0 }}>
-        <div className="csaving">
+        <div className="csaving reveal">
           <div>
             <span className="kicker">— {t('degressiveEyebrow')}</span>
             <h2>
@@ -199,7 +199,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </h2>
           </div>
         </div>
-        <div className="csteps">
+        <div className="csteps reveal">
           {[
             { Icon: ISearch, key: '1' },
             { Icon: CalendarClock, key: '2' },
@@ -217,7 +217,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* ─────────────── L'APP ─────────────── */}
       <section className="capp">
-        <div className="capp__text">
+        <div className="capp__text reveal">
           <span className="kicker">— {t('appEyebrow')}</span>
           <h2>
             {t('appTitle')} <i>{t('appTitleAccent')}</i>
@@ -232,7 +232,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {t('appCta')} <IArrowUpRight />
           </Link>
         </div>
-        <div className="capp__phones" aria-hidden>
+        <div className="capp__phones reveal" aria-hidden>
           <div className="cphone cphone--back">
             <div className="cphone__screen">
               <strong>BRICOLOC.</strong>
@@ -293,7 +293,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('adviceSeeAll')} <IArrowUpRight />
             </Link>
           </div>
-          <div className="guide-grid">
+          <div className="guide-grid reveal">
             {guides.map((g) => (
               <Link key={g.slug} href={`/conseils/${g.slug}`} className="guide-card" data-tone={g.tone}>
                 <span className="guide-card__meta">
@@ -312,7 +312,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       )}
 
       {/* ─────────────── TÉMOIGNAGE ─────────────── */}
-      <figure className="cquote">
+      <figure className="cquote reveal">
         <span className="cquote__mark">“</span>
         <blockquote>{t('testimonialQuote')}</blockquote>
         <figcaption>
@@ -321,7 +321,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </figure>
 
       {/* ─────────────── CTA ─────────────── */}
-      <section className="ccta">
+      <section className="ccta reveal">
         <div>
           <span className="kicker" style={{ color: '#fff', opacity: 0.7 }}>
             — {t('ctaEyebrow')}

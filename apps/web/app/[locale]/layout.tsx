@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Bricolage_Grotesque, Hanken_Grotesk } from 'next/font/google';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { LOCALE_META, type Locale } from '@bricoloc/shared';
@@ -9,23 +8,9 @@ import { Providers } from '@/lib/providers';
 import { routing } from '@/i18n/routing';
 
 /**
- * Typographie du design system Bricoloc (design-system/bricoloc/MASTER.md).
- * next/font auto-héberge les fichiers au build : aucune requête externe, aucun souci CSP.
+ * Typographie : police système (concept Bricoloc 2026) — aucun webfont chargé,
+ * rendu identique aux maquettes ChatGPT. Les tokens vivent dans globals.css.
  */
-const display = Bricolage_Grotesque({
-  subsets: ['latin'],
-  weight: ['600', '700', '800'],
-  variable: '--font-display-src',
-  display: 'swap',
-});
-
-const sans = Hanken_Grotesk({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-sans-src',
-  display: 'swap',
-});
-
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.bricoloc.be';
 
 export function generateStaticParams() {
@@ -82,11 +67,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html
-      lang={LOCALE_META[locale].htmlLang}
-      className={`${display.variable} ${sans.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang={LOCALE_META[locale].htmlLang} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
