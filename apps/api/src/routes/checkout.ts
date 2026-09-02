@@ -102,6 +102,37 @@ checkoutRouter.post(
       if (!d.served) throw badRequest(d.reason);
     }
 
+    // Point d'enlèvement (Click & Collect).
+    let pickupPointSnap: Record<string, unknown> | null = null;
+    if (data.fulfilment.mode === 'PICKUP') {
+      const points = (Array.isArray(settings.pickupPoints) ? settings.pickupPoints : []) as {
+        id: string;
+        name: string;
+        line1: string;
+        postalCode: string;
+        city: string;
+        isMain?: boolean;
+        transferHours?: number;
+        active?: boolean;
+      }[];
+      const active = points.filter((p) => p.active !== false);
+      const chosen =
+        active.find((p) => p.id === data.fulfilment.pickupPointId) ??
+        active.find((p) => p.isMain) ??
+        active[0] ??
+        null;
+      if (chosen) {
+        pickupPointSnap = {
+          id: chosen.id,
+          name: chosen.name,
+          line1: chosen.line1,
+          postalCode: chosen.postalCode,
+          city: chosen.city,
+          transferHours: Number(chosen.transferHours ?? 0),
+        };
+      }
+    }
+
     const customerType = await customerTypeFor(uid);
     const quote = await buildQuote({
       lines: cart.items.map((i) => ({ product: i.product, quantity: i.quantity })),
@@ -128,6 +159,7 @@ checkoutRouter.post(
         periodEnd: end,
         fulfilmentMode: data.fulfilment.mode,
         address: deliveryAddress as never,
+        pickupPoint: pickupPointSnap as never,
         slot: data.fulfilment.slot ?? null,
         contact: (data.contact ?? null) as never,
         promoCode: quote.promoCode,
@@ -258,6 +290,7 @@ checkoutRouter.post(
         mode: reservation.fulfilmentMode,
         slot: reservation.slot,
         address: reservation.address,
+        pickupPoint: reservation.pickupPoint,
       },
     });
   }),

@@ -82,6 +82,8 @@ export const cartFulfilmentSchema = z.object({
   address: addressSchema.optional(),
   slot: z.string().optional(),
   pickupNote: z.string().optional(),
+  /** Point d'enlèvement choisi (Click & Collect). Défaut = point principal. */
+  pickupPointId: z.string().optional(),
 });
 
 export const applyPromoSchema = z.object({ code: z.string().min(1) });

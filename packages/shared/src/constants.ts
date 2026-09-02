@@ -74,6 +74,39 @@ export const DEFAULT_SETTINGS = {
     /** Facteur applique a la distance a vol d'oiseau si le routage echoue. */
     detourFactor: 1.3,
   },
+  /**
+   * Points d'enlèvement (Click & Collect). Le stock reste au point principal
+   * (`isMain`) ; un point relais implique un délai d'acheminement (`transferHours`).
+   * Éditable en admin.
+   */
+  pickupPoints: [
+    {
+      id: 'ruisbroek',
+      name: 'Dépôt Ruisbroek',
+      line1: 'Gieterijstraat 49',
+      postalCode: '1601',
+      city: 'Ruisbroek (Sint-Pieters-Leeuw)',
+      lat: 50.7921009,
+      lng: 4.2967424,
+      hours: 'Lun–Sam 7h–17h',
+      isMain: true,
+      transferHours: 0,
+      active: true,
+    },
+    {
+      id: 'relais-1',
+      name: 'Point relais (à configurer)',
+      line1: '',
+      postalCode: '',
+      city: '',
+      lat: null as number | null,
+      lng: null as number | null,
+      hours: '',
+      isMain: false,
+      transferHours: 24,
+      active: false,
+    },
+  ],
   cleaningFeeDefault: 20,
   /** Reduction longue duree appliquee automatiquement (paliers). */
   proDiscountPctDefault: 0.1,
@@ -261,3 +294,18 @@ export const DELIVERY_STATUSES = [
   'COLLECTED',
 ] as const;
 export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number];
+
+export interface PickupPoint {
+  id: string;
+  name: string;
+  line1: string;
+  postalCode: string;
+  city: string;
+  lat: number | null;
+  lng: number | null;
+  hours: string;
+  isMain: boolean;
+  /** Délai d'acheminement depuis le point principal (0 pour le principal). */
+  transferHours: number;
+  active: boolean;
+}

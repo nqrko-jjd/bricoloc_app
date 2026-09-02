@@ -219,8 +219,10 @@ export const CounterFlow = forwardRef<
             {r.user?.phone ? ` · ${r.user.phone}` : ''}
           </p>
           <p className="small muted">
-            {r.fulfilmentMode === 'DELIVERY' ? 'Livraison' : 'Retrait comptoir'} ·{' '}
-            {formatDateTimeBE(r.periodStart)} → {formatDateTimeBE(r.periodEnd)}
+            {r.fulfilmentMode === 'DELIVERY'
+              ? 'Livraison'
+              : `Retrait — ${r.pickupPoint?.name ?? 'Dépôt'}`}{' '}
+            · {formatDateTimeBE(r.periodStart)} → {formatDateTimeBE(r.periodEnd)}
           </p>
 
           <ul className="cflow__lines">

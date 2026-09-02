@@ -33,6 +33,11 @@ export default function CommandePage() {
     isConstructionSite: false,
   });
   const [slot, setSlot] = useState('Matin (8h-12h)');
+  const [pickupPoints, setPickupPoints] = useState<
+    { id: string; name: string; line1: string; postalCode: string; city: string; isMain: boolean; transferHours: number }[]
+  >([]);
+  const [pickupPointId, setPickupPointId] = useState('');
+  const pickupPoint = pickupPoints.find((p) => p.id === pickupPointId) ?? pickupPoints[0];
   const [delivQuote, setDelivQuote] = useState<{
     served: boolean;
     distanceKm: number;
@@ -56,8 +61,47 @@ export default function CommandePage() {
     number: string;
     qrDataUrl: string;
     invoiceNumber: string;
-    fulfilment: { mode: string; slot: string | null };
+    fulfilment: { mode: string; slot: string | null; pickupPoint?: { name: string; line1: string; postalCode: string; city: string; transferHours: number } | null };
   } | null>(null);
+
+  useEffect(() => {
+    api<{ pickupPoints?: typeof pickupPoints }>('/api/public/config')
+      .then((c) => {
+        const pts = c.pickupPoints ?? [];
+        setPickupPoints(pts);
+        setPickupPointId(pts.find((p) => p.isMain)?.id ?? pts[0]?.id ?? '');
+      })
+      .catch(() => undefined);
+  }, []);
+
+  // Devis livraison géolocalisé dès que l'adresse est complète.
+  useEffect(() => {
+    if (mode !== 'DELIVERY' || !addr.postalCode || !addr.city) {
+      setDelivQuote(null);
+      return;
+    }
+    const id = setTimeout(async () => {
+      setQuoting(true);
+      try {
+        const q = await api<typeof delivQuote & object>('/api/public/delivery/quote', {
+          method: 'POST',
+          body: {
+            line1: addr.line1,
+            postalCode: addr.postalCode,
+            city: addr.city,
+            country: 'BE',
+            rentalHT: cart?.quote?.totals?.rentalHT ?? 0,
+          },
+        });
+        setDelivQuote(q as typeof delivQuote);
+      } catch {
+        setDelivQuote(null);
+      } finally {
+        setQuoting(false);
+      }
+    }, 500);
+    return () => clearTimeout(id);
+  }, [mode, addr.line1, addr.postalCode, addr.city, cart?.quote?.totals?.rentalHT]);
 
   const canReview = useMemo(() => {
     if (!cart?.period) return false;
@@ -84,6 +128,16 @@ export default function CommandePage() {
             Présentez ce QR code au comptoir BRICOLOC
             {result.fulfilment.mode === 'DELIVERY' ? ' ou au livreur' : ''}.
           </p>
+          {result.fulfilment.pickupPoint && (
+            <p className="small">
+              Enlèvement : <strong>{result.fulfilment.pickupPoint.name}</strong> —{' '}
+              {result.fulfilment.pickupPoint.line1}, {result.fulfilment.pickupPoint.postalCode}{' '}
+              {result.fulfilment.pickupPoint.city}
+              {result.fulfilment.pickupPoint.transferHours > 0 && (
+                <> · prêt sous {result.fulfilment.pickupPoint.transferHours} h</>
+              )}
+            </p>
+          )}
           <p className="small">Facture : {result.invoiceNumber}</p>
           <div className="row">
             <Link href="/compte" className="btn btn-primary">
@@ -121,35 +175,6 @@ export default function CommandePage() {
       setBusy(false);
     }
   }
-
-  // Devis livraison géolocalisé dès que l'adresse est complète.
-  useEffect(() => {
-    if (mode !== 'DELIVERY' || !addr.postalCode || !addr.city) {
-      setDelivQuote(null);
-      return;
-    }
-    const id = setTimeout(async () => {
-      setQuoting(true);
-      try {
-        const q = await api<typeof delivQuote & object>('/api/public/delivery/quote', {
-          method: 'POST',
-          body: {
-            line1: addr.line1,
-            postalCode: addr.postalCode,
-            city: addr.city,
-            country: 'BE',
-            rentalHT: cart?.quote?.totals?.rentalHT ?? 0,
-          },
-        });
-        setDelivQuote(q as typeof delivQuote);
-      } catch {
-        setDelivQuote(null);
-      } finally {
-        setQuoting(false);
-      }
-    }, 500);
-    return () => clearTimeout(id);
-  }, [mode, addr.line1, addr.postalCode, addr.city, cart?.quote?.totals?.rentalHT]);
 
   async function saveFulfil() {
     setBusy(true);
@@ -215,7 +240,7 @@ export default function CommandePage() {
           fulfilment:
             mode === 'DELIVERY'
               ? { mode, address: { ...addr, country: 'BE' }, slot }
-              : { mode },
+              : { mode, pickupPointId: pickupPointId || undefined },
           contact: user ? undefined : contact,
           account: !user && authMode === 'create' ? { password } : undefined,
           promoCode: cart?.promoCode ?? undefined,
@@ -304,6 +329,36 @@ export default function CommandePage() {
                   Livraison chantier / domicile
                 </button>
               </div>
+
+              {mode === 'PICKUP' && pickupPoints.length > 1 && (
+                <div className="field">
+                  <label>Point d’enlèvement</label>
+                  <div className="stack" style={{ gap: 8 }}>
+                    {pickupPoints.map((p) => (
+                      <label key={p.id} className="pickup-opt">
+                        <input
+                          type="radio"
+                          name="pickupPoint"
+                          checked={pickupPointId === p.id}
+                          onChange={() => setPickupPointId(p.id)}
+                        />
+                        <span>
+                          <strong>{p.name}</strong>
+                          <span className="small muted">
+                            {' '}
+                            — {p.line1}, {p.postalCode} {p.city}
+                          </span>
+                          <span className="small" style={{ display: 'block', color: 'var(--primary)' }}>
+                            {p.transferHours > 0
+                              ? `Prêt sous ${p.transferHours} h (acheminé depuis le dépôt)`
+                              : 'Prêt en 2 h selon disponibilité'}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               {mode === 'DELIVERY' && (
                 <div className="stack">
                   <div className="field">

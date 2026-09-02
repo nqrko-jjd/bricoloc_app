@@ -22,6 +22,18 @@ publicRouter.get(
       sameDayCutoffHour: s.sameDayCutoffHour,
       deliveryBaseFee: s.deliveryBaseFee,
       deliveryFreeThreshold: s.deliveryFreeThreshold,
+      pickupPoints: (Array.isArray(s.pickupPoints) ? s.pickupPoints : [])
+        .filter((p: { active?: boolean }) => p.active !== false)
+        .map((p: Record<string, unknown>) => ({
+          id: p.id,
+          name: p.name,
+          line1: p.line1,
+          postalCode: p.postalCode,
+          city: p.city,
+          hours: p.hours,
+          isMain: p.isMain === true,
+          transferHours: Number(p.transferHours ?? 0),
+        })),
       demo: true,
     });
   }),

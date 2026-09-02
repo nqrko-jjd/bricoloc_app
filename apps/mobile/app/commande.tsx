@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Text, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
@@ -28,6 +28,20 @@ export default function CommandeScreen() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [result, setResult] = useState<{ number: string; qrDataUrl: string; invoiceNumber: string } | null>(null);
+  const [points, setPoints] = useState<
+    { id: string; name: string; line1: string; postalCode: string; city: string; isMain: boolean; transferHours: number }[]
+  >([]);
+  const [pointId, setPointId] = useState('');
+
+  useEffect(() => {
+    api<{ pickupPoints?: typeof points }>('/api/public/config')
+      .then((c) => {
+        const pts = c.pickupPoints ?? [];
+        setPoints(pts);
+        setPointId(pts.find((p) => p.isMain)?.id ?? pts[0]?.id ?? '');
+      })
+      .catch(() => undefined);
+  }, []);
 
   if (phase === 'done' && result)
     return (
@@ -71,7 +85,9 @@ export default function CommandeScreen() {
         body: {
           period: cart?.period,
           fulfilment:
-            mode === 'DELIVERY' ? { mode, address: { ...addr, country: 'BE' } } : { mode },
+            mode === 'DELIVERY'
+              ? { mode, address: { ...addr, country: 'BE' } }
+              : { mode, pickupPointId: pointId || undefined },
           contact: user ? undefined : contact,
           account: !user && authMode === 'create' ? { password } : undefined,
           acceptTerms: true,
@@ -127,6 +143,35 @@ export default function CommandeScreen() {
               <Text style={chipT(mode === 'DELIVERY')}>Livraison</Text>
             </Pressable>
           </View>
+
+          {mode === 'PICKUP' && points.length > 1 && (
+            <View style={{ gap: 8, marginBottom: 12 }}>
+              <Text style={{ fontWeight: '700', color: C.ink }}>Point d’enlèvement</Text>
+              {points.map((p) => (
+                <Pressable
+                  key={p.id}
+                  onPress={() => setPointId(p.id)}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: pointId === p.id ? C.loc : C.border,
+                    backgroundColor: pointId === p.id ? C.surface2 : C.white,
+                    borderRadius: 12,
+                    padding: 12,
+                  }}
+                >
+                  <Text style={{ fontWeight: '700', color: C.ink }}>{p.name}</Text>
+                  <Text style={{ color: C.muted, fontSize: 12 }}>
+                    {p.line1}, {p.postalCode} {p.city}
+                  </Text>
+                  <Text style={{ color: C.brico, fontSize: 12, marginTop: 2 }}>
+                    {p.transferHours > 0
+                      ? `Prêt sous ${p.transferHours} h`
+                      : 'Prêt en 2 h selon disponibilité'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
           {mode === 'DELIVERY' && (
             <>
               <AddressField

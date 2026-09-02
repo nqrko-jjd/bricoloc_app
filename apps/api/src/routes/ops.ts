@@ -94,6 +94,7 @@ opsRouter.get(
         ? `${r.user.firstName} ${r.user.lastName}`
         : (r.contact as { firstName?: string } | null)?.firstName ?? 'Invité',
       phone: r.user?.phone ?? (r.contact as { phone?: string } | null)?.phone ?? null,
+      pickupPoint: (r.pickupPoint as { name?: string } | null)?.name ?? null,
       items: r.items.map((i) => `${i.quantity}× ${i.nameSnapshot}`),
       lines: r.items.length,
     });

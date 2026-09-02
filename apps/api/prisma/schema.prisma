@@ -349,6 +349,8 @@ model Reservation {
   periodEnd      DateTime
   fulfilmentMode String   @default("PICKUP")
   address        Json?
+  /// Point d'enlèvement choisi (snapshot { id, name, line1, postalCode, city, transferHours }).
+  pickupPoint    Json?
   slot           String?
   contact        Json?
   promoCode      String?
