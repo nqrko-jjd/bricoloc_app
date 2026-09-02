@@ -328,5 +328,13 @@
       "click-collect": "Retrait 2 h",
       "pro": "Comptes pro"
     }
+  },
+  "suggest": {
+    "popular": "Outils souvent utilisés",
+    "products": "Produits",
+    "categories": "Catégories",
+    "allResults": "Tous les résultats pour « {q} »",
+    "noResults": "Aucun résultat pour « {q} »",
+    "perDay": "/ jour"
   }
 }

@@ -4,7 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { loadContent } from '@/lib/content';
 import type { Category, GuideSummary, ProductSummary } from '@/lib/types';
-import { HomeSearch } from '@/components/HomeSearch';
+import { SearchAutocomplete } from '@/components/SearchAutocomplete';
 import { DegressivePricing } from '@/components/DegressivePricing';
 import {
   CATEGORY_ICON,
@@ -72,7 +72,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <i>{content.t('home.hero.accent', t('heroTitleAccent'))}</i>
           </h1>
           <p className="chero__intro">{content.t('home.hero.subtitle', t('heroLead'))}</p>
-          <HomeSearch placeholder={t('searchPlaceholder')} cta={t('heroCtaCatalogue')} />
+          <SearchAutocomplete
+            variant="hero"
+            placeholder={t('searchPlaceholder')}
+            cta={t('heroCtaCatalogue')}
+          />
         </div>
         <div className="chero__stat">
           <strong>{toolCount}+</strong>

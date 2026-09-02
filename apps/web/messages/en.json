@@ -328,5 +328,13 @@
       "click-collect": "2 h pickup",
       "pro": "Pro accounts"
     }
+  },
+  "suggest": {
+    "popular": "Frequently used tools",
+    "products": "Products",
+    "categories": "Categories",
+    "allResults": "All results for “{q}”",
+    "noResults": "No results for “{q}”",
+    "perDay": "/ day"
   }
 }

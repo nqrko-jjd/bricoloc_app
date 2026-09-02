@@ -328,5 +328,13 @@
       "click-collect": "Ophalen in 2 u",
       "pro": "Pro-accounts"
     }
+  },
+  "suggest": {
+    "popular": "Vaak gebruikt gereedschap",
+    "products": "Producten",
+    "categories": "Categorieën",
+    "allResults": "Alle resultaten voor « {q} »",
+    "noResults": "Geen resultaten voor « {q} »",
+    "perDay": "/ dag"
   }
 }

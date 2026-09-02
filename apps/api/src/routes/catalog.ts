@@ -110,6 +110,88 @@ catalogRouter.get(
   }),
 );
 
+/**
+ * Suggestions pour la barre de recherche.
+ *  - avec `q` (≥ 2 car.) : produits + catégories qui correspondent
+ *  - sans `q` : les outils les plus loués (« souvent utilisés »)
+ */
+catalogRouter.get(
+  '/suggest',
+  h(async (req, res) => {
+    const locale = qLocale(req);
+    const raw = String(req.query.q ?? '').trim();
+    const q = raw.slice(0, 60);
+
+    if (q.length < 2) {
+      // Top produits par nombre de lignes de réservation (fallback : avis puis récence).
+      const grouped = await prisma.reservationItem.groupBy({
+        by: ['productId'],
+        _count: { productId: true },
+        orderBy: { _count: { productId: 'desc' } },
+        take: 12,
+      });
+      let rows = grouped.length
+        ? await prisma.product.findMany({
+            where: { id: { in: grouped.map((g) => g.productId) }, published: true, kind: { not: 'CONSUMABLE' } },
+            include: productInclude,
+          })
+        : [];
+      if (rows.length < 6) {
+        const extra = await prisma.product.findMany({
+          where: {
+            published: true,
+            kind: 'MACHINE',
+            id: { notIn: rows.map((r) => r.id) },
+          },
+          include: productInclude,
+          orderBy: { createdAt: 'desc' },
+          take: 8,
+        });
+        rows = [...rows, ...extra];
+      }
+      const order = new Map(grouped.map((g, i) => [g.productId, i]));
+      rows.sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
+      return res.json({
+        query: '',
+        popular: true,
+        products: rows.slice(0, 6).map((r) => serializeProductSummary(r, locale)),
+        categories: [],
+      });
+    }
+
+    const [byName, byDesc, cats] = await Promise.all([
+      prisma.product.findMany({
+        where: { published: true, OR: [{ name: { contains: q } }, { brand: { contains: q } }] },
+        include: productInclude,
+        orderBy: { name: 'asc' },
+        take: 7,
+      }),
+      prisma.product.findMany({
+        where: { published: true, shortDescription: { contains: q } },
+        include: productInclude,
+        orderBy: { name: 'asc' },
+        take: 7,
+      }),
+      prisma.category.findMany({ where: { name: { contains: q } }, take: 3 }),
+    ]);
+    const seen = new Set(byName.map((p) => p.id));
+    const products = [...byName, ...byDesc.filter((p) => !seen.has(p.id))].slice(0, 7);
+
+    res.json({
+      query: q,
+      popular: false,
+      products: products.map((r) => serializeProductSummary(r, locale)),
+      categories: cats.map((c) => {
+        const i18n = c.i18n as Record<string, { nl?: string; en?: string }> | null;
+        return {
+          slug: c.slug,
+          name: locale !== 'fr' && i18n?.name?.[locale] ? i18n.name[locale]! : c.name,
+        };
+      }),
+    });
+  }),
+);
+
 catalogRouter.get(
   '/products/:slug',
   h(async (req, res) => {

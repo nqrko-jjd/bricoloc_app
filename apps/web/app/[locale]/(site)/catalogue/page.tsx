@@ -8,6 +8,7 @@ import { useCart } from '@/lib/providers';
 import { useRouter } from '@/i18n/navigation';
 import { ProductCard } from '@/components/ProductCard';
 import { PageHeader } from '@/components/PageHeader';
+import { SearchAutocomplete } from '@/components/SearchAutocomplete';
 
 function CatalogueInner() {
   const params = useSearchParams();
@@ -78,12 +79,11 @@ function CatalogueInner() {
         <div className="filters">
           <div className="field" style={{ flex: 1, minWidth: 200 }}>
             <label>{t('search')}</label>
-            <input
-              defaultValue={q}
+            <SearchAutocomplete
+              key={q}
+              variant="plain"
               placeholder={t('searchPlaceholder')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') update({ q: (e.target as HTMLInputElement).value });
-              }}
+              initial={q}
             />
           </div>
           <div className="field">
