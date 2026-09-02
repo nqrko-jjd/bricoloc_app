@@ -5,12 +5,14 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "prisma:generate": "prisma generate",
-    "db:push": "prisma db push --skip-generate --accept-data-loss",
-    "db:reset": "prisma db push --force-reset --skip-generate --accept-data-loss && npm run seed",
+    "db:provider": "node scripts/set-db-provider.mjs",
+    "prisma:generate": "npm run db:provider && prisma generate",
+    "db:push": "npm run db:provider && prisma db push --skip-generate --accept-data-loss",
+    "db:reset": "npm run db:provider && prisma db push --force-reset --skip-generate --accept-data-loss && npm run seed",
+    "db:deploy": "npm run db:push",
     "seed": "tsx prisma/seed.ts",
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run db:provider && prisma generate && tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test --import tsx --experimental-test-isolation=none src/**/*.test.ts test/**/*.test.ts"
@@ -28,7 +30,9 @@
     "pdfkit": "^0.15.2",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.4",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "prisma": "^6.2.1",
+    "tsx": "^4.19.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -40,8 +44,6 @@
     "@types/node": "^22.10.5",
     "@types/pdfkit": "^0.13.9",
     "@types/qrcode": "^1.5.5",
-    "prisma": "^6.2.1",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
 }

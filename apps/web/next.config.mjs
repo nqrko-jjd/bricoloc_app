@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
@@ -6,6 +7,9 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@bricoloc/shared'],
+  // Sortie autonome pour l'image Docker de production (dossier .next/standalone).
+  output: 'standalone',
+  outputFileTracingRoot: fileURLToPath(new URL('../../', import.meta.url)),
   // Autorise l'accès en dev depuis un tunnel HTTPS (test caméra sur iPad / borne / téléphone)
   // et depuis le réseau local. Sans effet en production.
   allowedDevOrigins: [

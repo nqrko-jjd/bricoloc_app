@@ -1,0 +1,85 @@
+# BRICOLOC — pile de production (VPS Combell).
+#   cp deploy/.env.production.example .env.production   (puis compléter)
+#   docker compose --env-file .env.production up -d --build
+#
+# Un seul domaine public sert tout : le site, l'API (/bricoloc-api) et les
+# médias (/uploads). Voir deploy/nginx/bricoloc.conf.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bricoloc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?mot de passe DB requis}
+      POSTGRES_DB: ${POSTGRES_DB:-bricoloc}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-bricoloc}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bricoloc}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-bricoloc}
+      JWT_SECRET: ${JWT_SECRET:?secret JWT requis}
+      PORT: 4000
+      PUBLIC_API_URL: ${SITE_URL}
+      SITE_URL: ${SITE_URL}
+      CORS_ORIGINS: ${SITE_URL}
+      EXPO_PUSH_ENABLED: ${EXPO_PUSH_ENABLED:-false}
+      DEEPL_API_KEY: ${DEEPL_API_KEY:-}
+    volumes:
+      - uploads:/repo/apps/api/uploads
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_URL: http://api:4000
+      NEXT_PUBLIC_API_URL: ''
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    environment:
+      DOMAIN: ${DOMAIN:?domaine public requis (ex. new.bricoloc.be)}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./deploy/nginx/bricoloc.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - uploads:/srv/uploads:ro
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
+
+  # Renouvellement automatique du certificat (toutes les 12 h, no-op si pas dû).
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
+
+volumes:
+  db-data:
+  uploads:
+  certbot-www:
+  certbot-conf:
