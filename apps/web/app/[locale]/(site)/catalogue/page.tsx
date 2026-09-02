@@ -7,6 +7,7 @@ import type { Category, ProductSummary } from '@/lib/types';
 import { useCart } from '@/lib/providers';
 import { useRouter } from '@/i18n/navigation';
 import { ProductCard } from '@/components/ProductCard';
+import { PageHeader } from '@/components/PageHeader';
 
 function CatalogueInner() {
   const params = useSearchParams();
@@ -66,11 +67,10 @@ function CatalogueInner() {
   }
 
   return (
-    <div className="section container">
-      <h1>{t('title')}</h1>
-      <p className="muted">{cart?.period ? t('subtitleDated') : t('subtitle')}</p>
-
-      <div className="card card-body" style={{ margin: '18px 0' }}>
+    <>
+      <PageHeader title={t('title')} lead={cart?.period ? t('subtitleDated') : t('subtitle')} />
+      <div className="container page-body">
+      <div className="card card-body" style={{ marginBottom: '18px' }}>
         <div className="filters">
           <div className="field" style={{ flex: 1, minWidth: 200 }}>
             <label>{t('search')}</label>
@@ -147,7 +147,8 @@ function CatalogueInner() {
           </div>
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

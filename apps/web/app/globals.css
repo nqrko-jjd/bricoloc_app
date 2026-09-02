@@ -216,6 +216,34 @@ button { font-family: inherit; }
 @media (min-width: 900px) { .container { --gutter: 40px; } }
 .section { padding-block: var(--sp-7); }
 @media (min-width: 900px) { .section { padding-block: var(--sp-8); } }
+
+/* En-tête de page interne (catalogue, pages de contenu, pro…) */
+.page-header {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--navy) 8%, var(--surface)),
+    var(--surface)
+  );
+  border-bottom: 1px solid var(--border);
+  padding-block: var(--sp-6);
+}
+@media (min-width: 900px) { .page-header { padding-block: var(--sp-7); } }
+.page-header h1 { margin: 0; }
+.page-header h1::after {
+  content: '';
+  display: block;
+  width: 46px;
+  height: 3px;
+  margin-top: 14px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+.page-header__crumb { margin-bottom: 10px; color: var(--muted-fg); }
+.page-header__crumb a { color: var(--muted-fg); font-weight: 600; }
+.page-header__crumb a:hover { color: var(--primary); text-decoration: none; }
+.page-header__lead { margin-top: 14px; color: var(--muted-fg); font-size: 1.08rem; }
+/* Corps de page qui suit un .page-header */
+.page-body { padding-block: var(--sp-6) var(--sp-8); }
 .muted { color: var(--muted-fg); }
 .small { font-size: var(--fs-sm); }
 .center { text-align: center; }

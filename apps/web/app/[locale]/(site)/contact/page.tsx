@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { PublicConfig } from '@/lib/types';
+import { PageHeader } from '@/components/PageHeader';
 
 export default function ContactPage() {
   const [cfg, setCfg] = useState<PublicConfig | null>(null);
@@ -14,8 +15,9 @@ export default function ContactPage() {
   }, []);
 
   return (
-    <div className="section container" style={{ maxWidth: 720 }}>
-      <h1>Contact</h1>
+    <>
+      <PageHeader title="Contact" lead="Une question sur une machine, un devis, une livraison ? Écrivez-nous." />
+      <div className="container page-body" style={{ maxWidth: 720 }}>
       <div className="two-col">
         <form
           className="card card-pad stack"
@@ -83,6 +85,7 @@ export default function ContactPage() {
           <p className="small muted">Coordonnées de démonstration — fictives.</p>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
