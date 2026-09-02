@@ -6,9 +6,8 @@ import type { Locale } from '@bricoloc/shared';
 /** Étapes du parcours de commande borne (déclenché par « Je décris mon projet »). */
 export const KIOSK_STEPS = [
   'Projet',
-  'Catalogue',
-  'Choix',
   'Dates',
+  'Catalogue',
   'Panier',
   'Identification',
   'Paiement',

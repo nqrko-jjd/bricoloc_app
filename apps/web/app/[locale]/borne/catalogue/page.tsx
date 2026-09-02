@@ -1,9 +1,10 @@
 'use client';
 import { Suspense, useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
-import { useRouter } from '@/i18n/navigation';
-import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
+import { useSearchParams, useParams } from 'next/navigation';
+import { useRouter, usePathname } from '@/i18n/navigation';
+import { formatEUR, formatDateTimeBE, SUPPORTED_LOCALES, type Locale } from '@bricoloc/shared';
+import { KioskFrame } from '@/components/kiosk/KioskFrame';
 import { api } from '@/lib/api';
 import { ensureKioskCart, kioskApi, kioskCartKey, resetKioskSession } from '@/lib/kiosk';
 import { defaultPeriod, toLocalInput, fromLocalInput } from '@/lib/dates';
@@ -13,9 +14,20 @@ import type { Cart, ProductSummary, ProductDetail } from '@/lib/types';
 
 type Step = 'dates' | 'browse' | 'cart' | 'contact' | 'pay' | 'done';
 
+const STEP_NUM: Record<Step, number> = {
+  dates: 2,
+  browse: 3,
+  cart: 4,
+  contact: 5,
+  pay: 6,
+  done: 7,
+};
+
 function KioskCatalogue() {
   const router = useRouter();
-  const locale = useLocale();
+  const pathname = usePathname();
+  const routeParams = useParams();
+  const locale = useLocale() as Locale;
   const params = useSearchParams();
   const [step, setStep] = useState<Step>('dates');
   const [cart, setCart] = useState<Cart | null>(null);
@@ -123,18 +135,25 @@ function KioskCatalogue() {
     }
   }
 
+  const switchLocale = (l: Locale) =>
+    // @ts-expect-error params dynamiques transmis tels quels
+    router.replace({ pathname, params: routeParams }, { locale: l });
+
   return (
-    <div className="kiosk-body" style={{ justifyContent: 'flex-start', paddingTop: 30 }}>
-      <div className="spread" style={{ width: '100%', maxWidth: 960 }}>
-        <button className="btn btn-ghost" onClick={() => router.push('/borne')}>
+    <KioskFrame
+      step={STEP_NUM[step]}
+      locale={locale}
+      locales={SUPPORTED_LOCALES}
+      onLocale={switchLocale}
+      cartCount={cart?.itemCount ?? 0}
+    >
+      <div className="kiosk-flow">
+      <div className="spread" style={{ width: '100%' }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => router.push('/borne')}>
           ← Accueil
         </button>
-        {cart && step !== 'dates' && (
-          <button
-            className="btn"
-            style={{ background: '#fff', color: 'var(--loc)' }}
-            onClick={() => setStep('cart')}
-          >
+        {cart && step !== 'dates' && step !== 'cart' && (
+          <button className="btn btn-sm" onClick={() => setStep('cart')}>
             🛒 {cart.itemCount} article(s)
           </button>
         )}
@@ -454,7 +473,8 @@ function KioskCatalogue() {
           </button>
         </div>
       )}
-    </div>
+      </div>
+    </KioskFrame>
   );
 }
 
