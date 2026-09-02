@@ -36,6 +36,12 @@
         {
           "cameraPermission": "BRICOLOC utilise la caméra pour scanner les QR codes de vos réservations et les étiquettes des machines."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "BRICOLOC utilise la caméra pour photographier l'état du matériel à la sortie et au retour."
+        }
       ]
     ],
     "experiments": {

@@ -120,6 +120,19 @@ export default function CompteScreen() {
       </Card>
 
       <Button title={ti('common.logout')} variant="ghost" onPress={() => logout()} />
+
+      <Text
+        onPress={() => router.push('/staff' as never)}
+        style={{
+          textAlign: 'center',
+          color: C.lightGray,
+          fontSize: 12,
+          fontWeight: '700',
+          paddingVertical: 16,
+        }}
+      >
+        Espace équipe →
+      </Text>
     </Screen>
   );
 }
