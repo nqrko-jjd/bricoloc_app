@@ -65,6 +65,7 @@
 
   /* ---- Layout ---- */
   --maxw: 1200px;
+  --gutter: 20px;              /* marge horizontale de page (mobile) */
 
   /* ---- Motion ---- */
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -209,10 +210,12 @@ button { font-family: inherit; }
    Utilitaires de mise en page
    ========================================================================= */
 
-.container { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
-@media (min-width: 900px) { .container { padding: 0 40px; } }
-.section { padding: var(--sp-7) 0; }
-@media (min-width: 900px) { .section { padding: var(--sp-8) 0; } }
+/* padding-inline / padding-block (et non le raccourci `padding`) pour que
+   `.section` et `.container` se composent au lieu de s'écraser l'un l'autre. */
+.container { max-width: var(--maxw); margin: 0 auto; padding-inline: var(--gutter); }
+@media (min-width: 900px) { .container { --gutter: 40px; } }
+.section { padding-block: var(--sp-7); }
+@media (min-width: 900px) { .section { padding-block: var(--sp-8); } }
 .muted { color: var(--muted-fg); }
 .small { font-size: var(--fs-sm); }
 .center { text-align: center; }
@@ -481,7 +484,7 @@ button { font-family: inherit; }
   .chips {
     flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
     -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
-    margin-inline: calc(-1 * var(--sp-4)); padding-inline: var(--sp-4);
+    margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter);
   }
   .chips::-webkit-scrollbar { display: none; }
   .chip { flex: 0 0 auto; scroll-snap-align: start; }
@@ -935,7 +938,7 @@ button { font-family: inherit; }
 .pdetail__body { grid-area: body; margin-top: var(--sp-5); display: flex; flex-direction: column; gap: 8px; }
 @media (max-width: 940px) {
   .pdetail {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'media' 'head' 'buy' 'body';
   }
   .pdetail__media { position: static; }
@@ -961,7 +964,8 @@ button { font-family: inherit; }
 .pgallery__thumbs img { width: 100%; height: 100%; object-fit: cover; }
 
 /* Paliers de prix */
-.ptiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+.ptiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0; }
+@media (max-width: 380px) { .ptier__price { font-size: 1.15rem; } }
 .ptier {
   border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px; text-align: center;
   background: var(--surface); display: grid; gap: 2px;

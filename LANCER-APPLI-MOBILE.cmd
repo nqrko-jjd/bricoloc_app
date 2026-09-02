@@ -15,6 +15,11 @@ echo.
 echo   Laisse cette fenetre ouverte. Ferme-la pour arreter.
 echo.
 
+echo   Nettoyage de l'ancien serveur Metro (port 8081)...
+for /f "tokens=5" %%A in ('netstat -ano ^| findstr ":8081 " ^| findstr LISTENING') do taskkill /F /PID %%A >nul 2>&1
+echo   OK.
+echo.
+
 call npm start
 
 echo.
