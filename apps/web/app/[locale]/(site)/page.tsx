@@ -115,7 +115,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {t('seeAll')}
               </Link>
             </div>
-            <div className="grid grid-cards reveal" style={{ marginTop: 20 }}>
+            <div className="grid grid-cards carousel reveal" style={{ marginTop: 20 }}>
               {popular.map((p) => (
                 <ProductCard key={p.id} p={p} />
               ))}

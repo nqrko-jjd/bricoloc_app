@@ -258,7 +258,7 @@ export default async function ProductPage({
       {product.complementary.length > 0 && (
         <section className="section">
           <h2>{t('similar')}</h2>
-          <div className="grid grid-cards">
+          <div className="grid grid-cards carousel">
             {product.complementary.map((c) => (
               <div key={c.id} className="card card-body">
                 <Link href={`/produits/${c.slug}`}>{c.name}</Link>
@@ -274,7 +274,7 @@ export default async function ProductPage({
       {similar.length > 0 && (
         <section className="section">
           <h2>{t('similar')}</h2>
-          <div className="grid grid-cards">
+          <div className="grid grid-cards carousel">
             {similar.map((s) => (
               <ProductCard key={s.id} p={s} />
             ))}

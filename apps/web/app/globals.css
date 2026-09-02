@@ -477,6 +477,15 @@ button { font-family: inherit; }
    ========================================================================= */
 .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .chips {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
+    margin-inline: calc(-1 * var(--sp-4)); padding-inline: var(--sp-4);
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: 0 0 auto; scroll-snap-align: start; }
+}
 .chip {
   padding: 7px 13px; border-radius: var(--r-pill); border: 1px solid var(--border);
   background: var(--surface); font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--ink);
@@ -814,7 +823,7 @@ button { font-family: inherit; }
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
 }
 @media (max-width: 1000px) { .catbento { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 640px) { .catbento { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) { .catbento { grid-template-columns: repeat(2, 1fr); } }
 .catbento__item {
   position: relative; border-radius: var(--r-lg); overflow: hidden; min-height: 150px;
   background: linear-gradient(150deg, var(--navy), var(--navy-soft)); background-size: cover; background-position: center;
@@ -1001,6 +1010,42 @@ button { font-family: inherit; }
 .rating-input { display: flex; gap: 4px; }
 .rating-input button { border: none; background: none; font-size: 1.6rem; color: var(--border); cursor: pointer; padding: 0; line-height: 1; }
 .rating-input button.is-on { color: #f5a623; }
+
+/* =========================================================================
+   Sliders horizontaux sur mobile (catégories, tuiles, cartes produit)
+   Sur petit écran, les grilles deviennent des carrousels à défilement,
+   avec un aperçu de l'élément suivant pour signaler qu'on peut swiper.
+   ========================================================================= */
+@media (max-width: 640px) {
+  .taskgrid,
+  .catbento,
+  .carousel,
+  .complete__grid,
+  .home-packs__grid {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scroll-padding-left: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 12px;
+    /* aperçu de l'élément suivant à droite */
+    padding-inline-end: 18%;
+  }
+  .taskgrid::-webkit-scrollbar,
+  .catbento::-webkit-scrollbar,
+  .carousel::-webkit-scrollbar,
+  .complete__grid::-webkit-scrollbar,
+  .home-packs__grid::-webkit-scrollbar { display: none; }
+
+  .taskgrid > li { flex: 0 0 46%; scroll-snap-align: start; }
+  .catbento > li { flex: 0 0 60%; scroll-snap-align: start; min-height: 130px; }
+  .catbento__item--wide { grid-column: auto; }
+  .carousel > * { flex: 0 0 74%; scroll-snap-align: start; }
+  .complete__grid > li { flex: 0 0 66%; scroll-snap-align: start; }
+  .home-packs__grid > * { flex: 0 0 76%; scroll-snap-align: start; }
+}
 
 /* ---- CTA final ---- */
 .home-cta { position: relative; color: #fff; overflow: hidden; isolation: isolate; }
