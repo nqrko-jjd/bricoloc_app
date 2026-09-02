@@ -310,5 +310,21 @@
     "ctaTitle": "We verwittigen u bij de lancering",
     "ctaText": "De app komt eraan voor iOS en Android. Ondertussen is alles al beschikbaar op de site.",
     "ctaBtn": "Bekijk de catalogus"
+  },
+  "contentPage": {
+    "help": "Een vraag?",
+    "helpText": "Het BRICOLOC-team antwoordt van maandag tot zaterdag.",
+    "contact": "Contacteer ons",
+    "ctaTitle": "Klaar om te starten?",
+    "ctaText": "Kies je data wanneer je de winkelmand bevestigt.",
+    "ctaBtn": "Bekijk het materiaal",
+    "more": "Ook interessant",
+    "kicker": {
+      "how-it-works": "Handleiding",
+      "faq": "Goed om te weten",
+      "delivery": "Levering & ophaling",
+      "click-collect": "Ophalen in 2 u",
+      "pro": "Pro-accounts"
+    }
   }
 }

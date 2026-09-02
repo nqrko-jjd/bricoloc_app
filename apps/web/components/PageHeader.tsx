@@ -11,12 +11,14 @@ interface Crumb {
  * Bande légèrement teintée navy, fil d'Ariane optionnel, titre display + chapô.
  */
 export function PageHeader({
+  kicker,
   title,
   titleAccent,
   lead,
   breadcrumb,
   children,
 }: {
+  kicker?: string;
   title: string;
   titleAccent?: string;
   lead?: string;
@@ -36,6 +38,7 @@ export function PageHeader({
             ))}
           </nav>
         )}
+        {kicker ? <span className="kicker">{kicker}</span> : null}
         <h1>
           {title}
           {titleAccent ? (

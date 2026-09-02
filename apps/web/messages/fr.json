@@ -310,5 +310,21 @@
     "ctaTitle": "On vous prévient au lancement",
     "ctaText": "L’app arrive sur iOS et Android. En attendant, tout est déjà disponible sur le site.",
     "ctaBtn": "Parcourir le catalogue"
+  },
+  "contentPage": {
+    "help": "Une question ?",
+    "helpText": "L’équipe BRICOLOC vous répond du lundi au samedi.",
+    "contact": "Nous contacter",
+    "ctaTitle": "Prêt à démarrer ?",
+    "ctaText": "Choisissez vos dates au moment de valider le panier.",
+    "ctaBtn": "Voir le matériel",
+    "more": "À voir aussi",
+    "kicker": {
+      "how-it-works": "Mode d’emploi",
+      "faq": "Bon à savoir",
+      "delivery": "Livraison & retrait",
+      "click-collect": "Retrait 2 h",
+      "pro": "Comptes pro"
+    }
   }
 }
