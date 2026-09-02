@@ -67,7 +67,10 @@ export default async function ProductPage({
   const t = await getTranslations('product');
   const isLoiselet = product.supplier === 'LOISELET';
 
-  const accessories = [...product.recommendedAccessories, ...product.consumables, ...product.ppe];
+  const allLinked = [...product.recommendedAccessories, ...product.consumables, ...product.ppe];
+  // « pièces » = consommables/accessoires à acheter (réf. fournisseur) ; « accessoires » = louables.
+  const parts = allLinked.filter((a) => a.supplierRef || a.partSupplier);
+  const accessories = allLinked.filter((a) => !a.supplierRef && !a.partSupplier);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -247,6 +250,48 @@ export default async function ProductPage({
                   </div>
                 </div>
                 <AddToCartButton productId={a.id} small />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {parts.length > 0 && (
+        <section className="complete">
+          <h2>{t('partsTitle')}</h2>
+          <p className="muted">{t('partsHint')}</p>
+          <ul className="parts-list">
+            {parts.map((p) => (
+              <li key={p.id} className="parts-list__item">
+                <div className="parts-list__main">
+                  <span className="parts-list__name">
+                    {p.brand && <strong>{p.brand} · </strong>}
+                    {p.name}
+                  </span>
+                  {p.shortDescription && (
+                    <span className="small muted">{p.shortDescription}</span>
+                  )}
+                  <span className="small muted">
+                    {p.supplierRef && <>{t('partsRef')} {p.supplierRef}</>}
+                    {p.supplierListPrice != null && (
+                      <> · {t('partsPrice')} {formatEUR(p.supplierListPrice)}</>
+                    )}
+                  </span>
+                </div>
+                {p.supplierUrl ? (
+                  <a
+                    className="btn btn-outline btn-sm"
+                    href={p.supplierUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    {p.partSupplier ? t('partsBuyAt', { shop: p.partSupplier }) : t('addAccessory')}
+                  </a>
+                ) : (
+                  p.partSupplier && (
+                    <span className="tag">{t('partsBuyAt', { shop: p.partSupplier })}</span>
+                  )
+                )}
               </li>
             ))}
           </ul>

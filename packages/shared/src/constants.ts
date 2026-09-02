@@ -77,6 +77,19 @@ export const DEFAULT_SETTINGS = {
   cleaningFeeDefault: 20,
   /** Reduction longue duree appliquee automatiquement (paliers). */
   proDiscountPctDefault: 0.1,
+  /** Partenaire Loiselet (grosses machines / pros). Editable en admin. */
+  loiselet: {
+    /** Destinataires des demandes de location envoyees a Loiselet. */
+    recipients: ['erwin@loiselet.be', 'info@loiselet.be'],
+    /** Copie interne (Bricoloc) de chaque demande. Vide = pas de copie. */
+    ccBricoloc: '',
+    /** Marge Bricoloc sur le prix affiche Loiselet (le client paie le prix affiche). */
+    marginPct: 0.25,
+    /** Delai de confirmation annonce au client. */
+    confirmWithinHours: 1,
+  },
+  /** Revendeurs de consommables / accessoires (pieces adaptees aux machines). */
+  partSuppliers: ['Cipac', 'Lecot', 'Sanimat Wavre', 'BMK'],
   /** Coordonnees societe - FICTIVES, a completer en admin. */
   company: {
     legalName: 'BRICOLOC SRL (demo)',

@@ -21,6 +21,7 @@ import { productInclude, serializeProductDetail } from '../lib/serialize.js';
 import { generateInvoice } from '../lib/invoice.js';
 import { syncContentTranslations } from '../lib/i18n-content.js';
 import { recomputeReservation } from '../lib/quote.js';
+import { buildLoiseletRequest } from '../lib/loiselet.js';
 import { randomBytes } from 'node:crypto';
 
 export const adminRouter = Router();
@@ -553,6 +554,56 @@ adminRouter.get(
       },
     });
     if (!r) throw notFound();
+    res.json({ reservation: r });
+  }),
+);
+
+/* ----- Partenaire Loiselet : demande de location + confirmation ----- */
+
+/** Construit la demande structurée (destinataires config + corps + mailto). Ne modifie rien. */
+adminRouter.get(
+  '/reservations/:id/loiselet-request',
+  h(async (req, res) => {
+    const r = await prisma.reservation.findUnique({
+      where: { id: req.params.id },
+      include: { user: true, items: { include: { product: true } } },
+    });
+    if (!r) throw notFound();
+    const request = buildLoiseletRequest(r, await getSettings());
+    if (request.itemCount === 0) throw badRequest('Aucune ligne Loiselet dans cette réservation.');
+    res.json({ request });
+  }),
+);
+
+/** Marque la demande comme envoyée (l'e-mail réel part de la messagerie de l'équipe). */
+adminRouter.post(
+  '/reservations/:id/loiselet-request',
+  requireStaff('RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const r = await prisma.reservation.update({
+      where: { id: req.params.id },
+      data: { supplierStatus: 'REQUESTED', supplierRequestSentAt: new Date() },
+    });
+    res.json({ reservation: r });
+  }),
+);
+
+/** Réponse de Loiselet : confirmée (→ CONFIRMED) ou refusée (→ CANCELLED). */
+adminRouter.post(
+  '/reservations/:id/supplier-status',
+  requireStaff('RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const outcome = String(req.body?.outcome ?? '');
+    if (!['CONFIRMED', 'DECLINED'].includes(outcome)) throw badRequest('Issue invalide.');
+    const confirmed = outcome === 'CONFIRMED';
+    const r = await prisma.reservation.update({
+      where: { id: req.params.id },
+      data: {
+        supplierStatus: outcome,
+        supplierConfirmedAt: confirmed ? new Date() : null,
+        status: confirmed ? 'CONFIRMED' : 'CANCELLED',
+      },
+    });
     res.json({ reservation: r });
   }),
 );

@@ -158,7 +158,12 @@
     "reviewSubmit": "Mijn beoordeling publiceren",
     "reviewThanks": "Bedankt voor uw beoordeling!",
     "reviewModerated": "Bedankt! Uw beoordeling wordt na controle gepubliceerd.",
-    "reply": "Antwoord van Bricoloc"
+    "reply": "Antwoord van Bricoloc",
+    "partsTitle": "Aangepaste verbruiksartikelen & accessoires",
+    "partsHint": "De aanbevolen referenties voor deze machine, verkrijgbaar bij onze leveranciers.",
+    "partsRef": "art.nr.",
+    "partsPrice": "richtprijs",
+    "partsBuyAt": "Bekijk bij {shop}"
   },
   "catalogue": {
     "title": "Catalogus",

@@ -64,6 +64,12 @@ export interface LinkedProduct {
   deposit: number;
   image: string | null;
   isConsumable: boolean;
+  brand?: string | null;
+  shortDescription?: string | null;
+  supplierRef?: string | null;
+  supplierUrl?: string | null;
+  supplierListPrice?: number | null;
+  partSupplier?: string | null;
 }
 
 export interface Category {

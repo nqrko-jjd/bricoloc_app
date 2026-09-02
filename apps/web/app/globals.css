@@ -1021,6 +1021,20 @@ button { font-family: inherit; }
 .complete__grid li > div { grid-area: txt; }
 .complete__grid li > .btn, .complete__grid li button { grid-area: btn; }
 
+/* Consommables / accessoires adaptés (pièces à acheter chez un fournisseur) */
+.parts-list { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.parts-list__item {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px 4px; border-bottom: 1px solid var(--border);
+}
+.parts-list__item:first-child { border-top: 1px solid var(--border); }
+.parts-list__main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.parts-list__name { font-weight: 600; }
+.parts-list__item .btn, .parts-list__item .tag { flex: 0 0 auto; white-space: nowrap; }
+@media (max-width: 560px) {
+  .parts-list__item { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
 /* Avis */
 .reviews { margin-top: var(--sp-7); }
 .reviews__summary { display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: center; margin: 16px 0 24px; }

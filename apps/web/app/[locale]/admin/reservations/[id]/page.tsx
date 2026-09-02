@@ -20,14 +20,38 @@ export default function AdminReservationDetail({
   const [addSlug, setAddSlug] = useState('');
   const [fee, setFee] = useState('');
   const [disc, setDisc] = useState('');
+  const [loiselet, setLoiselet] = useState<any>(null);
+  const [loiseletTo, setLoiseletTo] = useState<string[]>([]);
 
   async function load() {
     const res = await staffApi<{ reservation: any }>(`/api/admin/reservations/${id}`);
     setR(res.reservation);
+    const hasLoiselet = res.reservation.items?.some((i: any) => i.product?.supplier === 'LOISELET');
+    if (hasLoiselet) {
+      try {
+        const rq = await staffApi<{ request: any }>(
+          `/api/admin/reservations/${id}/loiselet-request`,
+        );
+        setLoiselet(rq.request);
+        setLoiseletTo(rq.request.recipients ?? []);
+      } catch {
+        /* pas de config ou pas de ligne Loiselet */
+      }
+    }
   }
   useEffect(() => {
     load();
   }, [id]);
+
+  function loiseletMailto() {
+    if (!loiselet) return '#';
+    const cc = (loiselet.cc ?? []).length ? `&cc=${encodeURIComponent(loiselet.cc.join(','))}` : '';
+    return (
+      `mailto:${encodeURIComponent(loiseletTo.join(','))}` +
+      `?subject=${encodeURIComponent(loiselet.subject)}${cc}` +
+      `&body=${encodeURIComponent(loiselet.body)}`
+    );
+  }
 
   async function act(fn: () => Promise<unknown>, ok = 'Enregistré.') {
     try {
@@ -274,6 +298,109 @@ export default function AdminReservationDetail({
         </div>
 
         <div className="stack">
+          {loiselet && (
+            <div className="card card-body">
+              <h3>
+                Demande Loiselet{' '}
+                {r.supplierStatus && (
+                  <span
+                    className={`badge ${
+                      r.supplierStatus === 'CONFIRMED'
+                        ? 'badge-ok'
+                        : r.supplierStatus === 'DECLINED'
+                          ? 'badge-err'
+                          : ''
+                    }`}
+                  >
+                    {r.supplierStatus}
+                  </span>
+                )}
+              </h3>
+              <p className="small muted">
+                {loiselet.itemCount} ligne(s) partenaire · confirmation annoncée sous ~1 h.
+              </p>
+              <div className="stack" style={{ gap: 4, marginBottom: 8 }}>
+                {(loiselet.recipients ?? []).map((mail: string) => (
+                  <label key={mail} className="row small" style={{ gap: 6 }}>
+                    <input
+                      type="checkbox"
+                      checked={loiseletTo.includes(mail)}
+                      onChange={(e) =>
+                        setLoiseletTo((cur) =>
+                          e.target.checked ? [...cur, mail] : cur.filter((m) => m !== mail),
+                        )
+                      }
+                    />
+                    {mail}
+                  </label>
+                ))}
+              </div>
+              <details className="small" style={{ marginBottom: 8 }}>
+                <summary>Aperçu du message</summary>
+                <pre className="small" style={{ whiteSpace: 'pre-wrap' }}>{loiselet.body}</pre>
+              </details>
+              <div className="row" style={{ gap: 8 }}>
+                <a
+                  className="btn btn-primary btn-sm"
+                  href={loiseletMailto()}
+                  onClick={() =>
+                    act(
+                      () =>
+                        staffApi(`/api/admin/reservations/${id}/loiselet-request`, {
+                          method: 'POST',
+                        }),
+                      'Demande marquée envoyée.',
+                    )
+                  }
+                >
+                  Ouvrir l&apos;e-mail
+                </a>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(loiselet.body);
+                    setMsg('Message copié.');
+                  }}
+                >
+                  Copier
+                </button>
+              </div>
+              {r.supplierStatus === 'REQUESTED' && (
+                <div className="row" style={{ gap: 8, marginTop: 10 }}>
+                  <button
+                    className="btn btn-outline btn-sm"
+                    onClick={() =>
+                      act(
+                        () =>
+                          staffApi(`/api/admin/reservations/${id}/supplier-status`, {
+                            method: 'POST',
+                            body: { outcome: 'CONFIRMED' },
+                          }),
+                        'Réservation confirmée.',
+                      )
+                    }
+                  >
+                    Loiselet a confirmé
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() =>
+                      act(
+                        () =>
+                          staffApi(`/api/admin/reservations/${id}/supplier-status`, {
+                            method: 'POST',
+                            body: { outcome: 'DECLINED' },
+                          }),
+                        'Réservation annulée (refus Loiselet).',
+                      )
+                    }
+                  >
+                    Refusé
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           <div className="card card-body">
             <h3>Paiements</h3>
             {r.payments.map((p: any) => (

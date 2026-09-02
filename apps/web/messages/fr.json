@@ -118,7 +118,12 @@
     "reviewSubmit": "Publier mon avis",
     "reviewThanks": "Merci pour votre avis !",
     "reviewModerated": "Merci ! Votre avis sera publié après vérification.",
-    "reply": "Réponse de Bricoloc"
+    "reply": "Réponse de Bricoloc",
+    "partsTitle": "Consommables & accessoires adaptés",
+    "partsHint": "Les références conseillées pour cette machine, à vous procurer chez nos fournisseurs.",
+    "partsRef": "réf.",
+    "partsPrice": "prix indicatif",
+    "partsBuyAt": "Voir chez {shop}"
   },
   "search": {
     "title": "Je connais mes dates",

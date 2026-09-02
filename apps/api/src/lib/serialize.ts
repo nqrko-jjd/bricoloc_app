@@ -75,7 +75,14 @@ export function serializeProductDetail(
 ) {
   const links = (type: string) =>
     p.linksFrom
-      .filter((l) => l.type === type && l.to.published)
+      // Les consommables / EPI / accessoires « adaptés » sont des références
+      // (à acheter chez un fournisseur), pas des articles de location publiés :
+      // on ne leur impose pas `published`. Packs & produits complémentaires si.
+      .filter(
+        (l) =>
+          l.type === type &&
+          (l.to.published || ['CONSUMABLE', 'PPE', 'ACCESSORY'].includes(type)),
+      )
       .map((l) => ({
         id: l.to.id,
         slug: l.to.slug,
@@ -88,6 +95,13 @@ export function serializeProductDetail(
         deposit: l.to.deposit,
         image: (l.to.images as string[])?.[0] ?? null,
         isConsumable: l.to.isConsumable,
+        brand: l.to.brand,
+        shortDescription: loc(l.to.shortDescription, l.to.i18n, 'shortDescription', locale),
+        // Référence + revendeur pour les consommables (pièces à acheter, non louées).
+        supplierRef: l.to.supplierRef,
+        supplierUrl: l.to.supplierUrl,
+        supplierListPrice: l.to.supplierListPrice,
+        partSupplier: l.to.partSupplier,
       }));
   const seo = (p.seo as { title?: I18nText; description?: I18nText } | null) ?? {};
   return {

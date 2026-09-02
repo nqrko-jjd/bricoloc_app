@@ -17,12 +17,14 @@ const NUMERIC = [
 export default function AdminParametres() {
   const [s, setS] = useState<any>(null);
   const [company, setCompany] = useState<any>({});
+  const [loiselet, setLoiselet] = useState<any>({});
   const [msg, setMsg] = useState('');
 
   const load = () =>
     staffApi<{ settings: any }>('/api/admin/settings').then((r) => {
       setS(r.settings);
       setCompany(r.settings.company ?? {});
+      setLoiselet(r.settings.loiselet ?? {});
     });
   useEffect(() => {
     load();
@@ -85,6 +87,49 @@ export default function AdminParametres() {
         >
           Enregistrer les coordonnées
         </button>
+      </div>
+
+      <div className="card card-pad">
+        <h3>Partenaire Loiselet</h3>
+        <p className="small muted">
+          Destinataires des demandes de location envoyées à Loiselet (grosses machines / pros).
+          Une adresse par ligne — toutes sont pré-cochées à l&apos;envoi, décochables au cas par cas.
+        </p>
+        <div className="field">
+          <label>Adresses e-mail Loiselet</label>
+          <textarea
+            rows={3}
+            defaultValue={(loiselet.recipients ?? []).join('\n')}
+            onBlur={(e) =>
+              save('loiselet', {
+                ...loiselet,
+                recipients: e.target.value
+                  .split(/[\n,;]+/)
+                  .map((x: string) => x.trim())
+                  .filter(Boolean),
+              })
+            }
+          />
+        </div>
+        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <div className="field">
+            <label>Copie interne Bricoloc (optionnel)</label>
+            <input
+              defaultValue={loiselet.ccBricoloc ?? ''}
+              placeholder="ex : achats@bricoloc.be"
+              onBlur={(e) => save('loiselet', { ...loiselet, ccBricoloc: e.target.value.trim() })}
+            />
+          </div>
+          <div className="field">
+            <label>Marge Bricoloc sur le prix affiché (0-1)</label>
+            <input
+              type="number"
+              step="0.01"
+              defaultValue={loiselet.marginPct ?? 0.25}
+              onBlur={(e) => save('loiselet', { ...loiselet, marginPct: Number(e.target.value) })}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

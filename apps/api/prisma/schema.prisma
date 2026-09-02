@@ -203,6 +203,9 @@ model Product {
   brand String?
   model String?
 
+  /// Revendeur conseillé pour un consommable / accessoire (Cipac, Lecot, Sanimat Wavre, BMK…).
+  partSupplier String?
+
   /// Provenance : parc Bricoloc ou partenaire (Loiselet).
   supplier            String    @default("BRICOLOC") // BRICOLOC | LOISELET
   supplierId          String?

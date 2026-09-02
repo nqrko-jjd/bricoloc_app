@@ -158,7 +158,12 @@
     "reviewSubmit": "Post my review",
     "reviewThanks": "Thank you for your feedback!",
     "reviewModerated": "Thank you! Your review will be published once it has been verified.",
-    "reply": "Response from Bricoloc"
+    "reply": "Response from Bricoloc",
+    "partsTitle": "Suitable consumables & accessories",
+    "partsHint": "The recommended references for this machine, available from our suppliers.",
+    "partsRef": "ref.",
+    "partsPrice": "indicative price",
+    "partsBuyAt": "View at {shop}"
   },
   "catalogue": {
     "title": "Catalogue",
