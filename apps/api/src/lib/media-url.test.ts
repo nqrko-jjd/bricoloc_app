@@ -35,3 +35,14 @@ test('relativizeMedia : traverse objets et tableaux imbriqués', () => {
     price: 40,
   });
 });
+
+test('relativizeMedia : préserve les Date (pas de « {} » -> Invalid time value)', () => {
+  const d = new Date('2026-09-03T08:00:00.000Z');
+  const out = relativizeMedia({ periodStart: d, nested: [{ createdAt: d }] }) as {
+    periodStart: Date;
+    nested: { createdAt: Date }[];
+  };
+  assert.equal(out.periodStart, d);
+  assert.equal(out.nested[0].createdAt, d);
+  assert.equal(out.periodStart.toISOString(), '2026-09-03T08:00:00.000Z');
+});

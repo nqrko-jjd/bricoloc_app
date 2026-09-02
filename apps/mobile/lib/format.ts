@@ -6,8 +6,16 @@ export function formatEUR(n: number): string {
   }).format(n);
 }
 
-export function formatDateBE(input: string | Date): string {
+/** Date valide ou null (évite le crash « Invalid time value »). */
+function toDate(input: string | Date | null | undefined): Date | null {
+  if (!input) return null;
   const d = typeof input === 'string' ? new Date(input) : input;
+  return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+}
+
+export function formatDateBE(input: string | Date | null | undefined): string {
+  const d = toDate(input);
+  if (!d) return '—';
   return new Intl.DateTimeFormat('fr-BE', {
     day: '2-digit',
     month: '2-digit',
@@ -15,8 +23,9 @@ export function formatDateBE(input: string | Date): string {
   }).format(d);
 }
 
-export function formatDateTimeBE(input: string | Date): string {
-  const d = typeof input === 'string' ? new Date(input) : input;
+export function formatDateTimeBE(input: string | Date | null | undefined): string {
+  const d = toDate(input);
+  if (!d) return '—';
   return new Intl.DateTimeFormat('fr-BE', {
     day: '2-digit',
     month: '2-digit',
