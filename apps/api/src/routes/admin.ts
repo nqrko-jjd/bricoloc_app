@@ -22,6 +22,7 @@ import { generateInvoice } from '../lib/invoice.js';
 import { syncContentTranslations } from '../lib/i18n-content.js';
 import { recomputeReservation } from '../lib/quote.js';
 import { buildLoiseletRequest } from '../lib/loiselet.js';
+import { adminIoRouter } from './admin-io.js';
 import { randomBytes } from 'node:crypto';
 
 export const adminRouter = Router();
@@ -1321,3 +1322,6 @@ adminRouter.delete(
     res.status(204).end();
   }),
 );
+
+/* -------------------------- Import / export CSV -------------------------- */
+adminRouter.use(adminIoRouter);

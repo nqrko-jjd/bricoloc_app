@@ -19,6 +19,7 @@ const NAV = [
   ['/admin/zones', 'Livraison'],
   ['/admin/contenus', 'Contenus & avis'],
   ['/admin/conseils', 'Magazine Conseils'],
+  ['/admin/import-export', 'Import / export CSV'],
   ['/admin/parametres', 'Paramètres'],
   ['/admin/equipe', 'Équipe'],
 ];
