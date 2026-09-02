@@ -90,30 +90,32 @@ export default function BorneProjet() {
     router.replace({ pathname, params }, { locale: l });
 
   return (
-    <KioskFrame step={1} locale={locale} locales={SUPPORTED_LOCALES} onLocale={switchLocale}>
-      <div className="kiosk-ask">
+    <KioskFrame step={2} locale={locale} locales={SUPPORTED_LOCALES} onLocale={switchLocale}>
+      <div className="kiosk-pad">
         <button className="kiosk-back kiosk-back--inline" onClick={() => router.push('/borne')}>
           {t.back}
         </button>
         <h1>
-          {t.q} <i>{t.qA}</i>
+          {t.q}
+          <br />
+          <i>{t.qA}</i>
         </h1>
-        <p>{t.sub}</p>
-      </div>
+        <p className="kiosk-sub">{t.sub}</p>
 
-      <div className="kiosk-tiles kiosk-tiles--projects">
-        {PROJECTS.map((p) => (
-          <button
-            key={p.key}
-            className="kiosk-tile"
-            onClick={() => router.push(`/borne/catalogue?category=${p.category}`)}
-          >
-            <span className="kiosk-tile__ic" aria-hidden>
-              {p.icon}
-            </span>
-            <span className="kiosk-tile__t">{p.label[locale] ?? p.label.fr}</span>
-          </button>
-        ))}
+        <div className="kiosk-grid2 kiosk-grid2--projects">
+          {PROJECTS.map((p) => (
+            <button
+              key={p.key}
+              className="kiosk-tile"
+              onClick={() => router.push(`/borne/catalogue?category=${p.category}`)}
+            >
+              <span className="kiosk-tile__ic" aria-hidden>
+                {p.icon}
+              </span>
+              <span className="kiosk-tile__t">{p.label[locale] ?? p.label.fr}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </KioskFrame>
   );

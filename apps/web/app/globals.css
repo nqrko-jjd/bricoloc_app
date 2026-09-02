@@ -746,110 +746,116 @@ button { font-family: inherit; }
 /* =========================================================================
    Borne tactile 16"
    ========================================================================= */
-/* ---- Borne : châssis + écran (portrait par défaut, 2 colonnes en paysage) ---- */
+/* ---- Borne tactile VERTICALE (style concept) ---- */
 .kiosk {
-  min-height: 100vh; background: #ededf5; color: var(--navy-deep);
-  padding: 20px; display: flex; flex-direction: column; align-items: center;
+  min-height: 100vh; background: #e8e8ef; color: var(--navy-deep);
+  padding: 20px 12px 40px; display: flex; flex-direction: column; align-items: center;
 }
 .kiosk h1 { color: var(--navy-deep); }
 .kiosk-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
 
+.kiosk-topline { width: 100%; max-width: 620px; margin: 0 auto 14px; }
+.kiosk-exit { font-weight: 800; font-size: 0.9rem; color: var(--navy-deep); }
+.kiosk-exit:hover { color: var(--primary); text-decoration: none; }
+
+/* châssis + pied de l'écran vertical */
+.kiosk-device { width: 100%; max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
 .kiosk-bezel {
-  width: 100%; max-width: 720px; flex: 1;
-  background: var(--navy); border-radius: 34px; padding: 14px;
+  width: 100%; background: var(--navy); border-radius: 42px; padding: 16px;
+  box-shadow: 0 35px 90px rgba(8, 6, 93, 0.25);
 }
 .kiosk-screen {
-  background: #f7f7fb; border-radius: 24px; height: 100%; min-height: 70vh;
-  overflow: hidden; display: flex; flex-direction: column;
+  background: #f7f7fb; border-radius: 29px; overflow: hidden;
+  display: flex; flex-direction: column; height: min(78vh, 900px);
 }
+.kiosk-neck { width: 128px; height: 34px; background: var(--navy); }
+.kiosk-foot-stand { width: 260px; height: 18px; border-radius: var(--r-pill); background: var(--navy); box-shadow: var(--shadow-lg); }
+
 .kiosk-screen__top {
-  min-height: 84px; padding: 14px 26px; display: flex; align-items: center; justify-content: space-between;
-  gap: 10px; background: #fff; border-bottom: 1px solid var(--line); flex-wrap: wrap;
+  min-height: 84px; padding: 14px 22px; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; background: #fff; border-bottom: 1px solid var(--line);
 }
-.kiosk-screen__top .kiosk-logo { font-size: 1.4rem; }
+.kiosk-screen__top .kiosk-logo { font-size: 1.3rem; }
 .kiosk-screen__top .kiosk-logo .b { color: var(--primary); }
 .kiosk-screen__top .kiosk-logo .l { color: var(--navy-deep); }
 .kiosk-screen__actions { display: flex; align-items: center; gap: 8px; }
-.kiosk-help {
-  background: #eeeef7; border: none; border-radius: var(--r-pill); padding: 10px 16px;
-  font-weight: 800; cursor: pointer; color: var(--navy-deep); font-size: 0.9rem;
+.kiosk-circle {
+  width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer;
+  background: #eeeef7; color: var(--navy-deep); font-weight: 900; font-size: 0.85rem;
+  display: inline-grid; place-items: center; position: relative;
 }
-.kiosk-cart {
-  background: var(--navy); color: #fff; border: none; border-radius: var(--r-pill); padding: 10px 14px;
-  font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem;
+.kiosk-circle--cart { background: var(--navy); color: #fff; }
+.kiosk-circle--cart span {
+  position: absolute; top: -4px; right: -4px; background: var(--primary); color: #fff;
+  min-width: 20px; height: 20px; border-radius: 50%; font-size: 0.7rem; display: grid; place-items: center;
 }
-.kiosk-cart span { background: var(--primary); border-radius: 50%; min-width: 20px; padding: 1px 5px; text-align: center; font-size: 0.75rem; }
-.kiosk-screen .kiosk-langs { gap: 4px; }
-.kiosk-screen .kiosk-langs button { color: var(--navy-deep); border-color: var(--line); min-height: 38px; min-width: 40px; font-size: 0.85rem; }
-.kiosk-screen .kiosk-langs button.is-active { background: var(--navy); color: #fff; border-color: var(--navy); }
 
-/* progression du parcours de commande (pas de nav sur l'accueil) */
+/* progression du parcours de commande (jamais sur l'accueil) */
 .kiosk-progress {
-  display: flex; gap: 6px; padding: 14px 26px; background: #fff; border-bottom: 1px solid var(--line);
+  display: flex; gap: 14px; padding: 12px 22px; background: #fff; border-bottom: 1px solid var(--line);
   overflow-x: auto; scrollbar-width: none;
 }
 .kiosk-progress::-webkit-scrollbar { display: none; }
 .kiosk-progress__s {
-  white-space: nowrap; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+  white-space: nowrap; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em;
   color: var(--muted-fg); padding-bottom: 8px; border-bottom: 3px solid transparent;
 }
 .kiosk-progress__s.is-active { color: var(--primary); border-color: var(--primary); }
 .kiosk-progress__s.is-done { color: var(--navy-deep); }
 
-/* portrait : titre en haut, tuiles en dessous */
-.kiosk-screen__grid { flex: 1; display: grid; grid-template-rows: auto 1fr; min-height: 0; overflow-y: auto; }
-/* parcours de commande : une seule colonne, contenu défilant */
-.kiosk-screen__grid--process { display: block; overflow-y: auto; padding: clamp(20px, 4vw, 40px); }
-.kiosk-flow { max-width: 760px; margin: 0 auto; }
-.kiosk-flow h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); }
+.kiosk-screen__body { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+.kiosk-pad { padding: clamp(22px, 5vw, 34px); }
+.kiosk-pad h1 { font-size: clamp(2.3rem, 8vw, 3.6rem); letter-spacing: -0.065em; line-height: 0.9; margin: 12px 0; }
+.kiosk-pad h1 i { color: var(--primary); }
+.kiosk-sub { font-size: 1rem; color: var(--muted-fg); margin: 12px 0 0; }
 
-.kiosk-ask {
-  padding: clamp(24px, 5vw, 44px); display: flex; flex-direction: column;
+.kiosk-search {
+  width: 100%; margin-top: 22px; height: 62px; padding: 0 20px; cursor: pointer;
+  background: #fff; border: 2px solid var(--navy); border-radius: var(--r-md);
+  display: flex; align-items: center; gap: 12px; font-size: 1rem; color: var(--muted-fg); font-weight: 600;
 }
-.kiosk-ask h1 { font-size: clamp(2rem, 6vw, 3rem); margin: 12px 0; }
-.kiosk-ask h1 i { color: var(--primary); }
-.kiosk-ask p { font-size: 1.05rem; color: var(--muted-fg); margin: 16px 0 0; }
-.kiosk-projet {
-  margin-top: 4px; background: var(--navy); color: #fff; border: none; border-radius: var(--r-lg);
-  padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  cursor: pointer; text-align: left;
-}
-.kiosk-projet strong { display: block; font-family: var(--font-display); font-weight: 900; font-size: 1.2rem; letter-spacing: -0.03em; }
-.kiosk-projet small { color: rgba(255,255,255,0.75); }
-.kiosk-projet > span:last-child { font-size: 1.5rem; }
 
-.kiosk-tiles {
-  background: #eeeef7; padding: clamp(18px, 4vw, 32px); overflow-y: auto;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-content: start;
-}
-.kiosk-tiles--projects { grid-template-columns: 1fr 1fr; }
-@media (max-width: 420px) { .kiosk-tiles, .kiosk-tiles--projects { grid-template-columns: 1fr; } }
-
-/* paysage : châssis large, écran en deux colonnes (comme le concept) */
-@media (min-aspect-ratio: 1 / 1) and (min-width: 900px) {
-  .kiosk-bezel { max-width: 1500px; border-radius: 32px; }
-  .kiosk-screen { min-height: 78vh; }
-  .kiosk-screen__grid { grid-template-rows: none; grid-template-columns: 0.9fr 1.1fr; overflow: hidden; }
-  .kiosk-ask { justify-content: center; padding: clamp(28px, 4vw, 56px); }
-  .kiosk-ask h1 { font-size: clamp(2.4rem, 4vw, 3.9rem); }
-  .kiosk-tiles { align-content: center; }
-  .kiosk-tiles--projects { grid-template-columns: repeat(3, 1fr); }
-}
+.kiosk-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
+.kiosk-grid2--projects { grid-template-columns: 1fr 1fr; }
 .kiosk-tile {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
-  background: #fff; color: var(--navy-deep); border: none; border-radius: 24px;
-  padding: 24px; cursor: pointer; text-align: left; transition: transform 0.12s ease;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 10px; min-height: 150px;
+  background: #fff; color: var(--navy-deep); border: 1px solid var(--line); border-radius: 24px;
+  padding: 20px; cursor: pointer; text-align: left; transition: transform 0.12s ease;
 }
 .kiosk-tile:active { transform: scale(0.98); }
-.kiosk-tile__ic { font-size: 1.7rem; margin-bottom: 4px; }
-.kiosk-tile__t { font-family: var(--font-display); font-weight: 900; font-size: 1.25rem; letter-spacing: -0.03em; line-height: 1.05; }
-.kiosk-tile__s { font-size: 0.92rem; color: var(--muted-fg); }
-.kiosk-tile--pack { grid-column: 1 / -1; background: var(--primary); color: #fff; flex-direction: row; align-items: center; gap: 16px; }
-.kiosk-tile--pack .kiosk-tile__ic { margin: 0; }
-.kiosk-tile--pack > span:not(.kiosk-tile__ic) { display: flex; flex-direction: column; gap: 3px; }
-.kiosk-tile--pack .kiosk-tile__s { color: rgba(255,255,255,0.85); }
-.kiosk-tile--navy { background: var(--navy); color: #fff; }
-.kiosk-tile--navy .kiosk-tile__s { color: rgba(255,255,255,0.75); }
+.kiosk-tile__ic { font-size: 1.6rem; }
+.kiosk-tile__t { display: block; font-family: var(--font-display); font-weight: 900; font-size: 1.15rem; letter-spacing: -0.03em; line-height: 1.05; }
+.kiosk-tile__s { display: block; font-size: 0.85rem; color: var(--muted-fg); margin-top: 2px; }
+.kiosk-tile--red { background: var(--primary); color: #fff; border-color: var(--primary); }
+.kiosk-tile--red .kiosk-tile__s { color: rgba(255,255,255,0.85); }
+
+.kiosk-aide {
+  width: 100%; margin-top: 16px; background: var(--navy); color: #fff; border: none; border-radius: var(--r-md);
+  padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  cursor: pointer; text-align: left;
+}
+.kiosk-aide strong { display: block; font-family: var(--font-display); font-weight: 900; font-size: 1.2rem; letter-spacing: -0.03em; }
+.kiosk-aide small { color: rgba(255,255,255,0.75); }
+.kiosk-aide > span:last-child {
+  flex: none; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15);
+  display: grid; place-items: center; font-size: 1.2rem; font-weight: 900;
+}
+
+/* parcours de commande : contenu pleine largeur défilant */
+.kiosk-screen__body--process { padding: 0; }
+.kiosk-flow { max-width: 640px; margin: 0 auto; padding: clamp(20px, 5vw, 34px); }
+.kiosk-flow h1 { font-size: clamp(1.8rem, 6vw, 2.6rem); }
+
+/* paysage large : écran plus grand, grilles à 3 colonnes */
+@media (min-aspect-ratio: 1 / 1) and (min-width: 1000px) {
+  .kiosk-device, .kiosk-topline { max-width: 900px; }
+  .kiosk-screen { height: min(82vh, 1000px); }
+  .kiosk-grid2--projects { grid-template-columns: repeat(3, 1fr); }
+}
+
+.kiosk-keyboard { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 720px; margin: 20px auto; }
+.kiosk-key { background: var(--surface); color: var(--navy); border: none; border-radius: 10px; padding: 18px 0; font-size: 1.3rem; font-weight: 800; cursor: pointer; }
+.kiosk-key.wide { grid-column: span 3; }
 .kiosk-keyboard { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 720px; margin: 20px auto; }
 .kiosk-key { background: var(--surface); color: var(--navy); border: none; border-radius: 10px; padding: 18px 0; font-size: 1.3rem; font-weight: 800; cursor: pointer; }
 .kiosk-key.wide { grid-column: span 3; }

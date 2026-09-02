@@ -15,9 +15,9 @@ import type { Cart, ProductSummary, ProductDetail } from '@/lib/types';
 type Step = 'dates' | 'browse' | 'cart' | 'contact' | 'pay' | 'done';
 
 const STEP_NUM: Record<Step, number> = {
-  dates: 2,
+  dates: 3,
   browse: 3,
-  cart: 4,
+  cart: 5,
   contact: 5,
   pay: 6,
   done: 7,
