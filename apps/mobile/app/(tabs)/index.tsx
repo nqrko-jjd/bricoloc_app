@@ -1,13 +1,5 @@
-import { useEffect, useState } from 'react';
-import {
-  Image,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +15,22 @@ interface Category {
   slug: string;
   name: string;
   image?: string | null;
+  productCount?: number;
+}
+
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+function CAT_ICON(slug: string): IoniconName {
+  if (/forer|percage|demolition|casser/.test(slug)) return 'build-outline';
+  if (/beton|pierre|maconn/.test(slug)) return 'hammer-outline';
+  if (/bois|decoupe|sciage/.test(slug)) return 'cut-outline';
+  if (/peinture|finition/.test(slug)) return 'color-palette-outline';
+  if (/chauffage|deshumid/.test(slug)) return 'flame-outline';
+  if (/exterieur|jardin/.test(slug)) return 'leaf-outline';
+  if (/plomberie|electri|sanitaire/.test(slug)) return 'water-outline';
+  if (/echelle|echafaud/.test(slug)) return 'layers-outline';
+  if (/nettoy|clean/.test(slug)) return 'sparkles-outline';
+  if (/pack/.test(slug)) return 'cube-outline';
+  return 'construct-outline';
 }
 
 export default function HomeScreen() {
@@ -109,13 +117,13 @@ export default function HomeScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, gap: 18 }}
+          contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
         >
-          {categories.slice(0, 8).map((c) => (
+          {categories.slice(0, 10).map((c) => (
             <Pressable
               key={c.slug}
-              onPress={() => router.push(`/(tabs)/catalogue?category=${c.slug}`)}
-              style={{ alignItems: 'center', width: 64 }}
+              onPress={() => router.push(`/catalogue?category=${c.slug}`)}
+              style={{ alignItems: 'center', width: 92 }}
             >
               <View
                 style={{
@@ -123,20 +131,21 @@ export default function HomeScreen() {
                   height: 64,
                   borderRadius: R.md,
                   backgroundColor: C.surface2,
-                  overflow: 'hidden',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                {c.image ? (
-                  <Image source={{ uri: mediaUrl(c.image) }} style={{ width: 64, height: 64 }} />
-                ) : (
-                  <Ionicons name="construct-outline" size={26} color={C.loc} />
-                )}
+                <Ionicons name={CAT_ICON(c.slug)} size={28} color={C.brico} />
               </View>
               <Text
-                style={{ fontSize: 11, fontWeight: '600', color: C.ink, marginTop: 6 }}
-                numberOfLines={1}
+                style={{
+                  fontSize: 11,
+                  fontWeight: '700',
+                  color: C.ink,
+                  marginTop: 7,
+                  textAlign: 'center',
+                }}
+                numberOfLines={2}
               >
                 {c.name}
               </Text>

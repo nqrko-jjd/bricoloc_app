@@ -30,10 +30,17 @@ export default function ReservationsScreen() {
     setLoading(true);
     api<{ reservations: Reservation[] }>('/api/reservations')
       .then((r) => setRows(r.reservations))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [user]);
 
-  useFocusEffect(load);
+  // NB : le callback de useFocusEffect ne doit rien retourner (sinon traité
+  // comme une fonction de nettoyage). On enveloppe donc `load()`.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   if (!user)
     return (

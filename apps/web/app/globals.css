@@ -746,36 +746,76 @@ button { font-family: inherit; }
 /* =========================================================================
    Borne tactile 16"
    ========================================================================= */
-.kiosk { min-height: 100vh; background: linear-gradient(160deg, var(--navy-deep), var(--navy)); color: #fff; display: flex; flex-direction: column; }
+.kiosk {
+  min-height: 100vh; background: var(--navy); color: #fff;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 28px 40px 40px; text-align: center;
+}
+.kiosk h1 { color: #fff; }
 .kiosk-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
-.kiosk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); width: 100%; max-width: 900px; }
-.kiosk-tile { background: var(--surface); color: var(--navy); border-radius: 20px; padding: 44px 24px; font-size: 1.5rem; font-weight: 800; font-family: var(--font-display); cursor: pointer; border: none; box-shadow: var(--shadow-lg); transition: transform 0.1s ease; }
-.kiosk-tile:active { transform: scale(0.97); }
-.kiosk-tile.brico { background: var(--primary); color: var(--on-primary); }
-.kiosk h1 { color: #fff; font-size: 2.6rem; }
+
+/* Barre d'étapes du parcours borne */
+.kiosk-stepbar {
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  margin-bottom: 26px;
+}
+.kiosk-stepbar__s {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
+  border-radius: var(--r-pill); padding: 8px 16px; font-size: 0.95rem; font-weight: 700;
+}
+.kiosk-stepbar__s b {
+  display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,255,255,0.14); font-size: 0.8rem;
+}
+.kiosk-stepbar__s.is-active { background: var(--primary); color: #fff; }
+.kiosk-stepbar__s.is-active b { background: rgba(255,255,255,0.25); }
+
+.kiosk-topbar {
+  width: 100%; max-width: 1100px; display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 40px;
+}
+.kiosk-hero { max-width: 900px; margin-bottom: 44px; }
+.kiosk-hero .kicker { font-size: 0.85rem; }
+.kiosk-hero h1 { font-size: clamp(2.6rem, 5vw, 4.5rem); margin: 14px 0; }
+.kiosk-hero h1 i { color: var(--primary); font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+.kiosk-hero p { font-size: 1.3rem; color: #cfceec; margin: 0; }
+
+.kiosk-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; width: 100%; max-width: 1000px; }
+.kiosk-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  background: #fff; color: var(--navy-deep); border: none; border-radius: var(--r-lg);
+  padding: 32px 28px; cursor: pointer; text-align: left; min-height: 150px;
+  transition: transform 0.12s ease;
+}
+.kiosk-tile:active { transform: scale(0.98); }
+.kiosk-tile__ic { font-size: 2rem; margin-bottom: 6px; }
+.kiosk-tile__t { font-family: var(--font-display); font-weight: 900; font-size: 1.7rem; letter-spacing: -0.03em; }
+.kiosk-tile__s { font-size: 1.05rem; color: var(--muted-fg); }
+.kiosk-tile--pack { grid-column: 1 / -1; background: var(--primary); color: #fff; flex-direction: row; align-items: center; gap: 20px; min-height: 120px; }
+.kiosk-tile--pack .kiosk-tile__ic { margin: 0; }
+.kiosk-tile--pack .kiosk-tile__s { color: rgba(255,255,255,0.85); }
+.kiosk-tile--soft { background: var(--navy-soft); color: #fff; }
+.kiosk-tile--soft .kiosk-tile__s { color: rgba(255,255,255,0.75); }
 .kiosk-keyboard { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 720px; margin: 20px auto; }
 .kiosk-key { background: var(--surface); color: var(--navy); border: none; border-radius: 10px; padding: 18px 0; font-size: 1.3rem; font-weight: 800; cursor: pointer; }
 .kiosk-key.wide { grid-column: span 3; }
 
 /* Borne — accueil & infos (16" tactile : cibles ≥ 64pt, texte ≥ 20px) */
-.kiosk-home { justify-content: flex-start; padding-top: 28px; gap: 4px; }
-.kiosk-langs { display: flex; gap: 10px; margin-bottom: 12px; }
+.kiosk-langs { display: flex; gap: 8px; }
 .kiosk-langs button {
-  min-width: 64px; min-height: 48px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.3);
-  background: transparent; color: #fff; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; cursor: pointer;
+  min-width: 56px; min-height: 44px; border-radius: var(--r-pill); border: 1.5px solid rgba(255,255,255,0.3);
+  background: transparent; color: #fff; font-weight: 800; font-size: 1rem; cursor: pointer;
 }
 .kiosk-langs button.is-active { background: #fff; color: var(--navy-deep); border-color: #fff; }
-.kiosk-logo { font-size: 2.6rem; margin-bottom: 4px; }
-.kiosk-tagline { font-size: 1.35rem; opacity: 0.9; margin: 0 0 24px; }
-.kiosk-grid { grid-template-columns: 1fr 1fr; max-width: 960px; }
-.kiosk-tile { min-height: 132px; font-size: 1.5rem; line-height: 1.2; }
-.kiosk-tile--soft { background: var(--navy-soft); color: #fff; }
-.kiosk-tile--wide { grid-column: 1 / -1; min-height: 96px; background: transparent; border: 2px solid rgba(255,255,255,0.4); color: #fff; }
+.kiosk-logo { font-size: 1.7rem; font-weight: 900; letter-spacing: -0.03em; }
+.kiosk-logo .b { color: var(--primary); }
+.kiosk-logo .l { color: #fff; }
 .kiosk-strip {
-  margin-top: 22px; padding: 12px 22px; border-radius: 999px;
-  background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 1.05rem;
+  margin-top: 34px; padding: 12px 24px; border-radius: var(--r-pill);
+  background: rgba(255,255,255,0.1); color: #fff; font-weight: 700; font-size: 1.05rem;
 }
-.kiosk-foot { margin-top: 14px; opacity: 0.55; font-size: 0.95rem; max-width: 640px; }
+.kiosk-foot { margin-top: 14px; opacity: 0.5; font-size: 0.95rem; max-width: 680px; }
 
 .kiosk-scroll { justify-content: flex-start; overflow-y: auto; padding: 24px 32px 60px; }
 .kiosk-back {

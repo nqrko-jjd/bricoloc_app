@@ -36,10 +36,10 @@ export function Screen({
   refreshing?: React.ReactElement<RefreshControlProps>;
 }) {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.white }} edges={['top']}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: 48 }}
           keyboardShouldPersistTaps="handled"
           refreshControl={refreshing}
         >

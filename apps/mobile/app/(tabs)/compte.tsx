@@ -18,11 +18,16 @@ export default function CompteScreen() {
 
   const load = useCallback(() => {
     if (!user) return;
-    api<{ notifications: Notif[] }>('/api/account/notifications').then((r) =>
-      setNotifs(r.notifications),
-    );
+    api<{ notifications: Notif[] }>('/api/account/notifications')
+      .then((r) => setNotifs(r.notifications))
+      .catch(() => {});
   }, [user]);
-  useFocusEffect(load);
+  // Le callback de useFocusEffect ne doit rien retourner (sinon = cleanup).
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   if (!user)
     return (
