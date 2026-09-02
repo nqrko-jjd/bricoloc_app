@@ -8,7 +8,7 @@ import { Logo } from '@/components/Logo';
 const NAV = [
   ['/admin', 'Tableau de bord'],
   ['/admin/comptoir', 'Comptoir (retrait/retour)'],
-  ['/admin/terminal', 'Terminal (scan / inventaire)'],
+  ['/terminal', 'Terminal Zebra (handheld)'],
   ['/admin/reservations', 'Réservations'],
   ['/admin/livraisons', 'Livraisons'],
   ['/admin/produits', 'Catalogue & produits'],

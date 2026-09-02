@@ -1,0 +1,19 @@
+{
+  "name": "Bricoloc — Terminal équipe",
+  "short_name": "Bricoloc Terminal",
+  "description": "Gestion interne : scan, préparation, retrait, retour, inventaire.",
+  "start_url": "/terminal",
+  "scope": "/terminal",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08065d",
+  "theme_color": "#08065d",
+  "icons": [
+    {
+      "src": "/icon-terminal.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
