@@ -1,5 +1,15 @@
+/**
+ * Base de l'API.
+ *  - Côté serveur (SSR) : URL absolue interne (`API_URL`), ex. http://localhost:4000.
+ *  - Côté navigateur : proxy same-origin `/bricoloc-api` (rewrite Next) par défaut,
+ *    pour que téléphone / iPad / borne n'aient qu'une seule adresse à joindre
+ *    (celle du site) — sans CORS ni second port. Surchargeable via
+ *    NEXT_PUBLIC_API_URL (URL absolue) si besoin.
+ */
 export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? process.env.API_URL ?? 'http://localhost:4000';
+  typeof window === 'undefined'
+    ? (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000')
+    : (process.env.NEXT_PUBLIC_API_URL || '/bricoloc-api');
 
 export interface ApiOptions {
   method?: string;
