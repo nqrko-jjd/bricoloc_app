@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   type RefreshControlProps,
   ScrollView,
@@ -11,7 +12,19 @@ import {
   type TextInputProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { C } from '@/lib/theme';
+import { mediaUrl } from '@/lib/api';
+import { formatEUR } from '@/lib/format';
+
+export interface ProductMini {
+  slug: string;
+  name: string;
+  image?: string | null;
+  dailyPrice: number;
+  rating?: { avg: number; count: number } | null;
+}
 
 export function Screen({
   children,
@@ -39,12 +52,27 @@ export function Screen({
   );
 }
 
-export function Logo({ size = 22 }: { size?: number }) {
+export function Logo({ size = 22, onDark = false }: { size?: number; onDark?: boolean }) {
   return (
-    <Text style={{ fontWeight: '800', fontSize: size }}>
-      <Text style={{ color: C.brico }}>BRICO</Text>
-      <Text style={{ color: C.loc }}>LOC</Text>
-    </Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View
+        style={{
+          width: size * 1.2,
+          height: size * 1.2,
+          borderRadius: 6,
+          backgroundColor: C.brico,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 6,
+        }}
+      >
+        <Text style={{ color: C.white, fontWeight: '900', fontSize: size * 0.85 }}>B</Text>
+      </View>
+      <Text style={{ fontWeight: '900', fontSize: size, letterSpacing: -0.5 }}>
+        <Text style={{ color: C.brico }}>BRICO</Text>
+        <Text style={{ color: onDark ? C.white : C.locDeep }}>LOC</Text>
+      </Text>
+    </View>
   );
 }
 
@@ -138,22 +166,83 @@ export function Badge({
   );
 }
 
+/** Carte produit compacte (accueil / grille catalogue) — style concept. */
+export function ProductMiniCard({
+  p,
+  width,
+}: {
+  p: ProductMini;
+  width?: import('react-native').DimensionValue;
+}) {
+  return (
+    <Link href={`/produit/${p.slug}`} asChild>
+      <Pressable
+        style={{
+          width: width ?? '47%',
+          backgroundColor: C.white,
+          borderRadius: 18,
+          borderWidth: 1,
+          borderColor: C.border,
+          overflow: 'hidden',
+        }}
+      >
+        <View style={{ height: 120, backgroundColor: C.surface2, alignItems: 'center', justifyContent: 'center' }}>
+          <Image
+            source={{ uri: mediaUrl(p.image) ?? 'https://placehold.co/200x150/eeeef7/08065d/png?text=BRICOLOC' }}
+            style={{ width: '86%', height: '86%' }}
+            resizeMode="contain"
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              backgroundColor: C.white,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="heart-outline" size={15} color={C.muted} />
+          </View>
+        </View>
+        <View style={{ padding: 12, gap: 3 }}>
+          <Text style={{ fontWeight: '800', color: C.ink, fontSize: 14 }} numberOfLines={1}>
+            {p.name}
+          </Text>
+          <Text style={{ fontWeight: '900', color: C.ink, fontSize: 15 }}>
+            {formatEUR(p.dailyPrice)}
+            <Text style={{ fontWeight: '600', color: C.muted, fontSize: 11 }}> / jour</Text>
+          </Text>
+          {p.rating && p.rating.count > 0 ? (
+            <Text style={{ color: C.muted, fontSize: 11 }}>
+              ★ {p.rating.avg.toFixed(1)} ({p.rating.count})
+            </Text>
+          ) : null}
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
+
 export const styles = StyleSheet.create({
-  h1: { fontSize: 24, fontWeight: '800', color: C.loc, marginBottom: 8 },
-  h2: { fontSize: 18, fontWeight: '800', color: C.loc, marginVertical: 8 },
-  p: { fontSize: 14, color: C.darkGray, lineHeight: 20 },
+  h1: { fontSize: 27, fontWeight: '900', color: C.locDeep, marginBottom: 8, letterSpacing: -0.6 },
+  h2: { fontSize: 19, fontWeight: '900', color: C.locDeep, marginVertical: 8, letterSpacing: -0.4 },
+  p: { fontSize: 14, color: C.darkGray, lineHeight: 21 },
   card: {
     backgroundColor: C.white,
-    borderRadius: 12,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: C.border,
-    padding: 14,
+    padding: 16,
     marginBottom: 12,
   },
   btn: {
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+    borderRadius: 999,
+    paddingVertical: 15,
+    paddingHorizontal: 22,
     alignItems: 'center',
     marginVertical: 4,
   },

@@ -38,6 +38,11 @@ export function ProductCard({ p }: { p: ProductSummary }) {
           {formatEUR(p.dailyPrice)}
           <small>/ {p.isConsumable ? t('perUnit') : t('perDay')}</small>
         </div>
+        {p.rating && p.rating.count > 0 ? (
+          <span className="pcard__rating">
+            ★ {p.rating.avg.toFixed(1)} <span>({p.rating.count})</span>
+          </span>
+        ) : null}
         <div className="pcard__foot">
           <AvailabilityBadge a={p.availability} />
           <AddToCartButton productId={p.id} small />

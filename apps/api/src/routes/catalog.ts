@@ -85,7 +85,11 @@ catalogRouter.get(
       take: q.pageSize,
     });
 
-    let items = rows.map((r) => serializeProductSummary(r, q.locale));
+    const ratings = await ratingsFor(rows.map((r) => r.id));
+    let items = rows.map((r) => ({
+      ...serializeProductSummary(r, q.locale),
+      rating: ratings.get(r.id) ?? null,
+    }));
     let withAvail = await withAvailability(items, period);
 
     // Filtre "disponible sur toute la periode" quand des dates sont fournies.

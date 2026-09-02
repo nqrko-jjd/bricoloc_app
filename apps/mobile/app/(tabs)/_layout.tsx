@@ -1,54 +1,58 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { C } from '@/lib/theme';
-import { useStore } from '@/lib/store';
 import { t } from '@/lib/i18n';
 
-function Icon({ label, color }: { label: string; color: string }) {
-  return <Text style={{ fontSize: 20, color }}>{label}</Text>;
-}
-
 export default function TabsLayout() {
-  const { cart } = useStore();
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: C.brico,
         tabBarInactiveTintColor: C.lightGray,
-        headerStyle: { backgroundColor: C.loc },
-        headerTintColor: C.white,
-        headerTitleStyle: { fontWeight: '800' },
+        tabBarStyle: {
+          backgroundColor: C.white,
+          borderTopColor: C.border,
+          height: 64,
+          paddingBottom: 9,
+          paddingTop: 7,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: t('tab.home'),
-          tabBarIcon: ({ color }) => <Icon label="🛠️" color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
-        name="panier"
+        name="catalogue"
         options={{
-          title: t('tab.cart'),
-          tabBarBadge: cart && cart.itemCount > 0 ? cart.itemCount : undefined,
-          tabBarIcon: ({ color }) => <Icon label="🛒" color={color} />,
+          title: t('tab.catalogue'),
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="reservations"
         options={{
           title: t('tab.reservations'),
-          tabBarIcon: ({ color }) => <Icon label="🎫" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name="compte"
         options={{
           title: t('tab.account'),
-          tabBarIcon: ({ color }) => <Icon label="👤" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" color={color} size={size} />
+          ),
         }}
       />
+      <Tabs.Screen name="panier" options={{ href: null, title: t('tab.cart') }} />
     </Tabs>
   );
 }

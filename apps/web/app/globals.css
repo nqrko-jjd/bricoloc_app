@@ -1624,3 +1624,5 @@ button { font-family: inherit; }
 
 /* ---- En-tête de page : accent serif ---- */
 .page-header h1 i { color: var(--primary); }
+.pcard__rating { font-size: 0.8rem; color: var(--muted-fg); font-weight: 600; }
+.pcard__rating span { opacity: 0.7; }

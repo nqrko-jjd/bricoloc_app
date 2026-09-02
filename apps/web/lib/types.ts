@@ -28,6 +28,7 @@ export interface ProductSummary {
   availabilityMode?: string;
   deliveryPolicy?: string;
   totalStock: number;
+  rating?: { avg: number; count: number } | null;
   availability?: Availability | null;
 }
 

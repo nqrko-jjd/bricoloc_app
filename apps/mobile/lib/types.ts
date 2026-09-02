@@ -14,19 +14,23 @@ export interface ProductSummary {
   image: string | null;
   images: string[];
   category: { name: string; slug: string } | null;
+  brand?: string | null;
   dailyPrice: number;
   weekendPrice: number | null;
   deposit: number;
   isConsumable: boolean;
+  rating?: { avg: number; count: number } | null;
   availability?: Availability | null;
 }
 
 export interface ProductDetail extends ProductSummary {
   description: string | null;
+  brand?: string | null;
   specs: Record<string, string>;
   recommendedUses: string[];
   includedAccessories: string[];
   tiers: { minDays: number; perDay: number }[];
+  rating?: { avg: number; count: number } | null;
   recommendedAccessories: LinkedProduct[];
   consumables: LinkedProduct[];
   ppe: LinkedProduct[];
@@ -38,6 +42,10 @@ export interface LinkedProduct {
   quantity: number;
   dailyPrice: number;
   isConsumable: boolean;
+  brand?: string | null;
+  supplierRef?: string | null;
+  supplierUrl?: string | null;
+  partSupplier?: string | null;
 }
 
 export interface CartItem {

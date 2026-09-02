@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Image, Text, TextInput, View, Pressable } from 'react-native';
+import { Image, ScrollView, Text, TextInput, View, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { api, mediaUrl } from '@/lib/api';
 import { useStore } from '@/lib/store';
-import { C } from '@/lib/theme';
+import { C, R } from '@/lib/theme';
 import { t as ti } from '@/lib/i18n';
 import { formatEUR } from '@/lib/format';
-import { Screen, H1, H2, P, Card, Button, Badge } from '@/components/ui';
+import { H2, P, Card, Button } from '@/components/ui';
 import type { ProductDetail } from '@/lib/types';
+
+const DURATIONS = [
+  { key: 1, label: `1${ti('prod.day')}` },
+  { key: 2, label: `2${ti('prod.day')}` },
+  { key: 3, label: `3${ti('prod.day')}` },
+  { key: 7, label: `1 ${ti('prod.week')}` },
+];
 
 export default function ProductScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -15,19 +24,23 @@ export default function ProductScreen() {
   const router = useRouter();
   const [p, setP] = useState<ProductDetail | null>(null);
   const [qty, setQty] = useState(1);
+  const [dur, setDur] = useState(1);
+  const [expanded, setExpanded] = useState(false);
   const [extras, setExtras] = useState<Record<string, boolean>>({});
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    const sp = cart?.period
-      ? `?start=${cart.period.start}&end=${cart.period.end}`
-      : '';
-    api<{ product: ProductDetail }>(`/api/catalog/products/${slug}${sp}`).then((r) =>
-      setP(r.product),
-    );
+    const sp = cart?.period ? `?start=${cart.period.start}&end=${cart.period.end}` : '';
+    api<{ product: ProductDetail }>(`/api/catalog/products/${slug}${sp}`).then((r) => setP(r.product));
   }, [slug, cart?.period]);
 
-  if (!p) return <Screen><P>Chargement…</P></Screen>;
+  if (!p) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }}>
+        <P muted>{ti('common.loading')}</P>
+      </SafeAreaView>
+    );
+  }
 
   const linked = [
     ...p.recommendedAccessories.map((x) => ({ ...x, g: 'Accessoire' })),
@@ -35,6 +48,7 @@ export default function ProductScreen() {
     ...p.ppe.map((x) => ({ ...x, g: 'Protection' })),
   ];
   const a = p.availability?.status;
+  const rating = p.rating;
 
   async function add() {
     await addItem(p!.id, qty);
@@ -43,128 +57,226 @@ export default function ProductScreen() {
   }
 
   return (
-    <Screen>
-      <Image
-        source={{ uri: mediaUrl(p.image) ?? 'https://placehold.co/600x400/eef0f3/0B1D3A/png?text=BRICOLOC' }}
-        style={{ width: '100%', height: 200, borderRadius: 12, backgroundColor: C.bg }}
-      />
-      <H1>{p.name}</H1>
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-        {p.category && <Badge text={p.category.name} />}
-        {a === 'AVAILABLE' ? (
-          <Badge text={`Disponible (${p.availability?.availableQty})`} tone="ok" />
-        ) : a === 'PARTIAL' ? (
-          <Badge text="Stock limité" tone="warn" />
-        ) : a ? (
-          <Badge text="Indisponible" tone="err" />
-        ) : (
-          <Badge text="Choisissez vos dates" />
-        )}
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.white }} edges={['top']}>
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+        }}
+      >
+        <Pressable onPress={() => router.back()} hitSlop={10}>
+          <Ionicons name="chevron-back" size={26} color={C.ink} />
+        </Pressable>
+        <Pressable hitSlop={10}>
+          <Ionicons name="heart-outline" size={24} color={C.ink} />
+        </Pressable>
       </View>
-      <Text style={{ fontSize: 20, fontWeight: '800', color: C.loc }}>
-        {formatEUR(p.dailyPrice)}
-        <Text style={{ fontSize: 13, color: C.lightGray }}> / {p.isConsumable ? 'unité' : 'jour'}</Text>
-      </Text>
-      {!p.isConsumable && (
-        <P muted>
-          Week-end {p.weekendPrice ? formatEUR(p.weekendPrice) : '—'} · Caution{' '}
-          {formatEUR(p.deposit)}
-        </P>
-      )}
-      {p.description ? <P>{p.description}</P> : null}
 
-      <Card>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-          <Text style={{ fontWeight: '700', color: C.loc }}>Quantité</Text>
-          <Pressable onPress={() => setQty((q) => Math.max(1, q - 1))} style={stepBtn}>
-            <Text style={stepT}>−</Text>
-          </Pressable>
-          <Text style={{ fontSize: 16 }}>{qty}</Text>
-          <Pressable onPress={() => setQty((q) => q + 1)} style={stepBtn}>
-            <Text style={stepT}>+</Text>
-          </Pressable>
-        </View>
-        {linked.length > 0 && (
-          <View style={{ marginTop: 12 }}>
-            <Text style={{ fontWeight: '700', color: C.loc, marginBottom: 6 }}>
-              Ajouter en un geste
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+        <Image
+          source={{
+            uri: mediaUrl(p.image) ?? 'https://placehold.co/600x400/eeeef7/08065d/png?text=BRICOLOC',
+          }}
+          style={{ width: '100%', height: 300, backgroundColor: C.white }}
+          resizeMode="contain"
+        />
+
+        <View style={{ padding: 20 }}>
+          <Text style={{ fontSize: 24, fontWeight: '900', color: C.locDeep, letterSpacing: -0.6 }}>
+            {p.name}
+          </Text>
+          {rating && rating.count > 0 ? (
+            <Text style={{ color: C.muted, marginTop: 6, fontWeight: '600' }}>
+              ★ {rating.avg.toFixed(1)} ({rating.count} {ti('prod.reviews')})
             </Text>
-            {linked.map((l) => (
-              <Pressable
-                key={l.id}
-                onPress={() => setExtras((s) => ({ ...s, [l.id]: !s[l.id] }))}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 }}
-              >
-                <View
+          ) : null}
+
+          {/* Durée */}
+          <Text style={{ fontWeight: '800', color: C.ink, marginTop: 20, marginBottom: 10 }}>
+            {ti('prod.duration')}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {DURATIONS.map((d) => {
+              const active = dur === d.key;
+              return (
+                <Pressable
+                  key={d.key}
+                  onPress={() => setDur(d.key)}
                   style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 4,
-                    borderWidth: 2,
-                    borderColor: C.loc,
-                    backgroundColor: extras[l.id] ? C.loc : 'transparent',
+                    flex: 1,
+                    alignItems: 'center',
+                    paddingVertical: 12,
+                    borderRadius: R.sm,
+                    backgroundColor: active ? C.loc : C.surface2,
                   }}
-                />
-                <Text style={{ flex: 1 }}>
-                  {l.name}{' '}
-                  <Text style={{ color: C.lightGray }}>
-                    ({l.g} · {formatEUR(l.dailyPrice)})
-                  </Text>
+                >
+                  <Text style={{ color: active ? C.white : C.ink, fontWeight: '800' }}>{d.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Description */}
+          {p.description ? (
+            <View style={{ marginTop: 20 }}>
+              <Text style={{ color: C.ink, lineHeight: 21 }} numberOfLines={expanded ? undefined : 3}>
+                {p.description}
+              </Text>
+              <Pressable onPress={() => setExpanded((v) => !v)} style={{ marginTop: 6 }}>
+                <Text style={{ color: C.muted, fontWeight: '700' }}>
+                  {expanded ? ti('prod.seeLess') : ti('prod.seeMore')}{' '}
+                  <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={13} />
                 </Text>
               </Pressable>
-            ))}
-          </View>
-        )}
-        <Button
-          title="Ajouter au panier"
+            </View>
+          ) : null}
+
+          {a && a !== 'AVAILABLE' ? (
+            <Text
+              style={{
+                marginTop: 16,
+                color: a === 'PARTIAL' ? C.warn : C.err,
+                fontWeight: '700',
+              }}
+            >
+              {a === 'PARTIAL' ? 'Stock limité sur cette période' : 'Indisponible sur cette période'}
+            </Text>
+          ) : null}
+
+          {linked.length > 0 && (
+            <View style={{ marginTop: 22 }}>
+              <Text style={{ fontWeight: '800', color: C.ink, marginBottom: 8 }}>
+                Consommables & accessoires adaptés
+              </Text>
+              {linked.map((l) => (
+                <Pressable
+                  key={l.id}
+                  onPress={() => setExtras((s) => ({ ...s, [l.id]: !s[l.id] }))}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 }}
+                >
+                  <View
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      borderWidth: 2,
+                      borderColor: extras[l.id] ? C.brico : C.border,
+                      backgroundColor: extras[l.id] ? C.brico : 'transparent',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {extras[l.id] && <Ionicons name="checkmark" size={14} color={C.white} />}
+                  </View>
+                  <Text style={{ flex: 1, color: C.ink }}>
+                    {l.name}
+                    {l.partSupplier ? (
+                      <Text style={{ color: C.muted }}> · {l.partSupplier}</Text>
+                    ) : (
+                      <Text style={{ color: C.muted }}> · {formatEUR(l.dailyPrice)}/j</Text>
+                    )}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          {Object.keys(p.specs).length > 0 && (
+            <Card style={{ marginTop: 20 }}>
+              <H2>Caractéristiques</H2>
+              {Object.entries(p.specs).map(([k, v]) => (
+                <View
+                  key={k}
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}
+                >
+                  <Text style={{ color: C.muted }}>{k}</Text>
+                  <Text style={{ fontWeight: '600', color: C.ink }}>{v}</Text>
+                </View>
+              ))}
+            </Card>
+          )}
+
+          <Reviews slug={slug} />
+        </View>
+      </ScrollView>
+
+      {/* Barre d'action fixe */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: C.white,
+          borderTopWidth: 1,
+          borderTopColor: C.border,
+          paddingHorizontal: 20,
+          paddingTop: 12,
+          paddingBottom: 26,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <View>
+          <Text style={{ fontSize: 20, fontWeight: '900', color: C.ink, letterSpacing: -0.4 }}>
+            {formatEUR(p.dailyPrice)}
+          </Text>
+          <Text style={{ fontSize: 11, color: C.muted }}>/ {p.isConsumable ? 'unité' : 'jour'}</Text>
+        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: C.border,
+            borderRadius: R.pill,
+          }}
+        >
+          <Pressable onPress={() => setQty((q) => Math.max(1, q - 1))} style={{ padding: 10 }}>
+            <Ionicons name="remove" size={16} color={C.ink} />
+          </Pressable>
+          <Text style={{ fontWeight: '800', minWidth: 18, textAlign: 'center' }}>{qty}</Text>
+          <Pressable onPress={() => setQty((q) => q + 1)} style={{ padding: 10 }}>
+            <Ionicons name="add" size={16} color={C.ink} />
+          </Pressable>
+        </View>
+        <Pressable
           onPress={add}
           disabled={a === 'UNAVAILABLE'}
-        />
-        {msg ? (
-          <Pressable onPress={() => router.push('/panier')}>
-            <Text style={{ color: C.ok, fontWeight: '700', textAlign: 'center', marginTop: 6 }}>
-              {msg} — voir le panier →
-            </Text>
-          </Pressable>
-        ) : null}
-      </Card>
+          style={{
+            flex: 1,
+            backgroundColor: a === 'UNAVAILABLE' ? C.border : C.brico,
+            borderRadius: R.pill,
+            paddingVertical: 15,
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: C.white, fontWeight: '900', fontSize: 15 }}>{ti('prod.book')}</Text>
+        </Pressable>
+      </View>
 
-      {p.tiers.length > 0 && (
-        <Card>
-          <H2>Tarifs dégressifs</H2>
-          {p.tiers.map((t) => (
-            <Text key={t.minDays} style={{ paddingVertical: 2 }}>
-              Dès {t.minDays} j : {formatEUR(t.perDay)} / jour
-            </Text>
-          ))}
-        </Card>
-      )}
-
-      {p.recommendedUses.length > 0 && (
-        <Card>
-          <H2>Utilisations conseillées</H2>
-          {p.recommendedUses.map((u) => (
-            <Text key={u} style={{ paddingVertical: 2 }}>
-              • {u}
-            </Text>
-          ))}
-        </Card>
-      )}
-
-      {Object.keys(p.specs).length > 0 && (
-        <Card>
-          <H2>Caractéristiques</H2>
-          {Object.entries(p.specs).map(([k, v]) => (
-            <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 }}>
-              <Text style={{ color: C.lightGray }}>{k}</Text>
-              <Text style={{ fontWeight: '600' }}>{v}</Text>
-            </View>
-          ))}
-        </Card>
-      )}
-
-      <Reviews slug={slug} />
-    </Screen>
+      {msg ? (
+        <Pressable
+          onPress={() => router.push('/(tabs)/panier')}
+          style={{
+            position: 'absolute',
+            bottom: 96,
+            alignSelf: 'center',
+            backgroundColor: C.locDeep,
+            borderRadius: R.pill,
+            paddingHorizontal: 18,
+            paddingVertical: 10,
+          }}
+        >
+          <Text style={{ color: C.white, fontWeight: '700' }}>{msg} — voir le panier →</Text>
+        </Pressable>
+      ) : null}
+    </SafeAreaView>
   );
 }
 
