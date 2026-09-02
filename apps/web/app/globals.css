@@ -2279,3 +2279,21 @@ button { font-family: inherit; }
 .pickup-opt { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border: 1px solid var(--border); border-radius: var(--r-md); cursor: pointer; }
 .pickup-opt input { margin-top: 3px; }
 .pickup-opt:has(input:checked) { border-color: var(--navy); background: var(--surface-2); }
+
+/* Terminal — vignettes */
+.term-thumb {
+  width: 48px; height: 48px; border-radius: 10px; object-fit: contain;
+  background: var(--surface-2); flex: 0 0 auto;
+}
+.term-thumb--sm { width: 40px; height: 40px; border-radius: 8px; }
+.term-detailhead { display: flex; align-items: center; gap: 12px; }
+.term-detailhead .term-thumb { width: 64px; height: 64px; }
+.term-detailhead h2 { margin: 0; }
+.term-list__row--img { gap: 12px; }
+.term-list__name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.term-row--img { display: flex; align-items: center; gap: 10px; }
+.cflow__unitline__head { display: flex; align-items: center; gap: 10px; }
+.cflow__thumb {
+  width: 40px; height: 40px; border-radius: 8px; object-fit: contain;
+  background: var(--surface-2); flex: 0 0 auto;
+}

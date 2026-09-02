@@ -15,8 +15,12 @@ interface Unit {
   notes: string | null;
   nextMaintenanceAt: string | null;
   immobilisedUntil: string | null;
-  product: { id: string; name: string };
+  product: { id: string; name: string; images?: string[] | null };
 }
+
+const PH =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="#eeeef7"/></svg>');
 
 export const TerminalRepairs = forwardRef<
   TerminalRepairsHandle,
@@ -82,11 +86,22 @@ export const TerminalRepairs = forwardRef<
         <button className="term-back" onClick={() => setSel(null)}>
           ← Retour
         </button>
-        <h2>{sel.assetTag}</h2>
-        <p className="term-note">
-          {sel.product.name} — <strong>{sel.state}</strong>
-          {sel.notes ? <> · {sel.notes}</> : null}
-        </p>
+        <div className="term-detailhead">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="term-thumb"
+            src={sel.product.images?.[0] || PH}
+            alt=""
+            onError={(e) => ((e.currentTarget as HTMLImageElement).src = PH)}
+          />
+          <div>
+            <h2>{sel.assetTag}</h2>
+            <p className="term-note">
+              {sel.product.name} — <strong>{sel.state}</strong>
+              {sel.notes ? <> · {sel.notes}</> : null}
+            </p>
+          </div>
+        </div>
         <div className="term-btns">
           <button className="btn btn-primary btn-lg" onClick={() => act(sel, 'AVAILABLE')}>
             Réparé — remettre en service
@@ -119,7 +134,14 @@ export const TerminalRepairs = forwardRef<
         <ul>
           {list.map((u) => (
             <li key={u.id}>
-              <button className="term-row" onClick={() => setSel(u)}>
+              <button className="term-row term-row--img" onClick={() => setSel(u)}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="term-thumb term-thumb--sm"
+                  src={u.product.images?.[0] || PH}
+                  alt=""
+                  onError={(e) => ((e.currentTarget as HTMLImageElement).src = PH)}
+                />
                 <span className="term-row__num">{u.assetTag}</span>
                 <span className="term-row__cust">{u.product.name}</span>
                 {u.immobilisedUntil && (

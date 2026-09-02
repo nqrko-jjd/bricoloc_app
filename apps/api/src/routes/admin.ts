@@ -404,6 +404,7 @@ adminRouter.get(
           slug: p.slug,
           name: p.name,
           kind: p.kind,
+          image: (p.images as string[] | null)?.[0] ?? null,
           category: p.category?.name ?? null,
           categorySlug: p.category?.slug ?? null,
           published: p.published,
@@ -418,11 +419,16 @@ adminRouter.get(
       })
       .filter((r) => r.total > 0 || r.kind === 'MACHINE');
 
-    const consumables = await prisma.product.findMany({
+    const consumableRows = await prisma.product.findMany({
       where: { kind: 'CONSUMABLE' },
-      select: { id: true, slug: true, name: true, stockQty: true, dailyPrice: true, partSupplier: true, published: true },
+      select: { id: true, slug: true, name: true, stockQty: true, dailyPrice: true, partSupplier: true, published: true, images: true },
       orderBy: { name: 'asc' },
     });
+    const consumables = consumableRows.map((c) => ({
+      ...c,
+      images: undefined,
+      image: (c.images as string[] | null)?.[0] ?? null,
+    }));
 
     res.json({ machines: rows, consumables });
   }),

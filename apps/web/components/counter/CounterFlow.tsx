@@ -291,7 +291,11 @@ export const CounterFlow = forwardRef<
             const got = Object.values(assigned).filter((a) => a.productId === i.productId);
             return (
               <div key={i.id} className="cflow__unitline">
-                <div>
+                <div className="cflow__unitline__head">
+                  {i.product?.images?.[0] && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="cflow__thumb" src={i.product.images[0]} alt="" />
+                  )}
                   <strong>{i.nameSnapshot}</strong>
                   <span className="small muted"> · {got.length}/{need}</span>
                 </div>

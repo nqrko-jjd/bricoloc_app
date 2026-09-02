@@ -11,6 +11,7 @@ export interface TerminalStockHandle {
 interface StockRow {
   id: string;
   name: string;
+  image: string | null;
   category: string | null;
   total: number;
   availableNow: number;
@@ -23,6 +24,7 @@ interface ConsumableRow {
   id: string;
   slug: string;
   name: string;
+  image: string | null;
   stockQty: number | null;
   partSupplier: string | null;
 }
@@ -30,7 +32,13 @@ interface Unit {
   id: string;
   assetTag: string;
   state: string;
-  product: { id: string; name: string };
+  product: { id: string; name: string; images?: string[] | null };
+}
+
+const PH = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="#eeeef7"/></svg>');
+function Thumb({ src, alt = '' }: { src?: string | null; alt?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className="term-thumb" src={src || PH} alt={alt} loading="lazy" onError={(e) => ((e.currentTarget as HTMLImageElement).src = PH)} />;
 }
 
 const STATE_LABEL: Record<string, string> = {
@@ -120,9 +128,11 @@ export const TerminalStock = forwardRef<
   if (inv) {
     const expected = units.filter((u) => u.state === 'AVAILABLE');
     const missing = expected.filter((u) => !seen.has(u.id));
-    const byProd = new Map<string, { name: string; seen: number; expected: number }>();
+    const byProd = new Map<string, { name: string; image: string | null; seen: number; expected: number }>();
     for (const u of expected) {
-      const e = byProd.get(u.product.id) ?? { name: u.product.name, seen: 0, expected: 0 };
+      const e =
+        byProd.get(u.product.id) ??
+        { name: u.product.name, image: u.product.images?.[0] ?? null, seen: 0, expected: 0 };
       e.expected++;
       if (seen.has(u.id)) e.seen++;
       byProd.set(u.product.id, e);
@@ -140,8 +150,9 @@ export const TerminalStock = forwardRef<
           {[...byProd.values()]
             .sort((a, b) => a.seen / a.expected - b.seen / b.expected)
             .map((p) => (
-              <li key={p.name} className="term-list__row">
-                <span>{p.name}</span>
+              <li key={p.name} className="term-list__row term-list__row--img">
+                <Thumb src={p.image} alt={p.name} />
+                <span className="term-list__name">{p.name}</span>
                 <strong className={p.seen === p.expected ? 'term-ok' : 'term-warn'}>
                   {p.seen}/{p.expected}
                 </strong>
@@ -174,10 +185,16 @@ export const TerminalStock = forwardRef<
         <button className="term-back" onClick={() => setUnitView(null)}>
           ← Retour
         </button>
-        <h2>{unitView.assetTag}</h2>
-        <p className="term-note">
-          {unitView.product.name} — <strong>{STATE_LABEL[unitView.state] ?? unitView.state}</strong>
-        </p>
+        <div className="term-detailhead">
+          <Thumb src={unitView.product.images?.[0]} alt={unitView.product.name} />
+          <div>
+            <h2>{unitView.assetTag}</h2>
+            <p className="term-note">
+              {unitView.product.name} —{' '}
+              <strong>{STATE_LABEL[unitView.state] ?? unitView.state}</strong>
+            </p>
+          </div>
+        </div>
         <div className="term-btns">
           {Object.entries(STATE_LABEL).map(([s, label]) => (
             <button
@@ -201,12 +218,17 @@ export const TerminalStock = forwardRef<
         <button className="term-back" onClick={() => setFocus(null)}>
           ← Retour
         </button>
-        <h2>{focus.name}</h2>
-        <p className="term-note">
-          <span className="term-ok">{focus.availableNow} dispo</span> · {focus.rented} en location ·{' '}
-          {focus.maintenance} entretien · {focus.damaged + focus.retired} HS —{' '}
-          <strong>{focus.total} exemplaires</strong>
-        </p>
+        <div className="term-detailhead">
+          <Thumb src={focus.image} alt={focus.name} />
+          <div>
+            <h2>{focus.name}</h2>
+            <p className="term-note">
+              <span className="term-ok">{focus.availableNow} dispo</span> · {focus.rented} en location ·{' '}
+              {focus.maintenance} entretien · {focus.damaged + focus.retired} HS —{' '}
+              <strong>{focus.total} exemplaires</strong>
+            </p>
+          </div>
+        </div>
         <ul className="term-list">
           {mine.map((u) => (
             <li key={u.id} className="term-list__row term-list__row--tap" onClick={() => setUnitView(u)}>
@@ -251,10 +273,11 @@ export const TerminalStock = forwardRef<
           {shownM.slice(0, 80).map((m) => (
             <li
               key={m.id}
-              className="term-list__row term-list__row--tap"
+              className="term-list__row term-list__row--tap term-list__row--img"
               onClick={() => setFocus(m)}
             >
-              <span>{m.name}</span>
+              <Thumb src={m.image} alt={m.name} />
+              <span className="term-list__name">{m.name}</span>
               <strong className={m.availableNow > 0 ? 'term-ok' : 'term-warn'}>
                 {m.availableNow}/{m.total}
               </strong>
@@ -266,8 +289,9 @@ export const TerminalStock = forwardRef<
       {tab === 'consumables' && (
         <ul className="term-list">
           {shownC.slice(0, 120).map((c) => (
-            <li key={c.id} className="term-list__row">
-              <span>{c.name}</span>
+            <li key={c.id} className="term-list__row term-list__row--img">
+              <Thumb src={c.image} alt={c.name} />
+              <span className="term-list__name">{c.name}</span>
               <strong className={(c.stockQty ?? 0) > 0 ? 'term-ok' : 'term-warn'}>
                 {c.stockQty ?? '—'}
               </strong>
