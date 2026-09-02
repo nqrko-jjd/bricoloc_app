@@ -3,6 +3,12 @@ import type { ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@bricoloc/shared';
 
+const EXIT_LABEL: Record<string, string> = {
+  fr: '← Retour au site',
+  nl: '← Terug naar site',
+  en: '← Back to site',
+};
+
 /** Étapes du parcours de commande borne (déclenché depuis l'accueil). */
 export const KIOSK_STEPS = [
   'Accueil',
@@ -43,7 +49,7 @@ export function KioskFrame({
     <>
       <div className="kiosk-topline">
         <Link href="/" className="kiosk-exit">
-          ← Retour au site
+          {EXIT_LABEL[locale] ?? EXIT_LABEL.fr}
         </Link>
       </div>
 
