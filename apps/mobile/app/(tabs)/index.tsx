@@ -95,7 +95,7 @@ export default function HomeScreen() {
 
         {/* Search */}
         <Pressable
-          onPress={() => router.push('/(tabs)/catalogue')}
+          onPress={() => router.push('/(tabs)/catalogue?focus=1')}
           style={{
             marginHorizontal: 20,
             marginTop: 16,

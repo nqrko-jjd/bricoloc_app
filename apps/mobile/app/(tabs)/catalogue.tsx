@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,17 +16,25 @@ interface Category {
 }
 
 export default function CatalogueScreen() {
-  const params = useLocalSearchParams<{ category?: string }>();
+  const params = useLocalSearchParams<{ category?: string; focus?: string }>();
   const { cart } = useStore();
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [q, setQ] = useState('');
   const [cat, setCat] = useState(params.category ?? '');
   const [loading, setLoading] = useState(true);
+  const searchRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (params.category !== undefined) setCat(params.category);
   }, [params.category]);
+
+  useEffect(() => {
+    if (params.focus) {
+      const id = setTimeout(() => searchRef.current?.focus(), 350);
+      return () => clearTimeout(id);
+    }
+  }, [params.focus]);
 
   async function load() {
     setLoading(true);
@@ -48,8 +56,10 @@ export default function CatalogueScreen() {
   useEffect(() => {
     api<{ categories: Category[] }>('/api/catalog/categories').then((r) => setCategories(r.categories));
   }, []);
+  // Recherche : on attend 300 ms après la dernière frappe (moins de requêtes).
   useEffect(() => {
-    load();
+    const id = setTimeout(load, q ? 300 : 0);
+    return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, cat, cart?.period]);
 
@@ -118,12 +128,19 @@ export default function CatalogueScreen() {
       >
         <Ionicons name="search" size={17} color={C.muted} />
         <TextInput
+          ref={searchRef}
           placeholder={t('cat.search')}
           placeholderTextColor={C.muted}
           value={q}
           onChangeText={setQ}
+          returnKeyType="search"
           style={{ flex: 1, color: C.ink, fontSize: 14 }}
         />
+        {q ? (
+          <Pressable onPress={() => setQ('')} hitSlop={8}>
+            <Ionicons name="close-circle" size={17} color={C.muted} />
+          </Pressable>
+        ) : null}
         <Pressable onPress={() => router.push('/scan')} hitSlop={8}>
           <Ionicons name="scan-outline" size={19} color={C.loc} />
         </Pressable>
