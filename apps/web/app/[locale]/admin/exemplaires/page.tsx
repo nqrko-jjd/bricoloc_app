@@ -35,10 +35,11 @@ interface Unit {
   barcode: string | null;
   qrToken: string;
   state: string;
+  storageLocation: string | null;
   immobilisedUntil: string | null;
   nextMaintenanceAt: string | null;
   notes: string | null;
-  product: { id: string; name: string };
+  product: { id: string; name: string; images?: string[] | null };
   reservationUnits: { assignedAt: string; returnedAt: string | null; reservationItem: { reservation: { number: string } } }[];
   damages: { description: string; feeHT: number; resolved: boolean }[];
   maintenances: { type: string; status?: string; description: string; performedAt: string; startAt?: string | null; endAt?: string | null }[];
@@ -187,12 +188,30 @@ function MachineRow({
   const [open, setOpen] = useState(false);
   const [maintFor, setMaintFor] = useState<string | null>(null);
   const [addN, setAddN] = useState('2');
+  const [addLoc, setAddLoc] = useState('');
   const mine = units.filter((u) => u.product.id === r.id);
+  const locs = [...new Set(mine.map((u) => u.storageLocation).filter(Boolean))] as string[];
 
   async function bulkAdd() {
     const n = Math.max(1, Math.min(50, Number(addN) || 1));
-    await staffApi('/api/admin/units/bulk', { method: 'POST', body: { productId: r.id, count: n } });
+    await staffApi('/api/admin/units/bulk', {
+      method: 'POST',
+      body: { productId: r.id, count: n, storageLocation: addLoc || undefined },
+    });
     setMsg(`${n} exemplaire(s) ajouté(s) à « ${r.name} » — QR générés.`);
+    await onReload();
+  }
+
+  async function setLocation(unitId: string, storageLocation: string) {
+    await staffApi(`/api/admin/units/${unitId}`, { method: 'PATCH', body: { storageLocation } });
+    await onReload();
+  }
+  async function relocateAll(storageLocation: string) {
+    await staffApi('/api/admin/units/relocate', {
+      method: 'POST',
+      body: { productId: r.id, storageLocation },
+    });
+    setMsg(`Emplacement « ${storageLocation || '—'} » appliqué à tous les exemplaires de « ${r.name} ».`);
     await onReload();
   }
 
@@ -211,11 +230,13 @@ function MachineRow({
           <StockBar r={r} />
         </td>
         <td className="small muted">
-          {r.rented ? `${r.rented} en location · ` : ''}
-          {r.reserved ? `${r.reserved} réservé · ` : ''}
-          {r.maintenance ? `${r.maintenance} entretien · ` : ''}
+          {locs.length > 0 && <strong style={{ color: 'var(--ink)' }}>📍 {locs.join(', ')} · </strong>}
+          {r.rented ? `${r.rented} loc. · ` : ''}
+          {r.maintenance ? `${r.maintenance} entr. · ` : ''}
           {r.damaged + r.retired ? `${r.damaged + r.retired} HS` : ''}
-          {!r.rented && !r.reserved && !r.maintenance && !r.damaged && !r.retired ? 'tout dispo' : ''}
+          {!r.rented && !r.reserved && !r.maintenance && !r.damaged && !r.retired && locs.length === 0
+            ? 'tout dispo'
+            : ''}
         </td>
       </tr>
       {open && (
@@ -233,6 +254,16 @@ function MachineRow({
                         <td>
                           <strong>{u.assetTag}</strong>
                           {u.serialNumber ? <span className="small muted"> · SN {u.serialNumber}</span> : null}
+                        </td>
+                        <td>
+                          <input
+                            defaultValue={u.storageLocation ?? ''}
+                            placeholder="R-01-A"
+                            style={{ width: 90 }}
+                            onBlur={(e) => {
+                              if (e.target.value !== (u.storageLocation ?? '')) setLocation(u.id, e.target.value);
+                            }}
+                          />
                         </td>
                         <td>
                           <select
@@ -269,7 +300,7 @@ function MachineRow({
                       </tr>
                       {maintFor === u.id && (
                         <tr>
-                          <td colSpan={4}>
+                          <td colSpan={5}>
                             <MaintenanceForm
                               unitId={u.id}
                               onDone={async () => {
@@ -286,6 +317,19 @@ function MachineRow({
                 </tbody>
               </table>
             )}
+            {mine.length > 0 && (
+              <div className="row" style={{ marginTop: 8, gap: 8, alignItems: 'center' }}>
+                <span className="small">Ranger tous en</span>
+                <input
+                  placeholder="R-01-A"
+                  style={{ width: 100 }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') relocateAll((e.target as HTMLInputElement).value);
+                  }}
+                />
+                <span className="small muted">(Entrée pour appliquer)</span>
+              </div>
+            )}
             <div className="row" style={{ marginTop: 10, gap: 8, alignItems: 'center' }}>
               <span className="small">Ajouter</span>
               <input
@@ -293,6 +337,12 @@ function MachineRow({
                 value={addN}
                 onChange={(e) => setAddN(e.target.value)}
                 style={{ width: 64 }}
+              />
+              <input
+                placeholder="emplacement (opt.)"
+                value={addLoc}
+                onChange={(e) => setAddLoc(e.target.value)}
+                style={{ width: 130 }}
               />
               <button className="btn btn-outline btn-sm" onClick={bulkAdd}>
                 + exemplaires (QR auto)

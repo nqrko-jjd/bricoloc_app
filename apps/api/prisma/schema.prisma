@@ -297,6 +297,8 @@ model ProductUnit {
   barcode           String?   @unique
   qrToken           String    @unique
   state             String    @default("AVAILABLE") // UNIT_STATES
+  /// Emplacement de rangement au dépôt : rack / étagère (ex. « R-01-A »).
+  storageLocation   String?
   /// Immobilise (maintenance/repar.) jusqu'a cette date -> retire des disponibilites.
   immobilisedUntil  DateTime?
   notes             String?

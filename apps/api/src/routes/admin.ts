@@ -493,10 +493,11 @@ adminRouter.post(
   '/units/bulk',
   requireStaff('RESPONSABLE', 'TECHNICIEN'),
   h(async (req, res) => {
-    const { productId, count } = req.body ?? {};
+    const { productId, count, storageLocation } = req.body ?? {};
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) throw notFound('Produit introuvable');
     const n = Math.min(50, Math.max(1, Number(count ?? 1)));
+    const loc = (storageLocation || '').trim() || null;
     const prefix = product.slug.slice(0, 10).toUpperCase().replace(/[^A-Z0-9]/g, '');
     const start = await prisma.productUnit.count({ where: { productId } });
     const created = [];
@@ -508,11 +509,28 @@ adminRouter.post(
             assetTag: `${prefix}-${String(start + i + 1).padStart(3, '0')}`,
             qrToken: newQrToken('U'),
             state: 'AVAILABLE',
+            storageLocation: loc,
           },
         }),
       );
     }
     res.status(201).json({ units: created });
+  }),
+);
+
+/** Affecte un emplacement de rangement à tous les exemplaires d'une machine. */
+adminRouter.post(
+  '/units/relocate',
+  requireStaff('RESPONSABLE', 'TECHNICIEN', 'COMPTOIR'),
+  h(async (req, res) => {
+    const { productId, storageLocation } = req.body ?? {};
+    if (!productId) throw badRequest('productId requis');
+    const loc = (storageLocation || '').trim() || null;
+    const { count } = await prisma.productUnit.updateMany({
+      where: { productId: String(productId) },
+      data: { storageLocation: loc },
+    });
+    res.json({ updated: count, storageLocation: loc });
   }),
 );
 
@@ -541,6 +559,7 @@ adminRouter.post(
         assetTag: u.assetTag,
         barcode: u.barcode ?? u.assetTag,
         productName: u.product.name,
+        storageLocation: u.storageLocation ?? null,
         qrToken: u.qrToken,
         qrDataUrl: await qrDataUrl(u.qrToken),
       })),
@@ -554,7 +573,7 @@ adminRouter.patch(
   '/units/:id',
   requireStaff('RESPONSABLE', 'TECHNICIEN', 'COMPTOIR'),
   h(async (req, res) => {
-    const { state, notes, serialNumber, sku, barcode, immobilisedUntil } = req.body ?? {};
+    const { state, notes, serialNumber, sku, barcode, immobilisedUntil, storageLocation } = req.body ?? {};
     const unit = await prisma.productUnit.update({
       where: { id: req.params.id! },
       data: {
@@ -563,6 +582,8 @@ adminRouter.patch(
         serialNumber: serialNumber === undefined ? undefined : serialNumber,
         sku: sku === undefined ? undefined : sku,
         barcode: barcode === undefined ? undefined : (barcode || null),
+        storageLocation:
+          storageLocation === undefined ? undefined : (storageLocation || '').trim() || null,
         immobilisedUntil:
           immobilisedUntil === undefined ? undefined : immobilisedUntil ? new Date(immobilisedUntil) : null,
       },

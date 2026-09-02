@@ -8,6 +8,7 @@ interface Label {
   assetTag: string;
   barcode: string;
   productName: string;
+  storageLocation: string | null;
   qrDataUrl: string;
 }
 interface StockRow {
@@ -131,7 +132,10 @@ export default function AdminEtiquettes() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={l.qrDataUrl} alt="" className="label__qr" />
             <div className="label__body">
-              <strong className="label__tag">{l.assetTag}</strong>
+              <strong className="label__tag">
+                {l.assetTag}
+                {l.storageLocation ? <span className="label__loc"> · 📍 {l.storageLocation}</span> : null}
+              </strong>
               <span className="label__name">{l.productName}</span>
               <Barcode value={l.barcode} height={30} unit={1.3} />
               <span className="label__brand">BRICOLOC</span>

@@ -13,6 +13,7 @@ interface Unit {
   assetTag: string;
   state: string;
   notes: string | null;
+  storageLocation: string | null;
   nextMaintenanceAt: string | null;
   immobilisedUntil: string | null;
   product: { id: string; name: string; images?: string[] | null };
@@ -100,6 +101,7 @@ export const TerminalRepairs = forwardRef<
               {sel.product.name} — <strong>{sel.state}</strong>
               {sel.notes ? <> · {sel.notes}</> : null}
             </p>
+            {sel.storageLocation && <p className="term-loc">📍 {sel.storageLocation}</p>}
           </div>
         </div>
         <div className="term-btns">
@@ -143,7 +145,10 @@ export const TerminalRepairs = forwardRef<
                   onError={(e) => ((e.currentTarget as HTMLImageElement).src = PH)}
                 />
                 <span className="term-row__num">{u.assetTag}</span>
-                <span className="term-row__cust">{u.product.name}</span>
+                <span className="term-row__cust">
+                  {u.product.name}
+                  {u.storageLocation && <span className="term-loc term-loc--inline"> 📍 {u.storageLocation}</span>}
+                </span>
                 {u.immobilisedUntil && (
                   <span className="term-row__meta">
                     jusqu’au {new Date(u.immobilisedUntil).toLocaleDateString('fr-BE')}

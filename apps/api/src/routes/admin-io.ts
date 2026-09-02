@@ -105,6 +105,7 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         assetTag: u.assetTag,
         productSlug: u.product.slug,
         productName: u.product.name,
+        storageLocation: u.storageLocation ?? '',
         serialNumber: u.serialNumber ?? '',
         sku: u.sku ?? '',
         barcode: u.barcode ?? '',
@@ -112,8 +113,8 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         notes: u.notes ?? '',
         nextMaintenanceAt: u.nextMaintenanceAt ? u.nextMaintenanceAt.toISOString().slice(0, 10) : '',
       })),
-      ['assetTag', 'productSlug', 'productName', 'serialNumber', 'sku', 'barcode', 'state',
-        'notes', 'nextMaintenanceAt'],
+      ['assetTag', 'productSlug', 'productName', 'storageLocation', 'serialNumber', 'sku', 'barcode',
+        'state', 'notes', 'nextMaintenanceAt'],
     );
   },
 
@@ -394,6 +395,7 @@ const IMPORTERS: Record<string, Importer> = {
         const data: Record<string, unknown> = {
           productId,
           state,
+          storageLocation: 'storageLocation' in r ? csv.str(r.storageLocation) : undefined,
           serialNumber: 'serialNumber' in r ? csv.str(r.serialNumber) : undefined,
           sku: 'sku' in r ? csv.str(r.sku) : undefined,
           barcode: 'barcode' in r ? csv.str(r.barcode) : undefined,

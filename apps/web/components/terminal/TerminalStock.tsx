@@ -32,6 +32,7 @@ interface Unit {
   id: string;
   assetTag: string;
   state: string;
+  storageLocation: string | null;
   product: { id: string; name: string; images?: string[] | null };
 }
 
@@ -128,11 +129,20 @@ export const TerminalStock = forwardRef<
   if (inv) {
     const expected = units.filter((u) => u.state === 'AVAILABLE');
     const missing = expected.filter((u) => !seen.has(u.id));
-    const byProd = new Map<string, { name: string; image: string | null; seen: number; expected: number }>();
+    const byProd = new Map<
+      string,
+      { name: string; image: string | null; loc: string | null; seen: number; expected: number }
+    >();
     for (const u of expected) {
       const e =
         byProd.get(u.product.id) ??
-        { name: u.product.name, image: u.product.images?.[0] ?? null, seen: 0, expected: 0 };
+        {
+          name: u.product.name,
+          image: u.product.images?.[0] ?? null,
+          loc: u.storageLocation ?? null,
+          seen: 0,
+          expected: 0,
+        };
       e.expected++;
       if (seen.has(u.id)) e.seen++;
       byProd.set(u.product.id, e);
@@ -148,11 +158,14 @@ export const TerminalStock = forwardRef<
         <p className="term-note">Scannez les exemplaires « disponibles » un par un.</p>
         <ul className="term-list">
           {[...byProd.values()]
-            .sort((a, b) => a.seen / a.expected - b.seen / b.expected)
+            .sort((a, b) => (a.loc ?? 'zzz').localeCompare(b.loc ?? 'zzz'))
             .map((p) => (
               <li key={p.name} className="term-list__row term-list__row--img">
                 <Thumb src={p.image} alt={p.name} />
-                <span className="term-list__name">{p.name}</span>
+                <span className="term-list__name">
+                  {p.name}
+                  {p.loc && <span className="term-loc term-loc--inline"> 📍 {p.loc}</span>}
+                </span>
                 <strong className={p.seen === p.expected ? 'term-ok' : 'term-warn'}>
                   {p.seen}/{p.expected}
                 </strong>
@@ -193,6 +206,9 @@ export const TerminalStock = forwardRef<
               {unitView.product.name} —{' '}
               <strong>{STATE_LABEL[unitView.state] ?? unitView.state}</strong>
             </p>
+            {unitView.storageLocation && (
+              <p className="term-loc">📍 {unitView.storageLocation}</p>
+            )}
           </div>
         </div>
         <div className="term-btns">
@@ -232,7 +248,10 @@ export const TerminalStock = forwardRef<
         <ul className="term-list">
           {mine.map((u) => (
             <li key={u.id} className="term-list__row term-list__row--tap" onClick={() => setUnitView(u)}>
-              <span>{u.assetTag}</span>
+              <span>
+                {u.assetTag}
+                {u.storageLocation && <span className="term-loc term-loc--inline"> 📍 {u.storageLocation}</span>}
+              </span>
               <span className="term-tag">{STATE_LABEL[u.state] ?? u.state}</span>
             </li>
           ))}
@@ -270,19 +289,27 @@ export const TerminalStock = forwardRef<
 
       {tab === 'machines' && (
         <ul className="term-list">
-          {shownM.slice(0, 80).map((m) => (
-            <li
-              key={m.id}
-              className="term-list__row term-list__row--tap term-list__row--img"
-              onClick={() => setFocus(m)}
-            >
-              <Thumb src={m.image} alt={m.name} />
-              <span className="term-list__name">{m.name}</span>
-              <strong className={m.availableNow > 0 ? 'term-ok' : 'term-warn'}>
-                {m.availableNow}/{m.total}
-              </strong>
-            </li>
-          ))}
+          {shownM.slice(0, 80).map((m) => {
+            const mlocs = [
+              ...new Set(units.filter((u) => u.product.id === m.id).map((u) => u.storageLocation).filter(Boolean)),
+            ] as string[];
+            return (
+              <li
+                key={m.id}
+                className="term-list__row term-list__row--tap term-list__row--img"
+                onClick={() => setFocus(m)}
+              >
+                <Thumb src={m.image} alt={m.name} />
+                <span className="term-list__name">
+                  {m.name}
+                  {mlocs.length > 0 && <span className="term-loc term-loc--inline"> 📍 {mlocs.join(', ')}</span>}
+                </span>
+                <strong className={m.availableNow > 0 ? 'term-ok' : 'term-warn'}>
+                  {m.availableNow}/{m.total}
+                </strong>
+              </li>
+            );
+          })}
         </ul>
       )}
 

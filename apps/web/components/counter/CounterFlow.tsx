@@ -289,6 +289,13 @@ export const CounterFlow = forwardRef<
           {machineItems.map((i: any) => {
             const need = i.quantity;
             const got = Object.values(assigned).filter((a) => a.productId === i.productId);
+            const locs = [
+              ...new Set(
+                (i.product?.units ?? [])
+                  .filter((u: any) => u.state === 'AVAILABLE' && u.storageLocation)
+                  .map((u: any) => u.storageLocation),
+              ),
+            ] as string[];
             return (
               <div key={i.id} className="cflow__unitline">
                 <div className="cflow__unitline__head">
@@ -298,6 +305,7 @@ export const CounterFlow = forwardRef<
                   )}
                   <strong>{i.nameSnapshot}</strong>
                   <span className="small muted"> · {got.length}/{need}</span>
+                  {locs.length > 0 && <span className="term-loc term-loc--inline"> 📍 {locs.join(', ')}</span>}
                 </div>
                 <div className="cflow__tags">
                   {got.map((g) => (
@@ -382,6 +390,21 @@ export const CounterFlow = forwardRef<
 
           {isReturn && (
             <>
+              {(() => {
+                const shelf = machineItems
+                  .flatMap((i: any) => (i.units ?? []).map((ru: any) => ru.unit))
+                  .filter((u: any) => u?.storageLocation);
+                return shelf.length > 0 ? (
+                  <div className="cflow__shelf">
+                    <strong>À ranger :</strong>
+                    {shelf.map((u: any) => (
+                      <span key={u.id} className="term-loc term-loc--inline">
+                        {u.assetTag} 📍 {u.storageLocation}
+                      </span>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
               <div className="field">
                 <label>Heure réelle de retour</label>
                 <input
