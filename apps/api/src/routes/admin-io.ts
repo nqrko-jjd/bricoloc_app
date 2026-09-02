@@ -86,9 +86,12 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         partSupplier: p.partSupplier ?? '',
         supplierRef: p.supplierRef ?? '',
         supplierUrl: p.supplierUrl ?? '',
+        supplierListPrice: p.supplierListPrice ?? '',
+        purchasePrice: p.purchasePrice ?? '',
       })),
       ['slug', 'name', 'categorySlug', 'brand', 'shortDescription', 'unitPrice', 'deposit',
-        'stockQty', 'published', 'partSupplier', 'supplierRef', 'supplierUrl'],
+        'stockQty', 'published', 'partSupplier', 'supplierRef', 'supplierUrl',
+        'supplierListPrice', 'purchasePrice'],
     );
   },
 
@@ -332,6 +335,8 @@ const IMPORTERS: Record<string, Importer> = {
           partSupplier: 'partSupplier' in r ? csv.str(r.partSupplier) : undefined,
           supplierRef: 'supplierRef' in r ? csv.str(r.supplierRef) : undefined,
           supplierUrl: 'supplierUrl' in r ? csv.str(r.supplierUrl) : undefined,
+          supplierListPrice: 'supplierListPrice' in r ? csv.num(r.supplierListPrice) : undefined,
+          purchasePrice: 'purchasePrice' in r ? csv.num(r.purchasePrice) : undefined,
         };
         if (catSlug) data.categoryId = cats.get(catSlug);
         const changes = existing ? diffKeys(existing as Record<string, unknown>, data) : Object.keys(data).filter((k) => data[k] !== undefined);

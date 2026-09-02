@@ -67,10 +67,11 @@ export default async function ProductPage({
   const t = await getTranslations('product');
   const isLoiselet = product.supplier === 'LOISELET';
 
-  const allLinked = [...product.recommendedAccessories, ...product.consumables, ...product.ppe];
-  // « pièces » = consommables/accessoires à acheter (réf. fournisseur) ; « accessoires » = louables.
-  const parts = allLinked.filter((a) => a.supplierRef || a.partSupplier);
-  const accessories = allLinked.filter((a) => !a.supplierRef && !a.partSupplier);
+  // Accessoires / EPI louables d'un côté, consommables (achat à l'unité) de l'autre.
+  // La provenance fournisseur des consommables reste interne (back-office).
+  const accessories = [...product.recommendedAccessories, ...product.ppe];
+  // Uniquement les consommables réellement mis en vente (prix client renseigné).
+  const consumables = product.consumables.filter((c) => c.dailyPrice > 0);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -256,42 +257,28 @@ export default async function ProductPage({
         </section>
       )}
 
-      {parts.length > 0 && (
+      {consumables.length > 0 && (
         <section className="complete">
-          <h2>{t('partsTitle')}</h2>
-          <p className="muted">{t('partsHint')}</p>
-          <ul className="parts-list">
-            {parts.map((p) => (
-              <li key={p.id} className="parts-list__item">
-                <div className="parts-list__main">
+          <h2>{t('consumables')}</h2>
+          <p className="muted">{t('consumablesHint')}</p>
+          <ul className="complete__grid">
+            {consumables.map((c) => (
+              <li key={c.id} className="card card-body">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {c.image && <img src={c.image} alt="" className="complete__img" loading="lazy" />}
+                <div>
                   <span className="parts-list__name">
-                    {p.brand && <strong>{p.brand} · </strong>}
-                    {p.name}
+                    {c.brand && <strong>{c.brand} · </strong>}
+                    {c.name}
                   </span>
-                  {p.shortDescription && (
-                    <span className="small muted">{p.shortDescription}</span>
+                  {c.shortDescription && (
+                    <div className="small muted">{c.shortDescription}</div>
                   )}
-                  <span className="small muted">
-                    {p.supplierRef && <>{t('partsRef')} {p.supplierRef}</>}
-                    {p.supplierListPrice != null && (
-                      <> · {t('partsPrice')} {formatEUR(p.supplierListPrice)}</>
-                    )}
-                  </span>
+                  <div className="small muted">
+                    {formatEUR(c.dailyPrice)} {t('perUnit')}
+                  </div>
                 </div>
-                {p.supplierUrl ? (
-                  <a
-                    className="btn btn-outline btn-sm"
-                    href={p.supplierUrl}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                  >
-                    {p.partSupplier ? t('partsBuyAt', { shop: p.partSupplier }) : t('addAccessory')}
-                  </a>
-                ) : (
-                  p.partSupplier && (
-                    <span className="tag">{t('partsBuyAt', { shop: p.partSupplier })}</span>
-                  )
-                )}
+                <AddToCartButton productId={c.id} small />
               </li>
             ))}
           </ul>

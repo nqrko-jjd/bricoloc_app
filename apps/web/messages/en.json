@@ -222,7 +222,9 @@
     "partsHint": "The recommended references for this machine, available from our suppliers.",
     "partsRef": "ref.",
     "partsPrice": "indicative price",
-    "partsBuyAt": "View at {shop}"
+    "partsBuyAt": "View at {shop}",
+    "perUnit": "/ unit",
+    "consumablesHint": "Don’t forget: discs, bits, abrasives… matched to this machine."
   },
   "catalogue": {
     "title": "Every tool,",

@@ -46,6 +46,12 @@ export interface ProductDetail extends ProductSummary {
   supplierRef?: string | null;
   weightKg?: number | null;
   bulky?: boolean;
+  // Internes (back-office uniquement)
+  stockQty?: number | null;
+  partSupplier?: string | null;
+  supplierUrl?: string | null;
+  supplierListPrice?: number | null;
+  purchasePrice?: number | null;
   seo?: { title: string | null; description: string | null };
   rating?: { avg: number; count: number };
   recommendedAccessories: LinkedProduct[];

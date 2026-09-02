@@ -22,6 +22,12 @@ const EMPTY = {
   stockQty: '',
   published: true,
   images: [] as string[],
+  // Internes
+  partSupplier: '',
+  supplierRef: '',
+  supplierUrl: '',
+  supplierListPrice: '',
+  purchasePrice: '',
 };
 
 export default function AdminProduits() {
@@ -62,9 +68,14 @@ export default function AdminProduits() {
       monthPrice: p.monthPrice != null ? String(p.monthPrice) : '',
       tiers: p.tiers.length ? JSON.stringify(p.tiers) : '',
       deposit: String(p.deposit),
-      stockQty: p.totalStock && p.kind !== 'MACHINE' ? String(p.totalStock) : '',
+      stockQty: p.stockQty != null ? String(p.stockQty) : '',
       published: p.isDemo ? true : true,
       images: p.images,
+      partSupplier: p.partSupplier ?? '',
+      supplierRef: p.supplierRef ?? '',
+      supplierUrl: p.supplierUrl ?? '',
+      supplierListPrice: p.supplierListPrice != null ? String(p.supplierListPrice) : '',
+      purchasePrice: p.purchasePrice != null ? String(p.purchasePrice) : '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -91,6 +102,12 @@ export default function AdminProduits() {
         deposit: Number(form.deposit),
         published: form.published,
         images: form.images,
+        stockQty: form.stockQty ? Number(form.stockQty) : null,
+        partSupplier: form.partSupplier || null,
+        supplierRef: form.supplierRef || null,
+        supplierUrl: form.supplierUrl || null,
+        supplierListPrice: form.supplierListPrice ? Number(form.supplierListPrice) : null,
+        purchasePrice: form.purchasePrice ? Number(form.purchasePrice) : null,
       };
       await staffApi('/api/admin/products', { method: 'POST', body });
       setMsg(editing ? 'Produit mis à jour.' : 'Produit créé et publié au catalogue.');
@@ -243,6 +260,72 @@ export default function AdminProduits() {
           <label>Images (glisser-déposer, la 1re est la principale)</label>
           <ImageDropzone value={form.images} onChange={(v) => set('images', v)} />
         </div>
+
+        <fieldset className="card card-body" style={{ margin: 0 }}>
+          <legend className="small" style={{ fontWeight: 700 }}>
+            Interne — approvisionnement (jamais affiché au client)
+          </legend>
+          {(form.kind === 'CONSUMABLE' || form.kind === 'ACCESSORY' || form.kind === 'PPE') && (
+            <div className="field-2">
+              <div className="field">
+                <label>Quantité en stock</label>
+                <input
+                  type="number"
+                  value={form.stockQty}
+                  onChange={(e) => set('stockQty', e.target.value)}
+                  placeholder="ex. 40"
+                />
+              </div>
+              <div className="field">
+                <label>Revendeur</label>
+                <input
+                  value={form.partSupplier}
+                  onChange={(e) => set('partSupplier', e.target.value)}
+                  placeholder="Cipac, Lecot, Sanimat…"
+                />
+              </div>
+            </div>
+          )}
+          <div className="field-2">
+            <div className="field">
+              <label>Référence fournisseur</label>
+              <input
+                value={form.supplierRef}
+                onChange={(e) => set('supplierRef', e.target.value)}
+                placeholder="ex. 2608900912"
+              />
+            </div>
+            <div className="field">
+              <label>Lien fiche fournisseur</label>
+              <input
+                value={form.supplierUrl}
+                onChange={(e) => set('supplierUrl', e.target.value)}
+                placeholder="https://www.cipac.be/…"
+              />
+            </div>
+          </div>
+          <div className="field-2">
+            <div className="field">
+              <label>Prix d&apos;achat / catalogue fournisseur (HTVA)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={form.supplierListPrice}
+                onChange={(e) => set('supplierListPrice', e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label>Prix d&apos;achat réel négocié (HTVA)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={form.purchasePrice}
+                onChange={(e) => set('purchasePrice', e.target.value)}
+              />
+            </div>
+          </div>
+        </fieldset>
+
         <label className="row" style={{ gap: 8 }}>
           <input
             type="checkbox"

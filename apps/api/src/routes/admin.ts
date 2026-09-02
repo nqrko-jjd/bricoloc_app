@@ -237,7 +237,7 @@ adminRouter.get(
       include: productInclude,
       orderBy: { name: 'asc' },
     });
-    res.json({ products: rows.map((r) => serializeProductDetail(r)) });
+    res.json({ products: rows.map((r) => serializeProductDetail(r, undefined, undefined, { internal: true })) });
   }),
 );
 
@@ -272,6 +272,18 @@ adminRouter.post(
       isConsumable: data.kind === 'CONSUMABLE',
       isDemo: data.isDemo,
       published: data.published,
+      stockQty: data.stockQty ?? null,
+      purchasePrice: data.purchasePrice ?? null,
+      // Champs revendeur : gérés ici pour les consommables/accessoires ;
+      // pour les machines LOISELET ils portent la réf. partenaire (gérée à l'import).
+      ...(data.kind === 'MACHINE'
+        ? {}
+        : {
+            partSupplier: data.partSupplier ?? null,
+            supplierRef: data.supplierRef ?? null,
+            supplierUrl: data.supplierUrl ?? null,
+            supplierListPrice: data.supplierListPrice ?? null,
+          }),
     };
     const product = await prisma.product.upsert({
       where: { slug: data.slug },
@@ -299,7 +311,7 @@ adminRouter.post(
       where: { id: product.id },
       include: productInclude,
     });
-    res.json({ product: serializeProductDetail(full!) });
+    res.json({ product: serializeProductDetail(full!, undefined, undefined, { internal: true }) });
   }),
 );
 

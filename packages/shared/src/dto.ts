@@ -155,6 +155,14 @@ export const upsertProductSchema = z.object({
   deposit: z.number().min(0).default(0),
   isDemo: z.boolean().default(true),
   published: z.boolean().default(true),
+  // Stock des articles non suivis à l'exemplaire (consommables, petits accessoires).
+  stockQty: z.number().int().min(0).nullable().optional(),
+  // Provenance interne (non affichée au client) : revendeur, réf. et prix d'achat.
+  partSupplier: z.string().nullable().optional(),
+  supplierRef: z.string().nullable().optional(),
+  supplierUrl: z.string().nullable().optional(),
+  supplierListPrice: z.number().min(0).nullable().optional(),
+  purchasePrice: z.number().min(0).nullable().optional(),
   recommendedAccessoryIds: z.array(z.string()).default([]),
   consumableIds: z.array(z.string()).default([]),
   ppeIds: z.array(z.string()).default([]),

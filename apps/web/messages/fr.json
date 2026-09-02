@@ -133,7 +133,9 @@
     "partsHint": "Les références conseillées pour cette machine, à vous procurer chez nos fournisseurs.",
     "partsRef": "réf.",
     "partsPrice": "prix indicatif",
-    "partsBuyAt": "Voir chez {shop}"
+    "partsBuyAt": "Voir chez {shop}",
+    "perUnit": "/ pièce",
+    "consumablesHint": "Pensez-y : disques, mèches, abrasifs… adaptés à cette machine."
   },
   "search": {
     "title": "Je connais mes dates",

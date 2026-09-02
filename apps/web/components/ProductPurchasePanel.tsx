@@ -30,7 +30,9 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
 
   const linked = [
     ...product.recommendedAccessories.map((x) => ({ ...x, group: 'Accessoire' })),
-    ...product.consumables.map((x) => ({ ...x, group: 'Consommable' })),
+    ...product.consumables
+      .filter((x) => x.dailyPrice > 0)
+      .map((x) => ({ ...x, group: 'Consommable' })),
     ...product.ppe.map((x) => ({ ...x, group: 'Protection' })),
   ];
 

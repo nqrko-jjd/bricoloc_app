@@ -11,20 +11,12 @@ import { formatEUR } from '@/lib/format';
 import { H2, P, Card, Button } from '@/components/ui';
 import type { ProductDetail } from '@/lib/types';
 
-const DURATIONS = [
-  { key: 1, label: `1${ti('prod.day')}` },
-  { key: 2, label: `2${ti('prod.day')}` },
-  { key: 3, label: `3${ti('prod.day')}` },
-  { key: 7, label: `1 ${ti('prod.week')}` },
-];
-
 export default function ProductScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { cart, addItem } = useStore();
   const router = useRouter();
   const [p, setP] = useState<ProductDetail | null>(null);
   const [qty, setQty] = useState(1);
-  const [dur, setDur] = useState(1);
   const [expanded, setExpanded] = useState(false);
   const [extras, setExtras] = useState<Record<string, boolean>>({});
   const [msg, setMsg] = useState('');
@@ -44,9 +36,17 @@ export default function ProductScreen() {
 
   const linked = [
     ...p.recommendedAccessories.map((x) => ({ ...x, g: 'Accessoire' })),
-    ...p.consumables.map((x) => ({ ...x, g: 'Consommable' })),
+    ...p.consumables.filter((x) => x.dailyPrice > 0).map((x) => ({ ...x, g: 'Consommable' })),
     ...p.ppe.map((x) => ({ ...x, g: 'Protection' })),
   ];
+
+  const priceRows: { label: string; value: number }[] = p.isConsumable
+    ? [{ label: ti('prod.priceUnit'), value: p.dailyPrice }]
+    : [
+        { label: ti('prod.priceDay'), value: p.dailyPrice },
+        { label: ti('prod.priceWeek'), value: p.weekPrice },
+        { label: ti('prod.priceMonth'), value: p.monthPrice },
+      ].flatMap((r) => (r.value != null ? [{ label: r.label, value: r.value }] : []));
   const a = p.availability?.status;
   const rating = p.rating;
 
@@ -95,29 +95,37 @@ export default function ProductScreen() {
             </Text>
           ) : null}
 
-          {/* Durée */}
+          {/* Tarifs */}
           <Text style={{ fontWeight: '800', color: C.ink, marginTop: 20, marginBottom: 10 }}>
             {ti('prod.duration')}
           </Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {DURATIONS.map((d) => {
-              const active = dur === d.key;
-              return (
-                <Pressable
-                  key={d.key}
-                  onPress={() => setDur(d.key)}
-                  style={{
-                    flex: 1,
-                    alignItems: 'center',
-                    paddingVertical: 12,
-                    borderRadius: R.sm,
-                    backgroundColor: active ? C.loc : C.surface2,
-                  }}
-                >
-                  <Text style={{ color: active ? C.white : C.ink, fontWeight: '800' }}>{d.label}</Text>
-                </Pressable>
-              );
-            })}
+          <View
+            style={{
+              flexDirection: 'row',
+              borderRadius: R.sm,
+              backgroundColor: C.surface2,
+              overflow: 'hidden',
+            }}
+          >
+            {priceRows.map((row, i) => (
+              <View
+                key={row.label}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  paddingVertical: 14,
+                  borderLeftWidth: i === 0 ? 0 : 1,
+                  borderLeftColor: C.border,
+                }}
+              >
+                <Text style={{ color: C.muted, fontSize: 12, fontWeight: '700', marginBottom: 4 }}>
+                  {row.label}
+                </Text>
+                <Text style={{ color: C.locDeep, fontWeight: '900', fontSize: 16 }}>
+                  {formatEUR(row.value)}
+                </Text>
+              </View>
+            ))}
           </View>
 
           {/* Description */}
@@ -174,11 +182,11 @@ export default function ProductScreen() {
                   </View>
                   <Text style={{ flex: 1, color: C.ink }}>
                     {l.name}
-                    {l.partSupplier ? (
-                      <Text style={{ color: C.muted }}> · {l.partSupplier}</Text>
-                    ) : (
-                      <Text style={{ color: C.muted }}> · {formatEUR(l.dailyPrice)}/j</Text>
-                    )}
+                    <Text style={{ color: C.muted }}>
+                      {' '}
+                      · {formatEUR(l.dailyPrice)}
+                      {l.isConsumable ? '' : '/j'}
+                    </Text>
                   </Text>
                 </Pressable>
               ))}

@@ -72,7 +72,10 @@ export function serializeProductDetail(
   p: ProductWithRels,
   locale: Locale = SOURCE_LOCALE,
   rating: { avg: number; count: number } = { avg: 0, count: 0 },
+  opts: { internal?: boolean } = {},
 ) {
+  // Provenance / réf. / prix d'achat des consommables : interne uniquement (back-office).
+  const internal = opts.internal === true;
   const links = (type: string) =>
     p.linksFrom
       // Les consommables / EPI / accessoires « adaptés » sont des références
@@ -97,11 +100,15 @@ export function serializeProductDetail(
         isConsumable: l.to.isConsumable,
         brand: l.to.brand,
         shortDescription: loc(l.to.shortDescription, l.to.i18n, 'shortDescription', locale),
-        // Référence + revendeur pour les consommables (pièces à acheter, non louées).
-        supplierRef: l.to.supplierRef,
-        supplierUrl: l.to.supplierUrl,
-        supplierListPrice: l.to.supplierListPrice,
-        partSupplier: l.to.partSupplier,
+        // Référence + revendeur + prix d'achat : back-office seulement.
+        ...(internal
+          ? {
+              supplierRef: l.to.supplierRef,
+              supplierUrl: l.to.supplierUrl,
+              supplierListPrice: l.to.supplierListPrice,
+              partSupplier: l.to.partSupplier,
+            }
+          : {}),
       }));
   const seo = (p.seo as { title?: I18nText; description?: I18nText } | null) ?? {};
   return {
@@ -129,6 +136,17 @@ export function serializeProductDetail(
     ppe: links('PPE'),
     complementary: links('COMPLEMENTARY'),
     packItems: links('PACK_ITEM'),
+    // Champs internes (back-office) : provenance, réf. et prix d'achat.
+    ...(internal
+      ? {
+          stockQty: p.stockQty,
+          partSupplier: p.partSupplier,
+          supplierUrl: p.supplierUrl,
+          supplierRef: p.supplierRef,
+          supplierListPrice: p.supplierListPrice,
+          purchasePrice: p.purchasePrice,
+        }
+      : {}),
   };
 }
 

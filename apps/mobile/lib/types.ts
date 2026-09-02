@@ -26,6 +26,8 @@ export interface ProductSummary {
 export interface ProductDetail extends ProductSummary {
   description: string | null;
   brand?: string | null;
+  weekPrice?: number | null;
+  monthPrice?: number | null;
   specs: Record<string, string>;
   recommendedUses: string[];
   includedAccessories: string[];
