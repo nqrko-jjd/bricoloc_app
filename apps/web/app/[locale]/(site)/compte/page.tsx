@@ -7,6 +7,7 @@ import { clientApi } from '@/lib/api';
 import { useSession, useCart } from '@/lib/providers';
 import type { Reservation } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 
 export default function ComptePage() {
   const { user, loading, logout } = useSession();
@@ -206,7 +207,18 @@ function AddressManager({
           </div>
           <div className="field">
             <label>Rue et numéro</label>
-            <input value={f.line1} onChange={(e) => setF({ ...f, line1: e.target.value })} />
+            <AddressAutocomplete
+              value={f.line1}
+              onChange={(line1) => setF((s) => ({ ...s, line1 }))}
+              onPick={(a) =>
+                setF((s) => ({
+                  ...s,
+                  line1: a.line1,
+                  postalCode: a.postalCode || s.postalCode,
+                  city: a.city || s.city,
+                }))
+              }
+            />
           </div>
         </div>
         <div className="field-2">

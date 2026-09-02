@@ -7,6 +7,7 @@ import { C } from '@/lib/theme';
 import { formatEUR } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button, Field, Badge } from '@/components/ui';
 import { PeriodPicker } from '@/components/PeriodPicker';
+import { AddressField } from '@/components/AddressField';
 
 type Phase = 'dates' | 'fulfil' | 'account' | 'review' | 'done';
 
@@ -128,10 +129,16 @@ export default function CommandeScreen() {
           </View>
           {mode === 'DELIVERY' && (
             <>
-              <Field
-                label="Adresse"
+              <AddressField
                 value={addr.line1}
                 onChangeText={(v) => setAddr({ ...addr, line1: v })}
+                onPick={(a) =>
+                  setAddr({
+                    line1: a.line1,
+                    postalCode: a.postalCode || addr.postalCode,
+                    city: a.city || addr.city,
+                  })
+                }
               />
               <Field
                 label="Code postal"

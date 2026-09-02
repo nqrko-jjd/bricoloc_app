@@ -14,6 +14,7 @@ import { checkoutRouter } from './routes/checkout.js';
 import { reservationsRouter } from './routes/reservations.js';
 import { accountRouter } from './routes/account.js';
 import { publicRouter } from './routes/public.js';
+import { geoRouter } from './routes/geo.js';
 import { adminRouter } from './routes/admin.js';
 import { opsRouter } from './routes/ops.js';
 
@@ -59,6 +60,7 @@ export function createApp() {
   app.use('/api/reservations', reservationsRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/public', publicRouter);
+  app.use('/api/geo', geoRouter);
   app.use('/api/admin/uploads', uploadsRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/ops', opsRouter);

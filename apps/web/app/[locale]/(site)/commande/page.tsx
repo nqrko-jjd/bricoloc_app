@@ -6,6 +6,7 @@ import { api, clientApi } from '@/lib/api';
 import { useCart, useSession } from '@/lib/providers';
 import { CartSummary } from '@/components/CartSummary';
 import { Steps } from '@/components/Steps';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { fromLocalInput, toLocalInput, defaultPeriod } from '@/lib/dates';
 
 type Phase = 'dates' | 'fulfil' | 'account' | 'review' | 'pay' | 'done';
@@ -307,10 +308,18 @@ export default function CommandePage() {
                 <div className="stack">
                   <div className="field">
                     <label>Adresse</label>
-                    <input
+                    <AddressAutocomplete
                       value={addr.line1}
-                      onChange={(e) => setAddr({ ...addr, line1: e.target.value })}
-                      placeholder="Rue et numéro"
+                      onChange={(line1) => setAddr({ ...addr, line1 })}
+                      onPick={(a) =>
+                        setAddr({
+                          ...addr,
+                          line1: a.line1,
+                          postalCode: a.postalCode || addr.postalCode,
+                          city: a.city || addr.city,
+                        })
+                      }
+                      placeholder="Rue et numéro…"
                     />
                   </div>
                   <div className="field-2">
