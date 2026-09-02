@@ -44,17 +44,28 @@ before(async () => {
 });
 
 after(async () => {
-  // Nettoyage : retire les donnees creees par le test pour garder la base de demo propre.
+  // Nettoyage : retire tout ce que le test a cree, y compris les dependances,
+  // pour ne jamais polluer le catalogue de demonstration.
   try {
-    const users = await prisma.user.findMany({ where: { email: { startsWith: 'e2e-' } } });
-    await prisma.reservation.deleteMany({
-      where: { userId: { in: users.map((u) => u.id) } },
+    const testProducts = await prisma.product.findMany({
+      where: { OR: [{ slug: { startsWith: 'test-' } }, { slug: { startsWith: 'edit-' } }, { slug: { startsWith: 'maint-' } }, { name: { startsWith: 'Machine test' } }] },
+      select: { id: true },
     });
+    const pids = testProducts.map((p) => p.id);
+    const testRes = await prisma.reservation.findMany({
+      where: { OR: [{ items: { some: { productId: { in: pids } } } }, { number: { contains: 'E2E' } }, { number: { contains: 'EDIT' } }, { user: { email: { startsWith: 'e2e-' } } }] },
+      select: { id: true },
+    });
+    const rids = testRes.map((r) => r.id);
+    await prisma.reservation.deleteMany({ where: { id: { in: rids } } });
+    await prisma.cartItem.deleteMany({ where: { productId: { in: pids } } });
+    await prisma.review.deleteMany({ where: { productId: { in: pids } } });
+    await prisma.productLink.deleteMany({ where: { OR: [{ fromId: { in: pids } }, { toId: { in: pids } }] } });
+    await prisma.productUnit.deleteMany({ where: { productId: { in: pids } } });
+    await prisma.product.deleteMany({ where: { id: { in: pids } } });
     await prisma.user.deleteMany({ where: { email: { startsWith: 'e2e-' } } });
-    await prisma.productUnit.deleteMany({ where: { assetTag: { startsWith: 'E2E-' } } });
-    await prisma.product.deleteMany({ where: { slug: { startsWith: 'test-machine-' } } });
-  } catch {
-    /* best effort */
+  } catch (e) {
+    console.warn('[cleanup]', (e as Error).message);
   }
   server?.close();
   await prisma.$disconnect();

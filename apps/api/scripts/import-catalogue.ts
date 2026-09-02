@@ -234,6 +234,7 @@ async function main() {
     medias: await prisma.mediaAsset.count(),
   };
   console.log('\nImport terminé :', counts);
+  console.log('→ Pense à lancer : npx tsx scripts/seed-reviews.ts  (avis de démo)');
   await prisma.$disconnect();
 }
 
