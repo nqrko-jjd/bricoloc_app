@@ -2151,3 +2151,31 @@ button { font-family: inherit; }
   font-size: 0.9rem; font-weight: 600;
 }
 .etq-chip.is-on { border-color: var(--navy); background: var(--surface-2); }
+
+/* Prise de photos (comptoir) */
+.photocap__grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.photocap__thumb { position: relative; width: 84px; height: 84px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+.photocap__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photocap__thumb button {
+  position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border: 0;
+  border-radius: 50%; background: rgba(0,0,0,0.6); color: #fff; font-size: 1rem; cursor: pointer; line-height: 1;
+}
+.photocap__add {
+  width: 84px; height: 84px; border: 2px dashed var(--border); border-radius: 10px;
+  background: var(--surface-2); font-size: 0.8rem; font-weight: 700; cursor: pointer; color: var(--muted-fg);
+}
+
+/* Terminal — modes + stock/inventaire */
+.term-modes { display: flex; gap: 8px; margin-bottom: 10px; }
+.term-modes button {
+  flex: 1; padding: 12px; border: 1px solid var(--line); border-radius: 12px;
+  background: #fff; font-weight: 800; font-size: 0.95rem; cursor: pointer; color: var(--muted-fg);
+}
+.term-modes button.is-on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.term-search {
+  width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px;
+  font: inherit; margin: 8px 0;
+}
+.term-inv-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.term-ok { color: #1b7a4b; font-weight: 800; }
+.term-warn { color: #c0392b; font-weight: 800; }

@@ -5,6 +5,7 @@ import { staffApi } from '@/lib/staff';
 import { ScanField } from '@/components/admin/ScanField';
 import { StatusBadge } from '@/components/StatusBadge';
 import { CounterFlow, type CounterFlowHandle } from '@/components/counter/CounterFlow';
+import { TerminalStock, type TerminalStockHandle } from '@/components/terminal/TerminalStock';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -23,7 +24,9 @@ export default function TerminalPage() {
   const [scan, setScan] = useState<any>(null); // { reservation, paid, depositHeld } ou { type:'unit'|'product', ... }
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
+  const [mode, setMode] = useState<'counter' | 'stock'>('counter');
   const flowRef = useRef<CounterFlowHandle>(null);
+  const stockRef = useRef<TerminalStockHandle>(null);
 
   const loadBoard = useCallback(async () => {
     try {
@@ -55,6 +58,10 @@ export default function TerminalPage() {
   async function handleScan(code: string) {
     setErr('');
     setMsg('');
+    if (mode === 'stock') {
+      stockRef.current?.feedScan(code);
+      return;
+    }
     // Pendant un parcours, un scan d'exemplaire alimente l'affectation.
     if (inFlow) {
       try {
@@ -97,13 +104,36 @@ export default function TerminalPage() {
 
   return (
     <main className="term">
+      <div className="term-modes">
+        <button
+          className={mode === 'counter' ? 'is-on' : ''}
+          onClick={() => {
+            setMode('counter');
+            setScan(null);
+          }}
+        >
+          Comptoir
+        </button>
+        <button
+          className={mode === 'stock' ? 'is-on' : ''}
+          onClick={() => {
+            setMode('stock');
+            setScan(null);
+          }}
+        >
+          Stock / inventaire
+        </button>
+      </div>
+
       <ScanField onScan={handleScan} placeholder="Scanner un QR / code-barres…" />
 
       {err && <div className="term-flash term-flash--err">{err}</div>}
       {msg && <div className="term-flash term-flash--ok">{msg}</div>}
 
+      {mode === 'stock' && <TerminalStock ref={stockRef} setFlash={setMsg} />}
+
       {/* ─── Accueil : le board ─── */}
-      {!scan && (
+      {mode === 'counter' && !scan && (
         <div className="term-board">
           {BUCKETS.map((b) => {
             const rows = board[b.key] ?? [];

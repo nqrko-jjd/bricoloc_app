@@ -5,6 +5,7 @@ import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { StatusBadge } from '@/components/StatusBadge';
 import { SignaturePad } from '@/components/SignaturePad';
+import { PhotoCapture } from '@/components/PhotoCapture';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -51,6 +52,8 @@ export const CounterFlow = forwardRef<
   const [manual, setManual] = useState('');
   const [pChecks, setPChecks] = useState<Record<string, boolean>>({});
   const [signature, setSignature] = useState<string | null>(null);
+
+  const [photos, setPhotos] = useState<string[]>([]);
 
   // return
   const [rChecks, setRChecks] = useState<Record<string, boolean>>({});
@@ -125,7 +128,7 @@ export const CounterFlow = forwardRef<
           reservationId: r.id,
           unitIds: Object.keys(assigned),
           checklist: pChecks,
-          photos: [],
+          photos,
           customerSignature: signature ?? 'data:image/png;base64,',
           note: '',
         },
@@ -148,7 +151,7 @@ export const CounterFlow = forwardRef<
           reservationId: r.id,
           actualReturnAt: new Date(returnAt).toISOString(),
           checklist: rChecks,
-          photos: [],
+          photos,
           damages,
           missingAccessories: [],
           cleaningFeeHT: cleaningFee,
@@ -361,6 +364,14 @@ export const CounterFlow = forwardRef<
                 </button>
               );
             })}
+          </div>
+
+          <div>
+            <p className="small" style={{ fontWeight: 700, margin: '4px 0 6px' }}>
+              {isReturn ? 'Photos de l’état au retour' : 'Photos de l’état à la sortie'}
+              {!isReturn && photos.length === 0 ? ' — recommandé' : ''}
+            </p>
+            <PhotoCapture urls={photos} onChange={setPhotos} />
           </div>
 
           {isReturn && (
