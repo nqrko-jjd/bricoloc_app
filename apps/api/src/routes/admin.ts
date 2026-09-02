@@ -514,11 +514,20 @@ adminRouter.post(
 adminRouter.post(
   '/labels',
   h(async (req, res) => {
-    const { unitIds, productId } = req.body ?? {};
+    const { unitIds, productId, productIds, all } = req.body ?? {};
+    const where = unitIds?.length
+      ? { id: { in: unitIds } }
+      : productIds?.length
+        ? { productId: { in: productIds } }
+        : productId
+          ? { productId }
+          : all
+            ? { product: { kind: { in: ['MACHINE', 'ACCESSORY', 'PPE'] } } }
+            : { id: 'none' };
     const units = await prisma.productUnit.findMany({
-      where: unitIds?.length ? { id: { in: unitIds } } : productId ? { productId } : { id: 'none' },
+      where,
       include: { product: { select: { name: true, slug: true } } },
-      orderBy: { assetTag: 'asc' },
+      orderBy: [{ product: { name: 'asc' } }, { assetTag: 'asc' }],
     });
     const labels = await Promise.all(
       units.map(async (u) => ({

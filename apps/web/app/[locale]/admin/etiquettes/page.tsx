@@ -1,8 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { staffApi } from '@/lib/staff';
 import { Barcode } from '@/components/admin/Barcode';
-import type { ProductDetail } from '@/lib/types';
 
 interface Label {
   unitId: string;
@@ -11,28 +10,47 @@ interface Label {
   productName: string;
   qrDataUrl: string;
 }
+interface StockRow {
+  id: string;
+  name: string;
+  category: string | null;
+  total: number;
+}
 
 export default function AdminEtiquettes() {
-  const [products, setProducts] = useState<ProductDetail[]>([]);
-  const [productId, setProductId] = useState('');
+  const [machines, setMachines] = useState<StockRow[]>([]);
+  const [picked, setPicked] = useState<Record<string, boolean>>({});
   const [labels, setLabels] = useState<Label[]>([]);
-  const [count, setCount] = useState(1);
-  const [msg, setMsg] = useState('');
+  const [filter, setFilter] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    staffApi<{ products: ProductDetail[] }>('/api/admin/products?kind=MACHINE').then((r) =>
-      setProducts(r.products),
+    staffApi<{ machines: StockRow[] }>('/api/admin/stock').then((r) =>
+      setMachines(r.machines.filter((m) => m.total > 0)),
     );
   }, []);
 
-  async function loadLabels(pid: string) {
-    setProductId(pid);
-    if (!pid) return setLabels([]);
-    const r = await staffApi<{ labels: Label[] }>('/api/admin/labels', {
-      method: 'POST',
-      body: { productId: pid },
-    });
-    setLabels(r.labels);
+  const shown = useMemo(
+    () => machines.filter((m) => !filter || m.name.toLowerCase().includes(filter.toLowerCase())),
+    [machines, filter],
+  );
+  const pickedIds = Object.keys(picked).filter((k) => picked[k]);
+  const pickedCount = pickedIds.reduce(
+    (a, id) => a + (machines.find((m) => m.id === id)?.total ?? 0),
+    0,
+  );
+
+  async function generate(opts: { productIds?: string[]; all?: boolean }) {
+    setBusy(true);
+    try {
+      const r = await staffApi<{ labels: Label[] }>('/api/admin/labels', {
+        method: 'POST',
+        body: opts,
+      });
+      setLabels(r.labels);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -40,58 +58,71 @@ export default function AdminEtiquettes() {
       <div className="no-print stack">
         <h1>Étiquettes QR &amp; code-barres</h1>
         <p className="muted small">
-          Une étiquette par exemplaire : QR code (scan smartphone / Zebra) + code-barres Code 128
-          de l’identifiant + nom de la machine. Imprimez sur planche d’étiquettes autocollantes.
+          Une étiquette par exemplaire : QR (scan smartphone / Zebra) + code-barres Code 128 +
+          nom de la machine. Cochez les machines voulues, ou imprimez tout le parc.
         </p>
 
-        <div className="card card-body row">
-          <div className="field" style={{ flex: 1 }}>
-            <label>Machine</label>
-            <select value={productId} onChange={(e) => loadLabels(e.target.value)}>
-              <option value="">— choisir —</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+        <div className="card card-body stack">
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            <input
+              placeholder="Filtrer…"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              style={{ maxWidth: 260 }}
+            />
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() =>
+                setPicked(Object.fromEntries(shown.map((m) => [m.id, true])))
+              }
+            >
+              Tout cocher (visible)
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setPicked({})}>
+              Décocher
+            </button>
+            <div style={{ flex: 1 }} />
+            <button
+              className="btn btn-outline btn-sm"
+              disabled={busy}
+              onClick={() => generate({ all: true })}
+            >
+              Générer TOUT le parc
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={busy || pickedIds.length === 0}
+              onClick={() => generate({ productIds: pickedIds })}
+            >
+              Générer {pickedCount} étiquette(s) · {pickedIds.length} machine(s)
+            </button>
           </div>
-          <div className="field">
-            <label>Créer des exemplaires</label>
-            <div className="row">
-              <input
-                type="number"
-                min={1}
-                max={50}
-                value={count}
-                onChange={(e) => setCount(Number(e.target.value))}
-                style={{ width: 70 }}
-              />
-              <button
-                className="btn btn-outline btn-sm"
-                disabled={!productId}
-                onClick={async () => {
-                  const r = await staffApi<{ units: unknown[] }>('/api/admin/units/bulk', {
-                    method: 'POST',
-                    body: { productId, count },
-                  });
-                  setMsg(`${r.units.length} exemplaire(s) créé(s).`);
-                  await loadLabels(productId);
-                }}
-              >
-                + Créer
-              </button>
-            </div>
+
+          <div className="etq-picker">
+            {shown.map((m) => (
+              <label key={m.id} className={`etq-chip${picked[m.id] ? ' is-on' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={!!picked[m.id]}
+                  onChange={(e) => setPicked((s) => ({ ...s, [m.id]: e.target.checked }))}
+                />
+                {m.name} <span className="small muted">×{m.total}</span>
+              </label>
+            ))}
           </div>
-          <button
-            className="btn btn-primary btn-sm"
-            disabled={labels.length === 0}
-            onClick={() => window.print()}
-          >
-            🖨 Imprimer {labels.length} étiquette(s)
-          </button>
         </div>
-        {msg && <div className="alert alert-ok">{msg}</div>}
+
+        {labels.length > 0 && (
+          <div className="row" style={{ gap: 10, alignItems: 'center' }}>
+            <strong>{labels.length} étiquette(s) prêtes</strong>
+            <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
+              🖨 Imprimer
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setLabels([])}>
+              Effacer
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="label-sheet">
@@ -108,7 +139,7 @@ export default function AdminEtiquettes() {
           </div>
         ))}
         {labels.length === 0 && (
-          <p className="muted no-print">Sélectionnez une machine pour générer ses étiquettes.</p>
+          <p className="muted no-print">Cochez des machines puis « Générer ».</p>
         )}
       </div>
     </div>

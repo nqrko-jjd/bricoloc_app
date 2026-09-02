@@ -2142,3 +2142,12 @@ button { font-family: inherit; }
 .stock-detail > td { background: var(--surface-2); padding: 14px 18px; }
 .table--tight td { padding: 6px 8px; }
 .table .num { text-align: right; white-space: nowrap; }
+
+/* Sélecteur d'étiquettes */
+.etq-picker { display: flex; flex-wrap: wrap; gap: 8px; max-height: 340px; overflow-y: auto; }
+.etq-chip {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: var(--r-pill); padding: 8px 14px;
+  font-size: 0.9rem; font-weight: 600;
+}
+.etq-chip.is-on { border-color: var(--navy); background: var(--surface-2); }
