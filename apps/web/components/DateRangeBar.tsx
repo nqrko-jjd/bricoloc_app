@@ -37,6 +37,10 @@ export function DateRangeBar() {
 
   const p = cart?.period;
 
+  // Bandeau visible seulement quand une période est choisie (rappel + édition).
+  // Sinon on ne l'affiche pas : les dates se saisissent au catalogue / à la fiche.
+  if (!p && !editing) return null;
+
   return (
     <div className="datebar">
       <div className="container">

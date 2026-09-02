@@ -3,38 +3,32 @@ import { formatEUR } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { loadContent } from '@/lib/content';
-import type { Category, ProductSummary } from '@/lib/types';
-import { HomeDatePicker } from '@/components/HomeDatePicker';
-import { ProductCard } from '@/components/ProductCard';
+import type { Category, GuideSummary, ProductSummary } from '@/lib/types';
+import { HomeSearch } from '@/components/HomeSearch';
 import { DegressivePricing } from '@/components/DegressivePricing';
+import {
+  CATEGORY_ICON,
+  ArrowUpRight,
+  ArrowUpRight as IArrowUpRight,
+  Heart as IHeart,
+  Clock as IClock,
+  Truck as ITruck,
+  ShieldCheck as IShieldCheck,
+  Search as ISearch,
+  Sparkles,
+  CalendarClock,
+  PackageIcon,
+} from '@/components/icons';
 
 export const dynamic = 'force-dynamic';
-
-/** Tâches → catégorie ciblée + visuel. Le lien retombe sur /catalogue si la catégorie n'existe pas encore. */
-const TASKS = [
-  { key: 'demolir', label: 'Démolir, percer', img: 'task-demolir', cat: 'forer-casser' },
-  { key: 'beton', label: 'Béton & pierre', img: 'task-beton', cat: 'beton-pierre' },
-  { key: 'bois', label: 'Travailler le bois', img: 'task-bois', cat: 'travail-du-bois' },
-  { key: 'peindre', label: 'Peindre & enduire', img: 'task-peindre', cat: 'peintures-finitions' },
-  { key: 'poncer', label: 'Poncer', img: 'task-poncer', cat: 'travail-du-bois' },
-  { key: 'chauffer', label: 'Chauffer & assécher', img: 'task-chauffer', cat: 'chauffage-deshumidification' },
-  { key: 'jardin', label: 'Jardin & extérieur', img: 'task-jardin', cat: 'exterieur' },
-  { key: 'nettoyer', label: 'Nettoyer', img: 'task-nettoyer', cat: 'nettoyage' },
-];
-
-const BRANDS = [
-  'Makita', 'Bosch', 'Metabo', 'Milwaukee', 'DeWalt', 'Hikoki', 'Festool', 'Hilti',
-  'Flex', 'Husqvarna', 'Stihl', 'Karcher', 'Nilfisk', 'Spit', 'Rubi', 'Rothenberger',
-  'Geberit', 'Atika', 'Eibenstock', 'Master', 'Eurom', 'Paslode', 'Prebena', 'Stanley',
-];
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('home');
-  const tn = await getTranslations('nav');
+  const tg = await getTranslations('guides');
 
-  const [{ categories }, popularRes, packsRes, content] = await Promise.all([
+  const [{ categories }, popularRes, packsRes, guidesRes, content] = await Promise.all([
     api<{ categories: Category[] }>(`/api/catalog/categories?locale=${locale}`, {
       next: { revalidate: 120 },
     }),
@@ -43,296 +37,302 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       { next: { revalidate: 60 } },
     ),
     api<{ products: ProductSummary[] }>(
-      `/api/catalog/products?kind=PACK&pageSize=6&locale=${locale}`,
+      `/api/catalog/products?kind=PACK&pageSize=4&locale=${locale}`,
       { next: { revalidate: 120 } },
     ).catch(() => ({ products: [] as ProductSummary[] })),
+    api<{ guides: GuideSummary[] }>(`/api/public/guides?locale=${locale}`, {
+      next: { revalidate: 120 },
+    }).catch(() => ({ guides: [] as GuideSummary[] })),
     loadContent('home.', locale),
   ]);
-  const popular = popularRes.products ?? [];
+
+  const popular = (popularRes.products ?? []).filter((p) => p.image).slice(0, 3);
   const toolCount = Math.max(10, Math.floor((popularRes.total ?? 80) / 10) * 10);
-  const packs = packsRes.products ?? [];
-  const catLink = (slug: string) =>
-    categories.some((c) => c.slug === slug) ? `/catalogue?category=${slug}` : '/catalogue';
+  const guides = (guidesRes.guides ?? []).slice(0, 3);
+  const cats = categories.slice(0, 4);
+
+  const catLabel = (slug: string) => {
+    try {
+      return tg(`cat_${slug}` as never) as string;
+    } catch {
+      return slug;
+    }
+  };
 
   return (
     <>
       {/* ─────────────── HERO ─────────────── */}
-      <section className="home-hero">
-        <div className="home-hero__bg" aria-hidden />
-        <div className="container home-hero__inner">
-          <div className="home-hero__copy">
-            <span className="eyebrow">{t('heroEyebrow')}</span>
-            <h1>
-              {content.t('home.hero.title', t('heroTitle'))}{' '}
-              <em>{content.t('home.hero.accent', t('heroTitleAccent'))}</em>
-            </h1>
-            <p className="home-hero__lead">
-              {content.t('home.hero.subtitle', t('heroLead'))}
-            </p>
-            <div className="row">
-              <Link href="/catalogue" className="btn btn-primary btn-lg">
-                {t('heroCtaCatalogue')}
-              </Link>
-              <Link href="/pro" className="btn btn-outline btn-lg home-hero__pro">
-                {t('heroCtaPro')}
-              </Link>
-            </div>
-            <p className="home-hero__stat">
-              <strong>{t('statTools', { n: toolCount })}</strong> {t('statToolsSub')}
-            </p>
-          </div>
-          <div className="home-hero__search">
-            <HomeDatePicker />
-          </div>
+      <section className="chero">
+        <img className="chero__img" src="/img/home/hero.webp" alt="" />
+        <div className="chero__text">
+          <span className="kicker">— {t('heroEyebrow')}</span>
+          <h1>
+            {content.t('home.hero.title', t('heroTitle'))}
+            <br />
+            <i>{content.t('home.hero.accent', t('heroTitleAccent'))}</i>
+          </h1>
+          <p className="chero__intro">{content.t('home.hero.subtitle', t('heroLead'))}</p>
+          <HomeSearch placeholder={t('searchPlaceholder')} cta={t('heroCtaCatalogue')} />
         </div>
-        <div className="home-weekend container">
-          <strong>{t('weekend')}</strong>
-          <span>{content.t('home.weekend.text', t('weekendText'))}</span>
+        <div className="chero__stat">
+          <strong>{toolCount}+</strong>
+          <span>{t('statToolsSub')}</span>
         </div>
       </section>
 
-      {/* ─────────────── COMMENT VOUS AIDER ─────────────── */}
-      <section className="section container">
-        <div className="section-head reveal">
-          <h2>{t('helpTitle')}</h2>
-          <p className="muted">{content.t('home.help.subtitle', t('helpSubtitle'))}</p>
+      {/* ─────────────── CONFIANCE ─────────────── */}
+      <div className="ctrust">
+        <div>
+          <IClock /> {t('trustDispo')}
         </div>
-        <ul className="taskgrid">
-          {TASKS.map((task, i) => (
-            <li key={task.key} className="reveal" data-reveal-delay={i * 45}>
-              <Link href={catLink(task.cat)} className="taskcard">
-                <img src={`/img/home/${task.img}.webp`} alt="" loading="lazy" />
-                <span className="taskcard__label">
-                  {content.t(`home.task.${task.key}`, task.label)}
+        <div>
+          <ITruck /> {t('trustDelivery')}
+        </div>
+        <div>
+          <IShieldCheck /> {t('trustChecked')}
+        </div>
+        <div>
+          <IHeart /> {t('trustRating')}
+        </div>
+      </div>
+
+      {/* ─────────────── CATÉGORIES ─────────────── */}
+      <section className="csection">
+        <div className="csection__head">
+          <div>
+            <span className="kicker">— {t('exploreEyebrow')}</span>
+            <h2>
+              {t('exploreTitle')} <i>{t('exploreAccent')}</i>
+            </h2>
+          </div>
+          <Link href="/catalogue" className="csection__link">
+            {t('exploreCta', { count: toolCount })} <IArrowUpRight />
+          </Link>
+        </div>
+        <div className="ccats">
+          {cats.map((c, i) => {
+            const Icon = CATEGORY_ICON[c.slug] ?? Sparkles;
+            return (
+              <Link key={c.slug} href={`/catalogue?category=${c.slug}`}>
+                <span className="ccats__num">{String(i + 1).padStart(2, '0')}</span>
+                <span className="ccats__go" aria-hidden>
+                  →
                 </span>
+                <Icon className="ccats__icon" />
+                <span className="ccats__name">{c.name}</span>
+                {c.productCount ? (
+                  <span className="ccats__count">
+                    {c.productCount} {t('exploreTools')}
+                  </span>
+                ) : null}
               </Link>
-            </li>
-          ))}
-        </ul>
+            );
+          })}
+        </div>
       </section>
 
-      {/* ─────────────── LES PLUS LOUÉS ─────────────── */}
+      {/* ─────────────── LE + LOUÉ ─────────────── */}
       {popular.length > 0 && (
-        <section className="section section--alt">
-          <div className="container">
-            <div className="spread reveal">
+        <section className="csection" style={{ paddingTop: 0 }}>
+          <div className="csection__head">
+            <div>
+              <span className="kicker">— {t('popularEyebrow')}</span>
               <h2>{t('popularTitle')}</h2>
-              <Link href="/catalogue" className="btn btn-ghost btn-sm">
-                {t('seeAll')}
+            </div>
+            <Link href="/catalogue" className="csection__link">
+              {t('seeAll')} <IArrowUpRight />
+            </Link>
+          </div>
+          <div className="ctools">
+            {popular.map((p, i) => (
+              <Link key={p.id} href={`/produits/${p.slug}`} className="ctool">
+                <div className="ctool__top">
+                  <span className="ctool__tag">
+                    {i === 0 ? t('popularTag') : t('availableTag')}
+                  </span>
+                  <IHeart />
+                </div>
+                <div className="ctool__art">
+                  {p.brand && <span className="ctool__badge">{p.brand}</span>}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.image ?? ''} alt={p.name} loading="lazy" />
+                </div>
+                <span className="ctool__cat">{p.category?.name ?? ''}</span>
+                <span className="ctool__name">{p.name}</span>
+                <div className="ctool__foot">
+                  <p>
+                    {t('from')}
+                    <br />
+                    <b>{formatEUR(p.dailyPrice)}</b> {t('perDay')}
+                  </p>
+                  <span className="ctool__go" aria-hidden>
+                    <IArrowUpRight />
+                  </span>
+                </div>
               </Link>
-            </div>
-            <div className="grid grid-cards carousel reveal" style={{ marginTop: 20 }}>
-              {popular.map((p) => (
-                <ProductCard key={p.id} p={p} />
-              ))}
-            </div>
+            ))}
           </div>
         </section>
       )}
 
       {/* ─────────────── PRIX DÉGRESSIFS ─────────────── */}
-      <section className="section container">
-        <div className="reveal">
+      <section className="csection" style={{ paddingBlock: 0 }}>
+        <div className="csaving">
+          <div>
+            <span className="kicker">— {t('degressiveEyebrow')}</span>
+            <h2>
+              {t('degressiveTitle')} <i>{t('degressiveTitleAccent')}</i>
+            </h2>
+            <p className="csaving__lead">{t('degressiveText')}</p>
+          </div>
           <DegressivePricing />
         </div>
       </section>
 
-      {/* ─────────────── CATÉGORIES (bento) ─────────────── */}
-      <section className="section container">
-        <div className="section-head reveal">
-          <h2>{t('categoriesTitle')}</h2>
-        </div>
-        <ul className="catgrid">
-          {categories.map((c, i) => (
-            <li
-              key={c.slug}
-              className="catgrid__item reveal"
-              data-reveal-delay={i * 40}
-              data-tone={['red', 'navy', 'light'][i % 3]}
-            >
-              <Link href={`/catalogue?category=${c.slug}`}>
-                <span className="catgrid__num">{String(i + 1).padStart(2, '0')}</span>
-                <span className="catgrid__name">{c.name}</span>
-                <span className="catgrid__go" aria-hidden>
-                  →
-                </span>
-                {c.productCount ? (
-                  <span className="catgrid__count">{c.productCount}</span>
-                ) : null}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
       {/* ─────────────── 3 ÉTAPES ─────────────── */}
-      <section className="section section--navy">
-        <div className="container">
-          <h2 className="reveal">{t('stepsTitle')}</h2>
-          <ol className="steps3">
-            {[1, 2, 3].map((n) => (
-              <li key={n} className="reveal" data-reveal-delay={(n - 1) * 90}>
-                <span className="steps3__num">{n}</span>
-                <h3>{t(`step${n}Title`)}</h3>
-                <p>{content.t(`home.step${n}.text`, t(`step${n}Text`))}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      {/* ─────────────── BRICOPACKS ─────────────── */}
-      <section className="section container">
-        <div className="home-packs">
-          <div className="home-packs__intro reveal">
-            <span className="eyebrow">BricoPacks</span>
-            <h2>{t('packsTitle')}</h2>
-            <p className="muted">{content.t('home.packs.text', t('packsText'))}</p>
-            <Link href="/catalogue?category=bricopack" className="btn btn-secondary">
-              {t('seeAll')}
-            </Link>
-          </div>
-          <div className="home-packs__grid reveal">
-            {(packs.length > 0 ? packs : []).slice(0, 4).map((p) => (
-              <Link key={p.id} href={`/produits/${p.slug}`} className="home-pack">
-                <img src={p.image || '/img/home/pack.webp'} alt={p.name} loading="lazy" />
-                <div>
-                  <h3>{p.name}</h3>
-                  <span className="price">
-                    {t('from')} {formatEUR(p.dailyPrice)} {t('perDay')}
-                  </span>
-                </div>
-              </Link>
-            ))}
-            {packs.length === 0 && (
-              <div className="home-pack home-pack--empty">
-                <img src="/img/home/pack.webp" alt="" loading="lazy" />
-                <div>
-                  <h3>Bientôt disponibles</h3>
-                  <span className="muted small">Les BricoPacks arrivent au catalogue.</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────── FAQ 3 colonnes ─────────────── */}
-      <section className="section section--alt">
-        <div className="container">
-          <div className="section-head reveal">
-            <h2>{t('faqTitle')}</h2>
-          </div>
-          <div className="faq3">
-            {(['Price', 'Delivery', 'Gear'] as const).map((col) => (
-              <div key={col} className="faq3__col reveal">
-                <h3>{t(`faq${col}`)}</h3>
-                {[1, 2, 3].map((n) => (
-                  <details key={n}>
-                    <summary>{t(`faq${col}Q${n}`)}</summary>
-                    <p>{t(`faq${col}A${n}`)}</p>
-                  </details>
-                ))}
-              </div>
-            ))}
-          </div>
-          <p className="center" style={{ marginTop: 24 }}>
-            <Link href="/faq" className="btn btn-ghost btn-sm">
-              {tn('faq')}
-            </Link>
-          </p>
-        </div>
-      </section>
-
-      {/* ─────────────── L'APPLICATION ─────────────── */}
-      <section className="section container">
-        <div className="home-app reveal">
-          <div className="home-app__copy">
-            <span className="eyebrow">{t('appEyebrow')}</span>
+      <section className="csection">
+        <div className="csection__head">
+          <div>
+            <span className="kicker">— {t('stepsEyebrow')}</span>
             <h2>
-              {t('appTitle')} <em>{t('appTitleAccent')}</em>
+              {t('stepsTitle')} <i>{t('stepsAccent')}</i>
             </h2>
-            <p className="muted">{t('appText')}</p>
-            <ul className="home-app__list">
-              <li>✓ {t('appF1')}</li>
-              <li>✓ {t('appF2')}</li>
-              <li>✓ {t('appF3')}</li>
-            </ul>
-            <Link href="/application" className="btn btn-secondary">
-              {t('appCta')}
-            </Link>
           </div>
-          <div className="home-app__visual" aria-hidden>
-            <div className="home-app__phone">
-              <span className="home-app__time">9:41</span>
+        </div>
+        <div className="csteps">
+          {[
+            { Icon: ISearch, key: '1' },
+            { Icon: CalendarClock, key: '2' },
+            { Icon: PackageIcon, key: '3' },
+          ].map(({ Icon, key }) => (
+            <article key={key} className="cstep">
+              <span className="cstep__n">0{key}</span>
+              <Icon />
+              <h3>{t(`step${key}Title` as never)}</h3>
+              <p>{content.t(`home.step${key}.text`, t(`step${key}Text` as never))}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* ─────────────── L'APP ─────────────── */}
+      <section className="capp">
+        <div className="capp__text">
+          <span className="kicker">— {t('appEyebrow')}</span>
+          <h2>
+            {t('appTitle')} <i>{t('appTitleAccent')}</i>
+          </h2>
+          <p>{t('appText')}</p>
+          <ul className="capp__list">
+            <li>{t('appF1')}</li>
+            <li>{t('appF2')}</li>
+            <li>{t('appF3')}</li>
+          </ul>
+          <Link href="/application" className="csection__link" style={{ color: '#fff' }}>
+            {t('appCta')} <IArrowUpRight />
+          </Link>
+        </div>
+        <div className="capp__phones" aria-hidden>
+          <div className="cphone cphone--back">
+            <div className="cphone__screen">
               <strong>BRICOLOC.</strong>
-              <p>De quoi avez-vous besoin aujourd’hui ?</p>
-              <div className="home-app__chips">
+              <h4>
+                {t('s1a')}
+                <br />
+                {t('s1b')}
+              </h4>
+              <div className="cphone__chips">
                 <span>⚙️ Forer</span>
                 <span>🪵 Bois</span>
                 <span>🎨 Peinture</span>
               </div>
-              <div className="home-app__card">
-                <span>Ponceuse girafe</span>
-                <small>Disponible maintenant · 19,90 €</small>
+              <div className="cmini">
+                <span className="cmini__ico">⚙️</span>
+                <span>
+                  <b>Ponceuse girafe</b>
+                  <small>{t('s1pill')}</small>
+                </span>
+                <strong>19,90€</strong>
+              </div>
+            </div>
+          </div>
+          <div className="cphone cphone--front">
+            <div className="cphone__screen">
+              <strong>‹ ♡</strong>
+              <h4>{t('s2a')}</h4>
+              <div className="cmini">
+                <span className="cmini__ico">★</span>
+                <span>
+                  <b>4,9 · 126 avis</b>
+                  <small>{t('s2b')}</small>
+                </span>
+              </div>
+              <div className="cmini">
+                <span className="cmini__ico">€</span>
+                <span>
+                  <b>{t('s2pill')}</b>
+                  <small>41,80 €</small>
+                </span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─────────────── TÉMOIGNAGE ─────────────── */}
-      <section className="section container">
-        <figure className="home-quote reveal">
-          <blockquote>“{t('testimonialQuote')}”</blockquote>
-          <figcaption>
-            {t('testimonialAuthor')} <span aria-hidden>★★★★★</span>
-          </figcaption>
-        </figure>
-      </section>
-
-      {/* ─────────────── POINTS FORTS ─────────────── */}
-      <section className="section section--navy">
-        <div className="container">
-          <h2 className="reveal">{t('strengthsTitle')}</h2>
-          <div className="strengths">
-            {[
-              ['24/7', content.t('home.strength.1', 'Réservation en ligne, à toute heure')],
-              ['3', content.t('home.strength.2', 'Langues : FR · NL · EN')],
-              ['1', content.t('home.strength.3', 'Prix, une seule date pour toute la commande')],
-              ['100%', content.t('home.strength.4', 'Matériel suivi, entretenu et contrôlé')],
-            ].map(([n, label], i) => (
-              <div key={i} className="reveal" data-reveal-delay={i * 80}>
-                <span className="strengths__num">{n}</span>
-                <p>{label}</p>
-              </div>
+      {/* ─────────────── CONSEILS & DIY ─────────────── */}
+      {guides.length > 0 && (
+        <section className="csection">
+          <div className="csection__head">
+            <div>
+              <span className="kicker">— {t('adviceEyebrow')}</span>
+              <h2>
+                {t('adviceHeading')} <i>{t('adviceHeadingAccent')}</i>
+              </h2>
+            </div>
+            <Link href="/conseils" className="csection__link">
+              {t('adviceSeeAll')} <IArrowUpRight />
+            </Link>
+          </div>
+          <div className="guide-grid">
+            {guides.map((g) => (
+              <Link key={g.slug} href={`/conseils/${g.slug}`} className="guide-card" data-tone={g.tone}>
+                <span className="guide-card__meta">
+                  <span>{catLabel(g.category)}</span>
+                  <span>◷ {g.readMinutes} min</span>
+                </span>
+                <span className="guide-card__title">{g.title}</span>
+                <span className="guide-card__excerpt">{g.excerpt}</span>
+                <span className="guide-card__cta">
+                  {t('adviceRead')} →
+                </span>
+              </Link>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ─────────────── MARQUES ─────────────── */}
-      <section className="section container">
-        <div className="section-head reveal">
-          <h2>{t('brandsTitle')}</h2>
-        </div>
-        <div className="brandstrip reveal" aria-label={t('brandsTitle')}>
-          {[...BRANDS, ...BRANDS].map((b, i) => (
-            <span key={i}>{b}</span>
-          ))}
-        </div>
-      </section>
+      {/* ─────────────── TÉMOIGNAGE ─────────────── */}
+      <figure className="cquote">
+        <span className="cquote__mark">“</span>
+        <blockquote>{t('testimonialQuote')}</blockquote>
+        <figcaption>
+          {t('testimonialAuthor')} <span aria-hidden>★★★★★</span>
+        </figcaption>
+      </figure>
 
-      {/* ─────────────── CTA FINAL ─────────────── */}
-      <section className="home-cta">
-        <div className="home-cta__bg" aria-hidden />
-        <div className="container home-cta__inner reveal">
-          <h2>{content.title('home.cta.title', t('ctaTitle'))}</h2>
-          <p>{content.t('home.cta.text', t('ctaText'))}</p>
-          <Link href="/catalogue" className="btn btn-primary btn-lg">
-            {t('ctaButton')}
-          </Link>
+      {/* ─────────────── CTA ─────────────── */}
+      <section className="ccta">
+        <div>
+          <span className="kicker" style={{ color: '#fff', opacity: 0.7 }}>
+            — {t('ctaEyebrow')}
+          </span>
+          <h2>
+            {content.title('home.cta.title', t('ctaTitle'))} <i>{t('ctaAccent')}</i>
+          </h2>
         </div>
+        <Link href="/catalogue">
+          {t('ctaButton')} <ArrowUpRight />
+        </Link>
       </section>
     </>
   );

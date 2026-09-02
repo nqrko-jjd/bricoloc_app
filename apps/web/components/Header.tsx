@@ -24,7 +24,7 @@ export function Header() {
     };
   }, [open]);
 
-  const mainLinks = (
+  const links = (
     <>
       <Link href="/catalogue">{t('rentTool')}</Link>
       <Link href="/catalogue?kind=PACK">{t('bricopacks')}</Link>
@@ -38,55 +38,45 @@ export function Header() {
 
   return (
     <>
-      <div className="topbar">
-        <div className="container topbar__row">
-          <span className="topbar__info">
-            <span>◷ {tt('cc')}</span>
-            <span className="topbar__dot">•</span>
-            <span>{tt('delivery')}</span>
-          </span>
-          <span className="topbar__hours">{tt('hours')}</span>
-        </div>
+      <div className="top">
+        <span>◷ {tt('cc')}</span>
+        <span aria-hidden>·</span>
+        <span>{tt('delivery')}</span>
+        <b>{tt('hours')}</b>
       </div>
       <div className="demo-ribbon">{tc('demoRibbon')}</div>
 
-      <header className="site-header">
-        <div className="container site-header__row">
-          <Logo />
-          <nav className="site-nav site-nav--desktop">{mainLinks}</nav>
-          <div className="site-header__actions">
-            <Link href="/pro" className="nav-pro">
-              {t('proSpace')}
-            </Link>
-            <LanguageSwitcher />
-            <Link href={user ? '/compte' : '/connexion'} className="nav-account">
-              {user ? user.firstName : t('login')}
-            </Link>
-            <Link href="/panier" className="cart-pill">
-              <span aria-hidden>🛒</span> {t('cart')}
-              {cartCount ? <span className="cart-pill__count">{cartCount}</span> : null}
-            </Link>
-          </div>
+      <nav className="cnav">
+        <Logo />
 
-          <div className="site-nav--mobile">
-            <Link href="/panier" className="cart-pill cart-pill--sm">
-              <span aria-hidden>🛒</span>
-              {cartCount ? <span className="cart-pill__count">{cartCount}</span> : null}
-            </Link>
-            <button
-              type="button"
-              className={`burger${open ? ' is-open' : ''}`}
-              aria-label={open ? tc('close') : 'Menu'}
-              aria-expanded={open}
-              onClick={() => setOpen((v) => !v)}
-            >
-              <span />
-              <span />
-              <span />
-            </button>
-          </div>
+        <div className="cnav__links">{links}</div>
+
+        <div className="cnav__actions">
+          <Link href="/pro" className="cnav__pro">
+            {t('proSpace')}
+          </Link>
+          <LanguageSwitcher />
+          <Link href={user ? '/compte' : '/connexion'} className="cnav__account">
+            {user ? user.firstName : t('login')}
+          </Link>
+          <Link href="/panier" className="cnav__bag">
+            {t('cart')}
+            {cartCount ? <span>{cartCount}</span> : null}
+          </Link>
         </div>
-      </header>
+
+        <button
+          type="button"
+          className={`cnav__burger${open ? ' is-open' : ''}`}
+          aria-label={open ? tc('close') : 'Menu'}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+      </nav>
 
       <div
         className={`mobile-drawer__backdrop${open ? ' is-open' : ''}`}
@@ -100,10 +90,14 @@ export function Header() {
             if ((e.target as HTMLElement).tagName === 'A') setOpen(false);
           }}
         >
-          {mainLinks}
+          {links}
           <Link href="/pro">{t('proSpace')}</Link>
           <Link href={user ? '/compte' : '/connexion'}>
             {user ? user.firstName : t('login')}
+          </Link>
+          <Link href="/panier">
+            {t('cart')}
+            {cartCount ? ` (${cartCount})` : ''}
           </Link>
         </nav>
         <div className="mobile-drawer__lang">
