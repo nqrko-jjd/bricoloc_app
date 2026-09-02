@@ -35,6 +35,17 @@ export const API_URL =
 // eslint-disable-next-line no-console
 if (__DEV__) console.log('[BRICOLOC] API_URL =', API_URL);
 
+/**
+ * Résout une URL d'image renvoyée par l'API.
+ * L'API renvoie des chemins relatifs portables (`/uploads/…`) ; on les préfixe
+ * ici avec la base de l'API. Les URLs déjà absolues (ou data:) sont laissées.
+ */
+export function mediaUrl(src?: string | null): string | undefined {
+  if (!src) return undefined;
+  if (/^(https?:|data:)/i.test(src)) return src;
+  return `${API_URL}${src.startsWith('/') ? '' : '/'}${src}`;
+}
+
 export const TOKEN_KEY = 'bricoloc_token';
 export const CART_KEY = 'bricoloc_cart_key';
 

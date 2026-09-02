@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import { env } from './env.js';
 import { errorHandler, notFound } from './lib/http.js';
+import { relativizeMedia } from './lib/media-url.js';
 import { uploadsRouter } from './routes/uploads.js';
 import { reviewsRouter } from './routes/reviews.js';
 import { authRouter } from './routes/auth.js';
@@ -26,6 +27,14 @@ export function createApp() {
   );
   app.use(express.json({ limit: '8mb' }));
   app.use(morgan('dev'));
+
+  // Réécrit les URLs média absolues (http://host/uploads/…) en chemins relatifs
+  // portables, pour que les images chargent depuis un téléphone / iPad / la borne.
+  app.use((_req, res, next) => {
+    const send = res.json.bind(res);
+    res.json = (body: unknown) => send(relativizeMedia(body));
+    next();
+  });
 
   // Médias téléversés (images produits / contenus) servis en statique.
   app.use(

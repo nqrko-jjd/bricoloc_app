@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Image, Text, TextInput, View, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { api } from '@/lib/api';
+import { api, mediaUrl } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
 import { t as ti } from '@/lib/i18n';
@@ -45,7 +45,7 @@ export default function ProductScreen() {
   return (
     <Screen>
       <Image
-        source={{ uri: p.image ?? 'https://placehold.co/600x400/eef0f3/0B1D3A/png?text=BRICOLOC' }}
+        source={{ uri: mediaUrl(p.image) ?? 'https://placehold.co/600x400/eef0f3/0B1D3A/png?text=BRICOLOC' }}
         style={{ width: '100%', height: 200, borderRadius: 12, backgroundColor: C.bg }}
       />
       <H1>{p.name}</H1>

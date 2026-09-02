@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { api } from '@/lib/api';
+import { api, mediaUrl } from '@/lib/api';
 import { t as ti } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
@@ -188,7 +188,7 @@ function ProductRow({ p }: { p: ProductSummary }) {
         }}
       >
         <Image
-          source={{ uri: p.image ?? 'https://placehold.co/120x90/eef0f3/0B1D3A/png?text=BRICOLOC' }}
+          source={{ uri: mediaUrl(p.image) ?? 'https://placehold.co/120x90/eef0f3/0B1D3A/png?text=BRICOLOC' }}
           style={{ width: 90, height: 68, borderRadius: 8, backgroundColor: C.bg }}
         />
         <View style={{ flex: 1 }}>
