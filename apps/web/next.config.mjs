@@ -6,6 +6,15 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@bricoloc/shared'],
+  // Autorise l'accès en dev depuis un tunnel HTTPS (test caméra sur iPad / borne / téléphone)
+  // et depuis le réseau local. Sans effet en production.
+  allowedDevOrigins: [
+    '*.trycloudflare.com',
+    '*.ngrok-free.app',
+    '*.ngrok.io',
+    '*.loca.lt',
+    '192.168.1.27',
+  ],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'placehold.co' },
