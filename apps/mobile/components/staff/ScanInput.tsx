@@ -6,11 +6,18 @@ import { C, R } from '@/lib/theme';
 
 /**
  * Saisie de scan pour l'espace équipe.
- * - Lecteur physique Zebra (DataWedge « Keystroke output » + suffixe Entrée) :
- *   tape dans le champ toujours focus -> onSubmitEditing.
- * - Bouton caméra : lecture QR / code-barres via expo-camera.
- * - Bouton clavier : saisie manuelle d'un code.
+ *
+ * - **Lecteur physique Zebra** (DataWedge « Keystroke output ») : le code est
+ *   « tapé » dans le champ toujours focus. On valide de deux façons, au choix :
+ *     • sur la touche Entrée finale si DataWedge en envoie une (`onSubmitEditing`) ;
+ *     • sinon par **détection de rafale** : les caractères d'un scan arrivent
+ *       très vite (< ~110 ms), donc dès que ça se stabilise on valide tout seul.
+ *   → fonctionne que le suffixe Entrée soit configuré ou non.
+ * - **Bouton caméra** : lecture QR / code-barres via expo-camera (tel/tablette).
+ * - **Bouton clavier** : saisie manuelle d'un code (pas de validation auto).
  */
+const BURST_GAP_MS = 110;
+
 export function ScanInput({ onScan, hint }: { onScan: (code: string) => void; hint?: string }) {
   const inputRef = useRef<TextInput>(null);
   const [value, setValue] = useState('');
@@ -19,27 +26,61 @@ export function ScanInput({ onScan, hint }: { onScan: (code: string) => void; hi
   const [perm, requestPerm] = useCameraPermissions();
   const camBusy = useRef(false);
 
-  // Garde le focus pour le lecteur physique.
+  const burstTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCode = useRef<{ code: string; at: number }>({ code: '', at: 0 });
+
+  // Garde le champ focus pour le lecteur physique.
   useEffect(() => {
     if (manual || cam) return;
+    inputRef.current?.focus();
     const id = setInterval(() => {
       if (!inputRef.current?.isFocused()) inputRef.current?.focus();
-    }, 800);
-    inputRef.current?.focus();
+    }, 400);
     return () => clearInterval(id);
   }, [manual, cam]);
 
-  function submit(v: string) {
-    const code = v.trim();
+  useEffect(
+    () => () => {
+      if (burstTimer.current) clearTimeout(burstTimer.current);
+    },
+    [],
+  );
+
+  function submit(raw: string) {
+    if (burstTimer.current) {
+      clearTimeout(burstTimer.current);
+      burstTimer.current = null;
+    }
+    const code = raw.replace(/[\r\n\t]/g, '').trim();
     setValue('');
-    if (code.length >= 2) onScan(code);
     if (!manual) inputRef.current?.focus();
+    if (code.length < 2) return;
+    // Anti-doublon : lecteur qui envoie ET la rafale ET l'Entrée.
+    const now = Date.now();
+    if (code === lastCode.current.code && now - lastCode.current.at < 900) return;
+    lastCode.current = { code, at: now };
+    onScan(code);
+  }
+
+  function onChange(text: string) {
+    setValue(text);
+    // Entrée / tab au milieu du flux = fin de code.
+    if (/[\r\n\t]/.test(text)) {
+      submit(text);
+      return;
+    }
+    if (manual) return; // saisie humaine : pas d'auto-validation
+    if (burstTimer.current) clearTimeout(burstTimer.current);
+    burstTimer.current = setTimeout(() => {
+      burstTimer.current = null;
+      submit(text);
+    }, BURST_GAP_MS);
   }
 
   async function openCam() {
     if (!perm?.granted) {
-      const r = await requestPerm();
-      if (!r.granted) return;
+      const res = await requestPerm();
+      if (!res.granted) return;
     }
     camBusy.current = false;
     setCam(true);
@@ -51,14 +92,20 @@ export function ScanInput({ onScan, hint }: { onScan: (code: string) => void; hi
       <TextInput
         ref={inputRef}
         value={value}
-        onChangeText={setValue}
+        onChangeText={onChange}
         onSubmitEditing={(e) => submit(e.nativeEvent.text)}
-        placeholder={manual ? 'Taper un code…' : hint || 'Scanner'}
+        onBlur={() => {
+          if (!manual && !cam) setTimeout(() => inputRef.current?.focus(), 50);
+        }}
+        placeholder={manual ? 'Taper un code…' : hint || 'Prêt à scanner — visez et pressez la gâchette'}
         placeholderTextColor={C.muted}
         autoCapitalize="characters"
         autoCorrect={false}
+        autoComplete="off"
+        spellCheck={false}
         blurOnSubmit={false}
         showSoftInputOnFocus={manual}
+        caretHidden={!manual}
         returnKeyType="done"
         style={styles.input}
       />
@@ -74,7 +121,7 @@ export function ScanInput({ onScan, hint }: { onScan: (code: string) => void; hi
           <CameraView
             style={StyleSheet.absoluteFill}
             facing="back"
-            barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'ean13', 'code39', 'datamatrix'] }}
+            barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'datamatrix'] }}
             onBarcodeScanned={({ data }) => {
               if (camBusy.current) return;
               camBusy.current = true;
