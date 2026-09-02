@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import SignatureScreen from 'react-native-signature-canvas';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { staffApi } from '@/lib/staff';
@@ -10,6 +9,7 @@ import { API_URL, mediaUrl } from '@/lib/api';
 import { C, R } from '@/lib/theme';
 import { StaffScreen, BigButton } from '@/components/staff/kit';
 import { ScanInput } from '@/components/staff/ScanInput';
+import { SignaturePad, type SignaturePadHandle } from '@/components/staff/SignaturePad';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -42,7 +42,7 @@ export default function StaffFlow() {
   const [depositAction, setDepositAction] = useState<'RELEASE' | 'PARTIAL' | 'CAPTURE'>('RELEASE');
   const [depositCaptured, setDepositCaptured] = useState('0');
   const [result, setResult] = useState('');
-  const sigRef = useRef<any>(null);
+  const sigRef = useRef<SignaturePadHandle>(null);
 
   const load = useCallback(async () => {
     try {
@@ -217,29 +217,28 @@ export default function StaffFlow() {
     return (
       <StaffScreen title={r.number} onBack={() => setStep('check')} scroll={false}>
         <Text style={{ fontWeight: '800', color: C.ink }}>Le client signe la remise</Text>
-        <View style={{ flex: 1, borderWidth: 2, borderColor: C.border, borderRadius: 12, overflow: 'hidden' }}>
-          <SignatureScreen
-            ref={sigRef}
-            onOK={(sig: string) => validatePickup(sig)}
-            onEmpty={() => validatePickup(null)}
-            descriptionText=""
-            webStyle=".m-signature-pad--footer{display:none} .m-signature-pad{box-shadow:none;border:none} body,html{height:100%;margin:0}"
-          />
+        <View
+          style={{ flex: 1, borderWidth: 2, borderColor: C.border, borderRadius: 12, overflow: 'hidden' }}
+        >
+          <SignaturePad ref={sigRef} />
         </View>
         {err ? <Text style={{ color: C.err, fontWeight: '700' }}>{err}</Text> : null}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <View style={{ flex: 1 }}>
-            <BigButton label="Effacer" tone="outline" onPress={() => sigRef.current?.clearSignature()} />
+            <BigButton label="Effacer" tone="outline" onPress={() => sigRef.current?.clear()} />
           </View>
           <View style={{ flex: 2 }}>
             <BigButton
               label={busy ? '…' : 'Valider la sortie'}
               tone="red"
               disabled={busy}
-              onPress={() => sigRef.current?.readSignature()}
+              onPress={() => validatePickup(sigRef.current?.getData() ?? null)}
             />
           </View>
         </View>
+        <Text style={{ color: C.muted, fontSize: 12, textAlign: 'center' }}>
+          La signature n’est pas obligatoire pour valider.
+        </Text>
       </StaffScreen>
     );
   }
