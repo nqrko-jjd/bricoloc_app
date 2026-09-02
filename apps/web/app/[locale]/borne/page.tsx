@@ -84,7 +84,7 @@ export default function BorneHome() {
     router.replace({ pathname, params }, { locale: l });
 
   return (
-    <KioskFrame step={1} locale={locale} locales={SUPPORTED_LOCALES} onLocale={switchLocale}>
+    <KioskFrame locale={locale} locales={SUPPORTED_LOCALES} onLocale={switchLocale}>
       <div className="kiosk-ask">
         <span className="kicker">— {t.welcome}</span>
         <h1>

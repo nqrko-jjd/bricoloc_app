@@ -90,7 +90,7 @@ export default function BorneProjet() {
     router.replace({ pathname, params }, { locale: l });
 
   return (
-    <KioskFrame step={2} locale={locale} locales={SUPPORTED_LOCALES} onLocale={switchLocale}>
+    <KioskFrame step={1} locale={locale} locales={SUPPORTED_LOCALES} onLocale={switchLocale}>
       <div className="kiosk-ask">
         <button className="kiosk-back kiosk-back--inline" onClick={() => router.push('/borne')}>
           {t.back}

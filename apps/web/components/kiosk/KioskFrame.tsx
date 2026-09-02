@@ -3,11 +3,11 @@ import type { ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@bricoloc/shared';
 
-const STEPS = [
-  'Accueil',
+/** Étapes du parcours de commande borne (déclenché par « Je décris mon projet »). */
+export const KIOSK_STEPS = [
   'Projet',
   'Catalogue',
-  'Fiche outil',
+  'Choix',
   'Dates',
   'Panier',
   'Identification',
@@ -16,8 +16,9 @@ const STEPS = [
 ];
 
 /**
- * Cadre de la borne tactile (style concept) : barre d'étapes, châssis navy,
- * écran clair arrondi avec en-tête (logo + aide + panier), corps en 2 colonnes.
+ * Cadre de la borne tactile — orientation portrait par défaut, bascule en
+ * deux colonnes en paysage. Pas de barre de navigation sur l'accueil ;
+ * `step` (1..8) affiche la progression du parcours de commande.
  */
 export function KioskFrame({
   step,
@@ -25,59 +26,65 @@ export function KioskFrame({
   locales,
   onLocale,
   cartCount = 0,
+  onHelp,
   children,
 }: {
-  step: number;
+  step?: number;
   locale: Locale;
   locales: readonly Locale[];
   onLocale: (l: Locale) => void;
   cartCount?: number;
+  onHelp?: () => void;
   children: ReactNode;
 }) {
   return (
-    <>
-      <header className="kiosk-head">
-        <Link href="/" className="kiosk-back">
-          ← Retour au site
-        </Link>
-        <div className="kiosk-stepbar" aria-hidden>
-          {STEPS.map((s, i) => (
-            <span key={s} className={`kiosk-stepbar__s${i + 1 === step ? ' is-active' : ''}`}>
-              {i + 1}. {s}
-            </span>
-          ))}
-        </div>
-      </header>
-
-      <section className="kiosk-bezel">
-        <div className="kiosk-screen">
-          <div className="kiosk-screen__top">
-            <span className="logo kiosk-logo" aria-label="Bricoloc">
-              <span className="b">BRICO</span>
-              <span className="l">LOC</span>
-            </span>
-            <div className="kiosk-screen__actions">
-              <button className="kiosk-help">? Besoin d’aide&nbsp;?</button>
-              <button className="kiosk-cart">
-                🛒 Panier{cartCount > 0 ? <span>{cartCount}</span> : null}
-              </button>
-              <div className="kiosk-langs">
-                {locales.map((l) => (
-                  <button
-                    key={l}
-                    className={l === locale ? 'is-active' : ''}
-                    onClick={() => onLocale(l)}
-                  >
-                    {l.toUpperCase()}
-                  </button>
-                ))}
-              </div>
+    <section className="kiosk-bezel">
+      <div className="kiosk-screen">
+        <div className="kiosk-screen__top">
+          <Link href="/borne" className="logo kiosk-logo" aria-label="Bricoloc">
+            <span className="b">BRICO</span>
+            <span className="l">LOC</span>
+          </Link>
+          <div className="kiosk-screen__actions">
+            <button className="kiosk-help" onClick={onHelp}>
+              ? Aide
+            </button>
+            <Link href="/borne/panier" className="kiosk-cart">
+              🛒{cartCount > 0 ? <span>{cartCount}</span> : null}
+            </Link>
+            <div className="kiosk-langs">
+              {locales.map((l) => (
+                <button
+                  key={l}
+                  className={l === locale ? 'is-active' : ''}
+                  onClick={() => onLocale(l)}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
             </div>
           </div>
-
-          <div className="kiosk-screen__grid">{children}</div>
         </div>
-      </section>
-    </>
+
+        {step ? (
+          <div className="kiosk-progress" aria-label={`Étape ${step} sur ${KIOSK_STEPS.length}`}>
+            {KIOSK_STEPS.map((s, i) => (
+              <span
+                key={s}
+                className={`kiosk-progress__s${i + 1 === step ? ' is-active' : ''}${
+                  i + 1 < step ? ' is-done' : ''
+                }`}
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <div className={`kiosk-screen__grid${step ? ' kiosk-screen__grid--process' : ''}`}>
+          {children}
+        </div>
+      </div>
+    </section>
   );
 }
