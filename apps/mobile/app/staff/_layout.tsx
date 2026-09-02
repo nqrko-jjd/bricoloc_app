@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useStaff } from '@/lib/staff';
+import { TEAM_MODE } from '@/lib/config';
 import { C, R } from '@/lib/theme';
 
 function StaffLogin() {
@@ -63,9 +64,14 @@ function StaffLogin() {
           <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>Se connecter</Text>
         )}
       </Pressable>
-      <Pressable onPress={() => router.replace('/(tabs)')} style={{ marginTop: 18, alignItems: 'center' }}>
-        <Text style={{ color: '#c9c8ec' }}>← Retour à l’appli client</Text>
-      </Pressable>
+      {!TEAM_MODE && (
+        <Pressable
+          onPress={() => router.replace('/(tabs)')}
+          style={{ marginTop: 18, alignItems: 'center' }}
+        >
+          <Text style={{ color: '#c9c8ec' }}>← Retour à l’appli client</Text>
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 }

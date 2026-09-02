@@ -42,6 +42,18 @@ export default function CompteScreen() {
         <Card style={{ marginTop: 20 }}>
           <P muted>Démo : client@bricoloc.example / bricoloc</P>
         </Card>
+        <Text
+          onPress={() => router.push('/staff' as never)}
+          style={{
+            textAlign: 'center',
+            color: C.lightGray,
+            fontSize: 12,
+            fontWeight: '700',
+            paddingVertical: 24,
+          }}
+        >
+          Espace équipe →
+        </Text>
       </Screen>
     );
 

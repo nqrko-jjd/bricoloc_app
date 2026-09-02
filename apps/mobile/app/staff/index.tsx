@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useStaff, staffApi } from '@/lib/staff';
+import { TEAM_MODE } from '@/lib/config';
 import { C, R } from '@/lib/theme';
 import { ScanInput } from '@/components/staff/ScanInput';
 
@@ -70,11 +71,13 @@ export default function StaffHome() {
         <Pressable
           onPress={async () => {
             await logout();
-            router.replace('/(tabs)');
+            if (!TEAM_MODE) router.replace('/(tabs)');
           }}
           hitSlop={10}
         >
-          <Text style={{ color: '#c9c8ec', fontWeight: '700' }}>Quitter</Text>
+          <Text style={{ color: '#c9c8ec', fontWeight: '700' }}>
+            {TEAM_MODE ? 'Déconnexion' : 'Quitter'}
+          </Text>
         </Pressable>
       </View>
 
