@@ -24,16 +24,18 @@ export function OnScreenKeyboard({
       <div
         style={{
           background: '#fff',
-          color: 'var(--loc)',
-          borderRadius: 10,
-          padding: '14px 16px',
+          color: 'var(--navy-deep)',
+          border: '2px solid var(--navy)',
+          borderRadius: 14,
+          padding: '14px 18px',
           fontSize: '1.4rem',
-          minHeight: 52,
+          fontWeight: 700,
+          minHeight: 56,
           textAlign: 'left',
           wordBreak: 'break-all',
         }}
       >
-        {value || <span style={{ opacity: 0.35 }}>…</span>}
+        {value || <span style={{ opacity: 0.3 }}>…</span>}
       </div>
       <div className="kiosk-keyboard">
         {ROWS.flat().map((k) => (

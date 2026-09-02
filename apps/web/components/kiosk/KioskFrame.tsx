@@ -13,9 +13,10 @@ const EXIT_LABEL: Record<string, string> = {
 export const KIOSK_STEPS = [
   'Accueil',
   'Projet',
-  'Catalogue',
   'Dates',
+  'Catalogue',
   'Panier',
+  'Coordonnées',
   'Paiement',
   'Confirmation',
 ];

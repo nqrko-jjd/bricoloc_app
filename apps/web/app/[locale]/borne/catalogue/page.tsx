@@ -16,11 +16,11 @@ type Step = 'dates' | 'browse' | 'cart' | 'contact' | 'pay' | 'done';
 
 const STEP_NUM: Record<Step, number> = {
   dates: 3,
-  browse: 3,
+  browse: 4,
   cart: 5,
-  contact: 5,
-  pay: 6,
-  done: 7,
+  contact: 6,
+  pay: 7,
+  done: 8,
 };
 
 function KioskCatalogue() {
@@ -166,8 +166,12 @@ function KioskCatalogue() {
       )}
 
       {step === 'dates' && (
-        <div style={{ maxWidth: 640, width: '100%', marginTop: 30 }}>
-          <h1>Vos dates de location</h1>
+        <div className="kiosk-checkout">
+          <span className="eyebrow">— Étape 1</span>
+          <h1>
+            Vos dates <i>de location</i>
+          </h1>
+          <p className="kiosk-sub">Une seule fois, pour tout le matériel de la commande.</p>
           <div className="datepicker-card">
             <div className="field">
               <label>Début</label>
@@ -189,12 +193,12 @@ function KioskCatalogue() {
       )}
 
       {step === 'browse' && (
-        <div style={{ maxWidth: 960, width: '100%', marginTop: 20 }}>
+        <div className="kiosk-checkout kiosk-checkout--wide">
           <input
+            className="kiosk-browsesearch"
             placeholder="Rechercher un outil…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            style={{ width: '100%', padding: 14, fontSize: '1.1rem', borderRadius: 10, border: 'none' }}
           />
           <div className="kiosk-cat-grid">
             {products.map((p) => {
@@ -254,33 +258,32 @@ function KioskCatalogue() {
       )}
 
       {step === 'cart' && cart && (
-        <div style={{ marginTop: 12 }}>
+        <div className="kiosk-checkout">
           <h1>Votre panier</h1>
-          <div className="card card-pad">
+          <ul className="kiosk-cartlist">
             {cart.items.map((i) => (
-              <div key={i.id} className="spread" style={{ padding: '8px 0' }}>
-                <span>
-                  {i.quantity}× {i.name}
-                </span>
-                <span>{formatEUR(i.dailyPrice * i.quantity)}</span>
-              </div>
+              <li key={i.id}>
+                <span className="kiosk-cartlist__q">{i.quantity}×</span>
+                <span className="kiosk-cartlist__n">{i.name}</span>
+                <span className="kiosk-cartlist__p">{formatEUR(i.dailyPrice * i.quantity)}</span>
+              </li>
             ))}
-            {cart.quote && (
-              <>
-                <div className="line total">
-                  <span>Total TVAC</span>
-                  <span>{formatEUR(cart.quote.totals.totalTVAC)}</span>
-                </div>
-                <div className="line deposit">
-                  <span>Caution</span>
-                  <span>{formatEUR(cart.quote.totals.depositsTotal)}</span>
-                </div>
-              </>
-            )}
-          </div>
-          <div className="row" style={{ marginTop: 16 }}>
+          </ul>
+          {cart.quote && (
+            <div className="kiosk-totals">
+              <div>
+                <span>Total TVAC</span>
+                <strong>{formatEUR(cart.quote.totals.totalTVAC)}</strong>
+              </div>
+              <div className="kiosk-totals__dep">
+                <span>Caution (empreinte bancaire)</span>
+                <span>{formatEUR(cart.quote.totals.depositsTotal)}</span>
+              </div>
+            </div>
+          )}
+          <div className="kiosk-actions">
             <button className="btn btn-ghost" onClick={() => setStep('browse')}>
-              Ajouter d&apos;autres outils
+              ← Ajouter d&apos;autres outils
             </button>
             <button
               className="btn btn-primary btn-lg"
@@ -294,24 +297,23 @@ function KioskCatalogue() {
       )}
 
       {step === 'contact' && (
-        <div style={{ maxWidth: 760, width: '100%', marginTop: 16 }}>
+        <div className="kiosk-checkout">
           <h1>Vos coordonnées</h1>
-          <div className="pill-row" style={{ justifyContent: 'center', marginBottom: 10 }}>
-            {(['firstName', 'lastName', 'email', 'phone'] as const).map((k) => (
-              <button
-                key={k}
-                className={`chip${field === k ? ' active' : ''}`}
-                onClick={() => setField(k)}
-              >
-                {k === 'firstName'
-                  ? `Prénom${contact.firstName ? ' ✔' : ''}`
-                  : k === 'lastName'
-                    ? `Nom${contact.lastName ? ' ✔' : ''}`
-                    : k === 'email'
-                      ? `E-mail${contact.email ? ' ✔' : ''}`
-                      : `Téléphone${contact.phone ? ' ✔' : ''}`}
-              </button>
-            ))}
+          <p className="kiosk-sub">Touchez un champ, puis saisissez-le au clavier.</p>
+          <div className="kiosk-fields">
+            {(['firstName', 'lastName', 'email', 'phone'] as const).map((k) => {
+              const label = { firstName: 'Prénom', lastName: 'Nom', email: 'E-mail', phone: 'Téléphone' }[k];
+              return (
+                <button
+                  key={k}
+                  className={`kiosk-fieldchip${field === k ? ' is-active' : ''}${contact[k] ? ' is-filled' : ''}`}
+                  onClick={() => setField(k)}
+                >
+                  <small>{label}</small>
+                  <span>{contact[k] || '…'}</span>
+                </button>
+              );
+            })}
           </div>
           <OnScreenKeyboard
             value={contact[field]}
@@ -322,34 +324,39 @@ function KioskCatalogue() {
               if (idx < order.length - 1) setField(order[idx + 1]!);
             }}
           />
-          <button
-            className="btn btn-primary btn-lg"
-            style={{ marginTop: 16 }}
-            disabled={
-              !contact.firstName || !contact.lastName || !contact.email || !contact.phone
-            }
-            onClick={() => setStep('pay')}
-          >
-            Continuer vers le paiement
-          </button>
+          <div className="kiosk-actions">
+            <button className="btn btn-ghost" onClick={() => setStep('cart')}>
+              ← Retour
+            </button>
+            <button
+              className="btn btn-primary btn-lg"
+              disabled={!contact.firstName || !contact.lastName || !contact.email || !contact.phone}
+              onClick={() => setStep('pay')}
+            >
+              Continuer vers le paiement
+            </button>
+          </div>
         </div>
       )}
 
       {step === 'pay' && cart && (
-        <div style={{ maxWidth: 560, width: '100%', marginTop: 30, textAlign: 'center' }}>
-          <h1>Paiement — démonstration</h1>
-          <p style={{ fontSize: '2rem', fontWeight: 800 }}>
-            {formatEUR(cart.quote?.totals.amountDue ?? 0)}
-          </p>
-          <p style={{ opacity: 0.8 }}>
+        <div className="kiosk-checkout kiosk-checkout--center">
+          <span className="eyebrow">— Paiement · environnement de démonstration</span>
+          <h1>À régler</h1>
+          <p className="kiosk-amount">{formatEUR(cart.quote?.totals.amountDue ?? 0)}</p>
+          <p className="kiosk-sub">
             {formatDateTimeBE(fromLocalInput(start))} → {formatDateTimeBE(fromLocalInput(end))}
           </p>
-          <button className="btn btn-primary btn-lg" onClick={pay} disabled={busy}>
+          <div className="kiosk-paymethods" aria-hidden>
+            <span>💳 Carte</span>
+            <span>Bancontact</span>
+            <span>Espèces au comptoir</span>
+          </div>
+          <button className="btn btn-primary btn-lg btn-block" onClick={pay} disabled={busy}>
             {busy ? 'Traitement…' : 'Payer (mode test)'}
           </button>
-          <br />
-          <button className="btn btn-ghost" style={{ marginTop: 12 }} onClick={() => setStep('cart')}>
-            Retour
+          <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={() => setStep('contact')}>
+            ← Retour
           </button>
         </div>
       )}
@@ -453,17 +460,22 @@ function KioskCatalogue() {
       )}
 
       {step === 'done' && result && (
-        <div style={{ maxWidth: 560, width: '100%', marginTop: 30, textAlign: 'center' }}>
-          <h1>Réservation confirmée</h1>
-          <p style={{ fontSize: '1.6rem', fontWeight: 800 }}>{result.number}</p>
+        <div className="kiosk-checkout kiosk-checkout--center">
+          <span className="kiosk-check" aria-hidden>
+            ✓
+          </span>
+          <h1>
+            Réservation <i>confirmée</i>
+          </h1>
+          <p className="kiosk-resnum">{result.number}</p>
           <div className="qr-box">
             <img src={result.qrDataUrl} alt="QR" />
           </div>
-          <p style={{ opacity: 0.85 }}>
+          <p className="kiosk-sub">
             Présentez ce QR code au comptoir. Un e-mail de confirmation vous a été envoyé (démo).
           </p>
           <button
-            className="btn btn-primary btn-lg"
+            className="btn btn-primary btn-lg btn-block"
             onClick={() => {
               resetKioskSession();
               router.push('/borne');

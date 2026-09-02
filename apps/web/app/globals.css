@@ -1750,3 +1750,80 @@ button { font-family: inherit; }
 .page-header h1 i { color: var(--primary); }
 .pcard__rating { font-size: 0.8rem; color: var(--muted-fg); font-weight: 600; }
 .pcard__rating span { opacity: 0.7; }
+
+/* ---- Borne : écrans du parcours (dates / panier / coordonnées / paiement) ---- */
+.kiosk-checkout { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 4px; }
+.kiosk-checkout--wide { max-width: 920px; }
+.kiosk-checkout--center { text-align: center; align-items: center; }
+.kiosk-checkout h1 { margin: 8px 0 4px; }
+.kiosk-checkout h1 i { color: var(--primary); }
+.kiosk-checkout .kiosk-sub { margin-bottom: 14px; }
+.kiosk-checkout .datepicker-card { margin-top: 8px; }
+
+.kiosk-actions { display: flex; gap: 12px; margin-top: 20px; }
+.kiosk-actions .btn-lg { flex: 1; }
+
+.kiosk-cartlist { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; }
+.kiosk-cartlist li {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+  padding: 14px 0; border-bottom: 1px solid var(--line);
+}
+.kiosk-cartlist__q { font-weight: 900; color: var(--muted-fg); }
+.kiosk-cartlist__n { font-weight: 700; }
+.kiosk-cartlist__p { font-weight: 900; letter-spacing: -0.02em; }
+
+.kiosk-totals {
+  margin-top: 16px; background: var(--navy); color: #fff; border-radius: var(--r-md); padding: 20px 22px;
+  display: grid; gap: 8px;
+}
+.kiosk-totals > div { display: flex; justify-content: space-between; align-items: baseline; }
+.kiosk-totals strong { font-family: var(--font-display); font-weight: 900; font-size: 1.7rem; letter-spacing: -0.03em; }
+.kiosk-totals__dep { font-size: 0.9rem; color: rgba(255,255,255,0.7); }
+
+.kiosk-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 16px; }
+@media (max-width: 480px) { .kiosk-fields { grid-template-columns: 1fr; } }
+.kiosk-fieldchip {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  background: #fff; border: 2px solid var(--line); border-radius: var(--r-md);
+  padding: 12px 16px; cursor: pointer; text-align: left; min-height: 62px;
+}
+.kiosk-fieldchip small { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted-fg); }
+.kiosk-fieldchip span { font-weight: 700; color: var(--ink); }
+.kiosk-fieldchip.is-active { border-color: var(--navy); }
+.kiosk-fieldchip.is-filled { border-color: var(--ok); }
+.kiosk-fieldchip.is-filled small::after { content: ' ✓'; color: var(--ok); }
+
+.kiosk-amount {
+  font-family: var(--font-display); font-weight: 900; font-size: clamp(2.6rem, 9vw, 4rem);
+  letter-spacing: -0.05em; color: var(--navy-deep); margin: 6px 0;
+}
+.kiosk-paymethods { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 6px 0 18px; }
+.kiosk-paymethods span {
+  background: var(--surface2); border: 1px solid var(--line); border-radius: var(--r-pill);
+  padding: 8px 14px; font-size: 0.85rem; font-weight: 700; color: var(--muted-fg);
+}
+
+.kiosk-check {
+  width: 76px; height: 76px; border-radius: 50%; background: var(--ok); color: #fff;
+  display: grid; place-items: center; font-size: 2.4rem; font-weight: 900; margin-bottom: 8px;
+}
+.kiosk-resnum {
+  font-family: var(--font-display); font-weight: 900; font-size: 1.6rem; letter-spacing: 0.04em;
+  color: var(--navy-deep); margin: 4px 0 14px;
+}
+.qr-box { background: #fff; border: 1px solid var(--line); padding: 16px; border-radius: var(--r-md); display: inline-block; margin-bottom: 14px; }
+.qr-box img { width: 200px; height: 200px; display: block; }
+
+.kiosk-browsesearch {
+  width: 100%; height: 56px; padding: 0 20px; border: 2px solid var(--navy); border-radius: var(--r-md);
+  font-size: 1rem; font-weight: 600; color: var(--ink); background: #fff; margin-bottom: 4px;
+}
+
+/* clavier tactile — style concept */
+.kiosk-keyboard { grid-template-columns: repeat(10, 1fr); gap: 6px; max-width: 640px; margin: 14px auto; }
+.kiosk-key {
+  background: #fff; color: var(--navy-deep); border: 1px solid var(--line); border-radius: 12px;
+  padding: 16px 0; font-size: 1.2rem; font-weight: 800; cursor: pointer;
+}
+.kiosk-key:active { background: var(--surface2); }
+.kiosk-key.wide { grid-column: span 3; }
