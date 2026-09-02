@@ -1,9 +1,12 @@
 'use client';
 import { Suspense, useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
-import { formatDateTimeBE } from '@bricoloc/shared';
+import { useLocale } from 'next-intl';
+import { useParams } from 'next/navigation';
+import { useRouter, usePathname } from '@/i18n/navigation';
+import { formatDateTimeBE, SUPPORTED_LOCALES, type Locale } from '@bricoloc/shared';
 import { api } from '@/lib/api';
 import { OnScreenKeyboard } from '@/components/OnScreenKeyboard';
+import { KioskFrame } from '@/components/kiosk/KioskFrame';
 
 interface Lookup {
   number: string;
@@ -27,9 +30,16 @@ const STATUS_LABEL: Record<string, string> = {
 
 function KioskReservation() {
   const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams();
+  const locale = useLocale() as Locale;
   const [code, setCode] = useState('');
   const [res, setRes] = useState<Lookup | null>(null);
   const [err, setErr] = useState('');
+
+  const switchLocale = (l: Locale) =>
+    // @ts-expect-error params dynamiques transmis tels quels
+    router.replace({ pathname, params }, { locale: l });
 
   async function search() {
     setErr('');
@@ -46,16 +56,13 @@ function KioskReservation() {
   }
 
   return (
-    <div className="kiosk-body" style={{ justifyContent: 'flex-start', paddingTop: 30 }}>
-      <button
-        className="btn btn-ghost"
-        style={{ alignSelf: 'flex-start' }}
-        onClick={() => router.push('/borne')}
-      >
+    <KioskFrame locale={locale} locales={SUPPORTED_LOCALES} onLocale={switchLocale}>
+      <div className="kiosk-pad">
+      <button className="kiosk-back kiosk-back--inline" onClick={() => router.push('/borne')}>
         ← Accueil
       </button>
       <h1>Ma réservation</h1>
-      <p style={{ opacity: 0.85 }}>
+      <p className="kiosk-sub">
         Saisissez votre numéro de réservation (BRL-…) ou le code de votre QR (R-…).
       </p>
 
@@ -102,7 +109,8 @@ function KioskReservation() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </KioskFrame>
   );
 }
 
