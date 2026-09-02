@@ -10,6 +10,7 @@ const NAV = [
   ['/admin/comptoir', 'Comptoir (retrait/retour)'],
   ['/terminal', 'Terminal Zebra (handheld)'],
   ['/admin/reservations', 'Réservations'],
+  ['/admin/planning', 'Planning'],
   ['/admin/livraisons', 'Livraisons'],
   ['/admin/produits', 'Catalogue & produits'],
   ['/admin/exemplaires', 'Stock & exemplaires'],

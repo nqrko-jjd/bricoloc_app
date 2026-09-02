@@ -647,6 +647,103 @@ adminRouter.post(
 );
 
 /* -------------------------- Reservations -------------------------- */
+/**
+ * Planning : par machine, les locations et immobilisations sur une fenêtre de dates.
+ *   ?from=YYYY-MM-DD&to=YYYY-MM-DD  (défaut : aujourd'hui → +35 j)
+ */
+adminRouter.get(
+  '/planning',
+  h(async (req, res) => {
+    const from = req.query.from ? new Date(String(req.query.from)) : new Date();
+    from.setHours(0, 0, 0, 0);
+    const to = req.query.to
+      ? new Date(String(req.query.to))
+      : new Date(from.getTime() + 35 * 86_400_000);
+    to.setHours(23, 59, 59, 999);
+
+    const [products, items, maints] = await Promise.all([
+      prisma.product.findMany({
+        where: { kind: { in: ['MACHINE', 'ACCESSORY', 'PPE'] } },
+        select: { id: true, name: true, category: { select: { name: true, position: true } }, _count: { select: { units: true } } },
+        orderBy: [{ category: { position: 'asc' } }, { name: 'asc' }],
+      }),
+      prisma.reservationItem.findMany({
+        where: {
+          kind: 'MACHINE',
+          reservation: {
+            status: { in: ['CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDING', 'PENDING_SUPPLIER'] },
+            periodStart: { lte: to },
+            periodEnd: { gte: from },
+          },
+        },
+        select: {
+          productId: true,
+          quantity: true,
+          reservation: {
+            select: {
+              number: true,
+              status: true,
+              periodStart: true,
+              periodEnd: true,
+              fulfilmentMode: true,
+              user: { select: { firstName: true, lastName: true } },
+              contact: true,
+            },
+          },
+        },
+      }),
+      prisma.maintenance.findMany({
+        where: {
+          blocksAvailability: true,
+          status: { in: ['PLANNED', 'IN_PROGRESS'] },
+          startAt: { lte: to },
+          OR: [{ endAt: null }, { endAt: { gte: from } }],
+        },
+        select: {
+          description: true,
+          type: true,
+          startAt: true,
+          endAt: true,
+          unit: { select: { productId: true, assetTag: true } },
+        },
+      }),
+    ]);
+
+    const rows = products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category?.name ?? 'Sans catégorie',
+      capacity: p._count.units,
+      rentals: items
+        .filter((i) => i.productId === p.id)
+        .map((i) => {
+          const c = (i.reservation.contact as { firstName?: string; lastName?: string } | null) ?? null;
+          return {
+            number: i.reservation.number,
+            status: i.reservation.status,
+            qty: i.quantity,
+            start: i.reservation.periodStart,
+            end: i.reservation.periodEnd,
+            mode: i.reservation.fulfilmentMode,
+            customer: i.reservation.user
+              ? `${i.reservation.user.firstName} ${i.reservation.user.lastName}`
+              : `${c?.firstName ?? ''} ${c?.lastName ?? ''}`.trim() || 'Invité',
+          };
+        }),
+      maintenance: maints
+        .filter((m) => m.unit?.productId === p.id)
+        .map((m) => ({
+          label: `${m.type} ${m.unit?.assetTag ?? ''}`.trim(),
+          description: m.description,
+          start: m.startAt,
+          end: m.endAt ?? to,
+        })),
+    }));
+
+    res.json({ from, to, rows: rows.filter((r) => r.rentals.length || r.maintenance.length || r.capacity > 0) });
+  }),
+);
+
 adminRouter.get(
   '/reservations',
   h(async (req, res) => {
