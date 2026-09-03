@@ -13,7 +13,7 @@ export async function resolveUnit(code: string) {
   const c = code.trim();
   const unit = await prisma.productUnit.findFirst({
     where: { OR: [{ assetTag: c }, { barcode: c }, { qrToken: c }] },
-    include: { product: { select: { id: true, name: true, slug: true, kind: true } } },
+    include: { product: { select: { id: true, name: true, slug: true, kind: true, images: true } } },
   });
   return unit;
 }

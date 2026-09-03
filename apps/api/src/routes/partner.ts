@@ -18,6 +18,12 @@ import {
 
 export const partnerRouter = Router();
 
+/** Première image d'un produit (chemin relatif `/uploads/...` ou URL absolue). */
+function firstImage(images: unknown): string | null {
+  const arr = Array.isArray(images) ? (images as string[]) : [];
+  return arr[0] ?? null;
+}
+
 partnerRouter.use((req, res, next) => {
   if (!env.partnerApiKey) {
     return res.status(503).json({ error: { code: 'DISABLED', message: 'API partenaire désactivée' } });
@@ -117,6 +123,8 @@ partnerRouter.get(
         slug: true,
         name: true,
         kind: true,
+        brand: true,
+        images: true,
         category: { select: { name: true } },
         units: {
           select: { id: true, assetTag: true, state: true, storageLocation: true },
@@ -136,6 +144,8 @@ partnerRouter.get(
         slug: p.slug,
         name: p.name,
         kind: p.kind,
+        brand: p.brand ?? null,
+        image: firstImage(p.images),
         category: p.category?.name ?? null,
         total: p.units.length,
         available: p.units.filter((u) => u.state === 'AVAILABLE').length,
@@ -183,7 +193,12 @@ partnerRouter.get(
     });
     res.json({
       unit: { assetTag: unit.assetTag, barcode: unit.barcode, state: unit.state },
-      product: { id: unit.product.id, name: unit.product.name, kind: unit.product.kind },
+      product: {
+        id: unit.product.id,
+        name: unit.product.name,
+        kind: unit.product.kind,
+        image: firstImage((unit.product as { images?: unknown }).images),
+      },
       location,
       history: history.map((l) => ({
         chantier: l.chantier.name,
