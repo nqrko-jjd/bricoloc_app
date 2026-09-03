@@ -2345,3 +2345,12 @@ button { font-family: inherit; }
   display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
 }
 .label__loc { font-weight: 700; font-size: 0.85em; }
+
+/* Réservation admin — contrôles & preuves (retrait / retour) */
+.reslist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.reslist li.is-ok { color: var(--ok); font-weight: 600; }
+.reslist li.is-no { color: var(--muted-fg); }
+.photostrip { display: flex; flex-wrap: wrap; gap: 8px; }
+.photostrip a { display: block; width: 96px; height: 96px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.photostrip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sigbox { max-width: 320px; width: 100%; border: 1px solid var(--border); border-radius: 8px; background: #fff; }

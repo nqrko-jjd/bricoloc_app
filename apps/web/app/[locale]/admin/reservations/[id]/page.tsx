@@ -266,32 +266,40 @@ export default function AdminReservationDetail({
           </div>
 
           {r.pickup && (
-            <div className="card card-body">
-              <h3>Retrait</h3>
-              <p className="small">
-                Signé : {r.pickup.signature ? 'oui' : 'non'} ·{' '}
+            <div className="card card-body stack">
+              <h3>Retrait — contrôle &amp; preuves</h3>
+              <p className="small muted">
                 {formatDateTimeBE(r.pickup.createdAt)}
+                {r.pickup.note ? ` · ${r.pickup.note}` : ''}
               </p>
-              <pre className="small">{JSON.stringify(r.pickup.checklist, null, 1)}</pre>
+              <Checklist data={r.pickup.checklist} />
+              <PhotoStrip label="Photos à la sortie" urls={r.pickup.photos} />
+              <Signature src={r.pickup.signature} />
             </div>
           )}
           {r.return && (
-            <div className="card card-body">
-              <h3>Retour</h3>
+            <div className="card card-body stack">
+              <h3>Retour — contrôle &amp; preuves</h3>
               <p className="small">
                 Retour réel : {formatDateTimeBE(r.return.actualReturnAt)} · Retard{' '}
                 {r.return.lateDays} j ({formatEUR(r.return.lateFeeHT)}) · Nettoyage{' '}
                 {formatEUR(r.return.cleaningFeeHT)}
               </p>
+              <Checklist data={r.return.checklist} />
+              <PhotoStrip label="Photos au retour" urls={r.return.photos} />
             </div>
           )}
           {r.damages?.length > 0 && (
-            <div className="card card-body">
+            <div className="card card-body stack">
               <h3>Dommages</h3>
               {r.damages.map((d: any) => (
-                <p key={d.id} className="small">
-                  {d.description} — {formatEUR(d.feeHT)} {d.resolved ? '✔' : ''}
-                </p>
+                <div key={d.id} className="stack" style={{ gap: 4 }}>
+                  <p className="small">
+                    {d.description} — {formatEUR(d.feeHT)} {d.resolved ? '✔ résolu' : ''}
+                    {d.unit?.assetTag ? ` · ${d.unit.assetTag}` : ''}
+                  </p>
+                  <PhotoStrip urls={d.photos} />
+                </div>
               ))}
             </div>
           )}
@@ -446,6 +454,57 @@ export default function AdminReservationDetail({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+const CHECK_LABEL: Record<string, string> = {
+  complet: 'Matériel & accessoires complets',
+  propre: 'Propre, prêt à l’emploi',
+  fonctionnel: 'Testé, fonctionnel',
+  notice: 'Notice / consignes remises',
+  nettoye: 'Rendu nettoyé',
+};
+
+function Checklist({ data }: { data: any }) {
+  const entries = data && typeof data === 'object' ? Object.entries(data as Record<string, boolean>) : [];
+  if (!entries.length) return null;
+  return (
+    <ul className="reslist">
+      {entries.map(([k, v]) => (
+        <li key={k} className={v ? 'is-ok' : 'is-no'}>
+          <span aria-hidden>{v ? '✓' : '—'}</span> {CHECK_LABEL[k] ?? k}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PhotoStrip({ label, urls }: { label?: string; urls: any }) {
+  const list: string[] = Array.isArray(urls) ? urls.filter((u) => typeof u === 'string') : [];
+  if (!list.length) return null;
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      {label ? <span className="small muted" style={{ fontWeight: 700 }}>{label}</span> : null}
+      <div className="photostrip">
+        {list.map((u) => (
+          <a key={u} href={u} target="_blank" rel="noreferrer" title="Ouvrir en grand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={u} alt="" loading="lazy" />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Signature({ src }: { src?: string | null }) {
+  if (!src) return <p className="small muted">Pas de signature.</p>;
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      <span className="small muted" style={{ fontWeight: 700 }}>Signature du client</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="sigbox" src={src} alt="Signature du client" />
     </div>
   );
 }

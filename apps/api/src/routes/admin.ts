@@ -856,7 +856,7 @@ adminRouter.get(
         pickup: true,
         return: true,
         invoices: true,
-        damages: true,
+        damages: { include: { unit: { select: { assetTag: true } } } },
         tickets: true,
       },
     });
