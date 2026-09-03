@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
 import { api, clientApi, ApiError } from '@/lib/api';
 import { useCart, useSession } from '@/lib/providers';
+import { useKiosk } from '@/lib/kiosk';
 import { CartSummary } from '@/components/CartSummary';
 import { IdDocument } from '@/components/IdDocument';
 import { Steps } from '@/components/Steps';
@@ -18,6 +19,7 @@ const idOk = (s?: string) => s === 'PENDING' || s === 'VERIFIED';
 export default function CommandePage() {
   const { cart, setPeriod, setFulfilment, reload } = useCart();
   const { user, login, register, setToken, refresh } = useSession();
+  const kiosk = useKiosk();
 
   const [phase, setPhase] = useState<Phase>('dates');
   const [error, setError] = useState('');
@@ -209,7 +211,9 @@ export default function CommandePage() {
           ? { mode, address: { ...addr, country: 'BE' }, slot }
           : { mode },
       );
-      setPhase(user ? (idOk(user.idDocStatus) ? 'review' : 'identity') : 'account');
+      // Borne : coordonnées invité simples, ni compte ni pièce d'identité.
+      if (kiosk) setPhase('account');
+      else setPhase(user ? (idOk(user.idDocStatus) ? 'review' : 'identity') : 'account');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur');
     } finally {
@@ -221,6 +225,11 @@ export default function CommandePage() {
     setBusy(true);
     setError('');
     try {
+      // Borne : pas de compte, on passe direct à la vérification.
+      if (kiosk) {
+        setPhase('review');
+        return;
+      }
       if (authMode === 'login') {
         await login(contact.email, password);
       } else {
@@ -248,7 +257,7 @@ export default function CommandePage() {
     if (phase === 'identity' && idOk(user?.idDocStatus)) setPhase('review');
   }, [phase, user?.idDocStatus]);
 
-  async function placeOrder(outcome: 'success' | 'decline') {
+  async function placeOrder(outcome: 'success' | 'decline' | 'onsite') {
     setBusy(true);
     setError('');
     try {
@@ -258,19 +267,38 @@ export default function CommandePage() {
         token?: string;
       }>('/api/checkout', {
         method: 'POST',
-        auth: 'user',
+        auth: kiosk ? 'none' : 'user',
         body: {
           period: { start: fromLocalInput(start), end: fromLocalInput(end) },
           fulfilment:
             mode === 'DELIVERY'
               ? { mode, address: { ...addr, country: 'BE' }, slot }
               : { mode, pickupPointId: pickupPointId || undefined },
+          contact: kiosk ? contact : undefined,
           promoCode: cart?.promoCode ?? undefined,
           acceptTerms: true,
-          channel: 'WEB',
+          channel: kiosk ? 'KIOSK' : 'WEB',
         },
       });
       if (checkout.token) await setToken(checkout.token);
+
+      // Borne — paiement au comptoir : réservation confirmée, QR émis, rien à payer ici.
+      if (outcome === 'onsite') {
+        const done = await clientApi<{
+          number: string;
+          qrDataUrl: string;
+          invoiceNumber: string;
+          fulfilment: { mode: string; slot: string | null };
+        }>('/api/checkout/reserve-onsite', {
+          method: 'POST',
+          auth: 'none',
+          body: { reservationId: checkout.reservation.id },
+        });
+        setResult(done);
+        setPhase('done');
+        await reload();
+        return;
+      }
 
       // Paiement réel Mollie : redirection vers la page de paiement.
       if (checkout.payment.provider === 'mollie' && outcome === 'success') {
@@ -500,23 +528,33 @@ export default function CommandePage() {
           {phase === 'account' && (
             <div className="card card-pad stack">
               <h2>3. Vos coordonnées</h2>
-              <div className="pill-row">
-                <button
-                  className={`chip${authMode === 'create' ? ' active' : ''}`}
-                  onClick={() => setAuthMode('create')}
-                >
-                  Créer un compte
-                </button>
-                <button
-                  className={`chip${authMode === 'login' ? ' active' : ''}`}
-                  onClick={() => setAuthMode('login')}
-                >
-                  J&apos;ai déjà un compte
-                </button>
-              </div>
-              <p className="small muted" style={{ margin: 0 }}>
-                Un compte est nécessaire pour louer (contrat, caution, pièce d&apos;identité).
-              </p>
+              {!kiosk && (
+                <>
+                  <div className="pill-row">
+                    <button
+                      className={`chip${authMode === 'create' ? ' active' : ''}`}
+                      onClick={() => setAuthMode('create')}
+                    >
+                      Créer un compte
+                    </button>
+                    <button
+                      className={`chip${authMode === 'login' ? ' active' : ''}`}
+                      onClick={() => setAuthMode('login')}
+                    >
+                      J&apos;ai déjà un compte
+                    </button>
+                  </div>
+                  <p className="small muted" style={{ margin: 0 }}>
+                    Un compte est nécessaire pour louer (contrat, caution, pièce d&apos;identité).
+                  </p>
+                </>
+              )}
+              {kiosk && (
+                <p className="small muted" style={{ margin: 0 }}>
+                  Vos coordonnées pour la préparation. Le paiement et la pièce d&apos;identité se
+                  règlent au comptoir.
+                </p>
+              )}
 
               {authMode !== 'login' && (
                 <div className="field-2">
@@ -555,14 +593,16 @@ export default function CommandePage() {
                   </div>
                 )}
               </div>
-              <div className="field">
-                <label>Mot de passe {authMode === 'create' && '(8 caractères min.)'}</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
+              {!kiosk && (
+                <div className="field">
+                  <label>Mot de passe {authMode === 'create' && '(8 caractères min.)'}</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              )}
               <div className="row">
                 <button className="btn btn-ghost" onClick={() => setPhase('fulfil')}>
                   Retour
@@ -573,8 +613,8 @@ export default function CommandePage() {
                   disabled={
                     busy ||
                     !contact.email ||
-                    !password ||
-                    (authMode === 'create' &&
+                    (!kiosk && !password) ||
+                    ((kiosk || authMode === 'create') &&
                       (!contact.firstName || !contact.lastName || !contact.phone))
                   }
                 >
@@ -668,25 +708,42 @@ export default function CommandePage() {
           {phase === 'pay' && (
             <div className="card card-pad stack">
               <h2>5. Paiement</h2>
-              {payProvider === 'mollie' ? (
+              {kiosk ? (
+                <div className="alert alert-info">
+                  Payez maintenant sur la borne, ou au comptoir lors du retrait.
+                </div>
+              ) : payProvider === 'mollie' ? (
                 <div className="alert alert-info">
                   Vous allez être redirigé vers la page de paiement sécurisée (Bancontact, carte…).
                 </div>
               ) : (
-                <div className="alert alert-info">
-                  Mode démonstration — aucun paiement réel.
-                </div>
+                <div className="alert alert-info">Mode démonstration — aucun paiement réel.</div>
               )}
               <p className="price">{formatEUR(cart.quote?.totals.amountDue ?? 0)}</p>
-              <div className="row">
+              <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
                 <button
                   className="btn btn-primary btn-lg"
                   disabled={busy}
                   onClick={() => placeOrder('success')}
                 >
-                  {busy ? '…' : payProvider === 'mollie' ? 'Payer' : 'Payer (carte « success »)'}
+                  {busy
+                    ? '…'
+                    : kiosk
+                      ? 'Payer maintenant'
+                      : payProvider === 'mollie'
+                        ? 'Payer'
+                        : 'Payer (carte « success »)'}
                 </button>
-                {payProvider === 'mock' && (
+                {kiosk && mode === 'PICKUP' && (
+                  <button
+                    className="btn btn-outline btn-lg"
+                    disabled={busy}
+                    onClick={() => placeOrder('onsite')}
+                  >
+                    Payer au comptoir
+                  </button>
+                )}
+                {!kiosk && payProvider === 'mock' && (
                   <button
                     className="btn btn-ghost"
                     disabled={busy}

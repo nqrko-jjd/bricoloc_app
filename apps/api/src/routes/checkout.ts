@@ -351,6 +351,42 @@ checkoutRouter.post(
   }),
 );
 
+/**
+ * Borne / clic & collect : réserver sans payer, régler au comptoir.
+ * La réservation passe CONFIRMED, le QR est émis, le paiement reste dû
+ * (paymentStatus ON_PICKUP) — encaissé par le staff au retrait.
+ */
+checkoutRouter.post(
+  '/reserve-onsite',
+  h(async (req, res) => {
+    const reservationId = String(req.body?.reservationId ?? '');
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: { payments: true },
+    });
+    if (!reservation) throw notFound('Réservation introuvable');
+    if (reservation.status !== 'DRAFT') {
+      return res.json(await confirmedPayload(reservationId, null));
+    }
+    if (reservation.fulfilmentMode === 'DELIVERY') {
+      throw badRequest('Le paiement au comptoir n’est possible qu’en retrait (Click & Collect).');
+    }
+    await prisma.reservation.update({
+      where: { id: reservation.id },
+      data: { status: 'CONFIRMED', paymentMethod: 'ON_SITE_CARD', paymentStatus: 'ON_PICKUP' },
+    });
+    const rental = reservation.payments.find((p) => p.kind === 'RENTAL');
+    if (rental) {
+      await prisma.payment.update({
+        where: { id: rental.id },
+        data: { status: 'PENDING', meta: { channel: 'kiosk', payAtCounter: true } as never },
+      });
+    }
+    if (reservation.userId) await prisma.cart.deleteMany({ where: { userId: reservation.userId } });
+    res.json(await confirmedPayload(reservationId, null));
+  }),
+);
+
 /* ───────────────────────── Mollie ───────────────────────── */
 
 /** Crée le paiement Mollie et renvoie l'URL de checkout à ouvrir. */

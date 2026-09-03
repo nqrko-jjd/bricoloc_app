@@ -1,10 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
-import { useParams } from 'next/navigation';
-import { useRouter, usePathname } from '@/i18n/navigation';
-import { SUPPORTED_LOCALES, type Locale } from '@bricoloc/shared';
-import { KioskFrame } from '@/components/kiosk/KioskFrame';
+import { useRouter } from '@/i18n/navigation';
+import { type Locale } from '@bricoloc/shared';
 
 const T: Record<Locale, { title: string; body: string; back: string; countdown: string }> = {
   fr: {
@@ -29,8 +27,6 @@ const T: Record<Locale, { title: string; body: string; back: string; countdown: 
 
 export default function BorneConseiller() {
   const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
   const locale = useLocale() as Locale;
   const t = T[locale] ?? T.fr;
   const [count, setCount] = useState(20);
@@ -43,29 +39,19 @@ export default function BorneConseiller() {
     if (count <= 0) router.push('/borne');
   }, [count, router]);
 
-  const switchLocale = (l: Locale) =>
-    // @ts-expect-error params dynamiques transmis tels quels
-    router.replace({ pathname, params }, { locale: l });
-
   return (
-    <KioskFrame locale={locale} locales={SUPPORTED_LOCALES} onLocale={switchLocale}>
-      <div className="kiosk-pad kiosk-center">
-        <div style={{ fontSize: '4rem' }}>🔔</div>
-        <h1>{t.title}</h1>
-        <p className="kiosk-sub" style={{ fontSize: '1.15rem' }}>
-          {t.body}
-        </p>
-        <p className="kiosk-sub" style={{ opacity: 0.6 }}>
-          {t.countdown} {count}s
-        </p>
-        <button
-          className="btn btn-ghost"
-          style={{ marginTop: 16 }}
-          onClick={() => router.push('/borne')}
-        >
-          {t.back}
-        </button>
-      </div>
-    </KioskFrame>
+    <div className="kioskm-page kiosk-center">
+      <div style={{ fontSize: '4rem' }}>🔔</div>
+      <h1>{t.title}</h1>
+      <p className="kioskm-sub" style={{ fontSize: '1.15rem' }}>
+        {t.body}
+      </p>
+      <p className="kioskm-sub" style={{ opacity: 0.6 }}>
+        {t.countdown} {count}s
+      </p>
+      <button className="btn btn-ghost" style={{ marginTop: 16 }} onClick={() => router.push('/borne')}>
+        {t.back}
+      </button>
+    </div>
   );
 }

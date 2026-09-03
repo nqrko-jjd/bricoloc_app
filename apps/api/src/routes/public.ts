@@ -128,24 +128,81 @@ publicRouter.post(
   '/reservation/lookup',
   h(async (req, res) => {
     const token = String(req.body?.token ?? '').trim();
-    if (!token) return res.status(400).json({ error: { message: 'Code requis' } });
-    const r = await prisma.reservation.findFirst({
-      where: { OR: [{ qrToken: token }, { number: token }] },
-      include: { items: true, user: true, deliveries: true },
+    const name = String(req.body?.name ?? '').trim();
+    const phone = String(req.body?.phone ?? '').replace(/\s/g, '');
+
+    const serialize = (r: {
+      number: string;
+      status: string;
+      user: { firstName: string } | null;
+      contact: unknown;
+      periodStart: Date;
+      periodEnd: Date;
+      fulfilmentMode: string;
+      slot: string | null;
+      items: { nameSnapshot: string; quantity: number; kind: string }[];
+    }) => ({
+      number: r.number,
+      status: r.status,
+      firstName: r.user?.firstName ?? (r.contact as { firstName?: string })?.firstName ?? null,
+      periodStart: r.periodStart,
+      periodEnd: r.periodEnd,
+      fulfilmentMode: r.fulfilmentMode,
+      slot: r.slot,
+      items: r.items.map((i) => ({ name: i.nameSnapshot, quantity: i.quantity, kind: i.kind })),
     });
-    if (!r) return res.status(404).json({ error: { message: 'Reservation introuvable' } });
-    res.json({
-      reservation: {
-        number: r.number,
-        status: r.status,
-        firstName: r.user?.firstName ?? (r.contact as { firstName?: string })?.firstName ?? null,
-        periodStart: r.periodStart,
-        periodEnd: r.periodEnd,
-        fulfilmentMode: r.fulfilmentMode,
-        slot: r.slot,
-        items: r.items.map((i) => ({ name: i.nameSnapshot, quantity: i.quantity, kind: i.kind })),
-      },
-    });
+
+    const inc = { items: true, user: true, deliveries: true } as const;
+
+    // 1) Par code (numéro BRL- ou jeton QR R-)
+    if (token) {
+      const r = await prisma.reservation.findFirst({
+        where: { OR: [{ qrToken: token }, { number: token }] },
+        include: inc,
+      });
+      if (!r) return res.status(404).json({ error: { message: 'Réservation introuvable pour ce code' } });
+      return res.json({ reservation: serialize(r) });
+    }
+
+    // 2) Par nom + téléphone (au moins l'un des deux + un critère fort)
+    if (name && phone && phone.length >= 6) {
+      const last4 = phone.slice(-4);
+      const rows = await prisma.reservation.findMany({
+        where: {
+          status: { in: ['CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDING'] },
+          OR: [
+            { user: { AND: [{ lastName: { contains: name } }, { phone: { contains: last4 } }] } },
+          ],
+        },
+        include: inc,
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      });
+      // Repli sur le contact (invité) : filtrage en mémoire (JSON).
+      const guests = rows.length
+        ? []
+        : (
+            await prisma.reservation.findMany({
+              where: { status: { in: ['CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDING'] } },
+              include: inc,
+              orderBy: { createdAt: 'desc' },
+              take: 200,
+            })
+          ).filter((r) => {
+            const c = r.contact as { lastName?: string; phone?: string } | null;
+            return (
+              c?.lastName?.toLowerCase().includes(name.toLowerCase()) &&
+              c?.phone?.replace(/\s/g, '').endsWith(last4)
+            );
+          });
+      const found = [...rows, ...guests].slice(0, 5);
+      if (found.length === 0)
+        return res.status(404).json({ error: { message: 'Aucune réservation trouvée' } });
+      if (found.length === 1) return res.json({ reservation: serialize(found[0]!) });
+      return res.json({ reservations: found.map(serialize) });
+    }
+
+    return res.status(400).json({ error: { message: 'Fournissez un code, ou votre nom + téléphone' } });
   }),
 );
 

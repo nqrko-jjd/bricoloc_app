@@ -1,9 +1,7 @@
 'use client';
 import { useLocale } from 'next-intl';
-import { useParams } from 'next/navigation';
-import { useRouter, usePathname } from '@/i18n/navigation';
-import { SUPPORTED_LOCALES, type Locale } from '@bricoloc/shared';
-import { KioskFrame } from '@/components/kiosk/KioskFrame';
+import { useRouter } from '@/i18n/navigation';
+import { type Locale } from '@bricoloc/shared';
 
 const T: Record<Locale, { q: string; qA: string; sub: string; back: string }> = {
   fr: {
@@ -80,43 +78,33 @@ const PROJECTS: { key: string; icon: string; label: Record<Locale, string>; cate
 
 export default function BorneProjet() {
   const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
   const locale = useLocale() as Locale;
   const t = T[locale] ?? T.fr;
 
-  const switchLocale = (l: Locale) =>
-    // @ts-expect-error params dynamiques transmis tels quels
-    router.replace({ pathname, params }, { locale: l });
-
   return (
-    <KioskFrame step={2} locale={locale} locales={SUPPORTED_LOCALES} onLocale={switchLocale}>
-      <div className="kiosk-pad">
-        <button className="kiosk-back kiosk-back--inline" onClick={() => router.push('/borne')}>
-          {t.back}
-        </button>
-        <h1>
-          {t.q}
-          <br />
-          <i>{t.qA}</i>
-        </h1>
-        <p className="kiosk-sub">{t.sub}</p>
+    <div className="kioskm-page">
+      <button className="kioskm-back" onClick={() => router.push('/borne')}>
+        {t.back}
+      </button>
+      <h1>
+        {t.q} <i>{t.qA}</i>
+      </h1>
+      <p className="kioskm-sub">{t.sub}</p>
 
-        <div className="kiosk-grid2 kiosk-grid2--projects">
-          {PROJECTS.map((p) => (
-            <button
-              key={p.key}
-              className="kiosk-tile"
-              onClick={() => router.push(`/borne/catalogue?category=${p.category}`)}
-            >
-              <span className="kiosk-tile__ic" aria-hidden>
-                {p.icon}
-              </span>
-              <span className="kiosk-tile__t">{p.label[locale] ?? p.label.fr}</span>
-            </button>
-          ))}
-        </div>
+      <div className="kioskm-home__grid kioskm-home__grid--projects">
+        {PROJECTS.map((p) => (
+          <button
+            key={p.key}
+            className="kioskm-tile"
+            onClick={() => router.push(`/catalogue?category=${p.category}`)}
+          >
+            <span className="kioskm-tile__ic" aria-hidden>
+              {p.icon}
+            </span>
+            <span className="kioskm-tile__t">{p.label[locale] ?? p.label.fr}</span>
+          </button>
+        ))}
       </div>
-    </KioskFrame>
+    </div>
   );
 }

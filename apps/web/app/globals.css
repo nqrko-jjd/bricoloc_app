@@ -2578,3 +2578,167 @@ button { font-family: inherit; }
   .bpd-items h2, .bpd-compare h2, .bpd-conso h2, .bpd-trust h2, .bpd-related h2, .bpd-reserve h2 { font-size: clamp(24px, 7vw, 34px); }
   .bp-grid { grid-template-columns: 1fr; }
 }
+
+/* =========================================================================
+   BORNE TACTILE — mode plein écran (.kioskm). Réutilise les pages du site.
+   Orientation libre (portrait / paysage). Cibles tactiles ≥ 56px.
+   ========================================================================= */
+.kioskm {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ground, #f4f4f7);
+  color: var(--ink);
+  z-index: 100;
+  overflow: hidden;
+}
+.kioskm__bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px clamp(16px, 3vw, 36px);
+  background: #fff;
+  border-bottom: 1px solid var(--line, #e6e6ef);
+  min-height: 68px;
+}
+.kioskm__logo img { height: 40px; width: auto; display: block; }
+.kioskm__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.kioskm__btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: var(--r-pill, 999px);
+  border: 1.5px solid var(--line, #e6e6ef);
+  background: var(--surface, #fff);
+  color: var(--navy-deep, #08065d);
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.kioskm__btn:hover { text-decoration: none; }
+.kioskm__btn:active { transform: scale(0.97); }
+.kioskm__btn--cart { background: var(--navy, #08065d); color: #fff; border-color: var(--navy, #08065d); font-size: 1.2rem; padding: 0 16px; }
+.kioskm__btn--exit { border-color: transparent; color: var(--muted-fg); font-weight: 700; }
+.kioskm__badge {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--primary); color: #fff;
+  font-size: 0.72rem; font-weight: 900;
+  min-width: 20px; height: 20px; border-radius: 10px;
+  display: grid; place-items: center; padding: 0 5px;
+}
+.kioskm__body { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.kioskm__body > main { min-height: 100%; }
+
+/* --- Accueil borne --- */
+.kioskm-home { max-width: 1100px; margin: 0 auto; padding: clamp(24px, 5vw, 56px) clamp(20px, 4vw, 44px) 80px; }
+.kioskm-home h1 { font-size: clamp(2.4rem, 7vw, 4rem); font-weight: 900; letter-spacing: -0.06em; line-height: 0.95; margin: 10px 0 0; }
+.kioskm-home h1 i { color: var(--primary); font-style: normal; }
+.kioskm-home__search { margin: 28px 0 8px; }
+.kioskm-home__search .search-ac { max-width: none; }
+.kioskm-home__search .csearch { min-height: 76px; font-size: 1.3rem; border-radius: 20px; }
+.kioskm-home__search .csearch input { font-size: 1.3rem; }
+.kioskm-home__grid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.kioskm-home__grid--projects { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.kioskm-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: clamp(22px, 3vw, 32px);
+  min-height: 150px;
+  border-radius: 22px;
+  background: #fff;
+  border: 1.5px solid var(--line, #e6e6ef);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.kioskm-tile:hover { text-decoration: none; box-shadow: 0 18px 40px -22px rgba(8, 6, 93, 0.3); }
+.kioskm-tile:active { transform: scale(0.98); }
+.kioskm-tile__ic { font-size: 1.9rem; line-height: 1; }
+.kioskm-tile__ic svg { width: 34px; height: 34px; color: var(--primary); }
+.kioskm-tile__t { font-weight: 900; font-size: 1.3rem; letter-spacing: -0.035em; line-height: 1.05; }
+.kioskm-tile__s { font-size: 0.92rem; color: var(--muted-fg); }
+.kioskm-tile > svg { position: absolute; top: 20px; right: 20px; width: 20px; height: 20px; color: var(--muted-fg); }
+.kioskm-tile--red { background: var(--primary); border-color: var(--primary); color: #fff; }
+.kioskm-tile--red .kioskm-tile__s { color: rgba(255, 255, 255, 0.85); }
+.kioskm-tile--red .kioskm-tile__ic svg, .kioskm-tile--red > svg { color: #fff; }
+
+/* --- Sous-pages borne (projet / réservation / infos / conseiller) --- */
+.kioskm-page { max-width: 900px; margin: 0 auto; padding: clamp(20px, 4vw, 44px) clamp(20px, 4vw, 40px) 90px; }
+.kioskm-page h1 { font-size: clamp(2rem, 6vw, 3.2rem); font-weight: 900; letter-spacing: -0.05em; line-height: 1; margin: 8px 0 0; }
+.kioskm-page h1 i { color: var(--primary); font-style: normal; }
+.kioskm-sub { font-size: 1.05rem; color: var(--muted-fg); margin: 14px 0 0; }
+.kioskm-back {
+  align-self: flex-start;
+  min-height: 52px; padding: 0 20px;
+  border-radius: var(--r-pill, 999px);
+  border: 1.5px solid var(--line, #e6e6ef);
+  background: #fff; color: var(--navy-deep, #08065d);
+  font-weight: 800; font-size: 1rem; cursor: pointer;
+  margin-bottom: 18px;
+}
+.kioskm-tabs { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+.kioskm-tabs button {
+  min-height: 56px; padding: 0 22px;
+  border-radius: var(--r-pill, 999px);
+  border: 1.5px solid var(--line, #e6e6ef);
+  background: #fff; color: var(--muted-fg);
+  font-weight: 800; font-size: 1rem; cursor: pointer;
+}
+.kioskm-tabs button.is-on { background: var(--navy, #08065d); color: #fff; border-color: var(--navy, #08065d); }
+.kioskm-form { display: grid; gap: 16px; margin-top: 20px; }
+.kioskm-form .field input { min-height: 58px; font-size: 1.15rem; }
+.kioskm-reslist {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 18px 22px; border-radius: 16px;
+  border: 1.5px solid var(--line, #e6e6ef); background: #fff;
+  text-align: left; cursor: pointer;
+}
+.kioskm-reslist strong { font-size: 1.15rem; }
+.kioskm-reslist span { color: var(--muted-fg); font-size: 0.92rem; }
+
+/* --- Pages du site rendues dans la borne : agrandir les cibles --- */
+.kioskm .container, .kioskm .page-body { max-width: none; padding-inline: clamp(20px, 4vw, 44px); }
+.kioskm .btn { min-height: 54px; }
+.kioskm .btn-lg { min-height: 64px; font-size: 1.15rem; }
+.kioskm input, .kioskm select, .kioskm textarea, .kioskm .input { min-height: 56px; font-size: 1.1rem; }
+.kioskm .grid-cards { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.kioskm .pcard__fav, .kioskm .cnav__burger { display: none; }
+
+/* --- Clavier tactile --- */
+.kioskm-kb {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: #1a1830; padding: 12px clamp(8px, 2vw, 40px) 16px;
+  display: grid; gap: 8px; z-index: 200;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.3);
+}
+.kioskm-kb__row { display: flex; gap: 6px; justify-content: center; }
+.kioskm-kb__k {
+  flex: 1 1 0; max-width: 92px;
+  min-height: 54px;
+  border: 0; border-radius: 10px;
+  background: #302d4a; color: #fff;
+  font-size: 1.25rem; font-weight: 700; cursor: pointer;
+}
+.kioskm-kb__k:active { background: var(--primary); }
+.kioskm-kb__k--wide { max-width: 120px; flex-grow: 1.6; }
+.kioskm-kb__k--space { max-width: 420px; flex-grow: 6; font-size: 1rem; }
+.kioskm-kb__k.is-on { background: var(--primary); }
+
+@media (min-width: 900px) {
+  .kioskm-home h1 { font-size: clamp(3rem, 5vw, 4.4rem); }
+  .kioskm-kb { padding-inline: 8vw; }
+}
