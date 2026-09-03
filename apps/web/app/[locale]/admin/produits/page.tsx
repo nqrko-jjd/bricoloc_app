@@ -226,6 +226,11 @@ export default function AdminProduits() {
               value={form.deposit}
               onChange={(e) => set('deposit', e.target.value)}
             />
+            {form.kind === 'PACK' && (
+              <span className="small muted">
+                Éditable. Par défaut = somme des cautions des machines du pack.
+              </span>
+            )}
           </div>
         </div>
         <div className="field-2">

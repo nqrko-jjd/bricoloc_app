@@ -807,18 +807,24 @@ async function run() {
       dailyPrice: packPrice,
       weekPrice: Math.round(packPrice * 4),
       monthPrice: Math.round(packPrice * 12),
-      deposit: packDeposit,
       packMeta: packMeta as never,
       ...(i18n ? { i18n: i18n as never } : {}),
     };
 
     let packId: string;
     if (existing) {
-      await prisma.product.update({ where: { id: existing.id }, data });
+      // La caution est éditable en admin : on ne l'écrase que si elle est vide/à 0.
+      const keepDeposit = existing.deposit && existing.deposit > 0;
+      await prisma.product.update({
+        where: { id: existing.id },
+        data: { ...data, ...(keepDeposit ? {} : { deposit: packDeposit }) },
+      });
       packId = existing.id;
       updated++;
     } else {
-      const row = await prisma.product.create({ data: { slug: pk.slug, ...data } });
+      const row = await prisma.product.create({
+        data: { slug: pk.slug, ...data, deposit: packDeposit },
+      });
       packId = row.id;
       created++;
     }
