@@ -291,8 +291,13 @@ adminRouter.post(
       update: base,
     });
 
-    // Reconstruit les liens.
-    await prisma.productLink.deleteMany({ where: { fromId: product.id } });
+    // Reconstruit les liens. La composition d'un BricoPack (PACK_ITEM) est gérée
+    // par le seed dédié : on ne la touche que si le formulaire l'a explicitée.
+    const rebuiltTypes = ['ACCESSORY', 'CONSUMABLE', 'PPE', 'COMPLEMENTARY'];
+    if (data.packItems.length) rebuiltTypes.push('PACK_ITEM');
+    await prisma.productLink.deleteMany({
+      where: { fromId: product.id, type: { in: rebuiltTypes } },
+    });
     const links: { fromId: string; toId: string; type: string; quantity: number }[] = [];
     for (const id of data.recommendedAccessoryIds)
       links.push({ fromId: product.id, toId: id, type: 'ACCESSORY', quantity: 1 });
