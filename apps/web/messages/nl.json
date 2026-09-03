@@ -165,7 +165,18 @@
     "adviceHeadingAccent": "van bij de eerste keer.",
     "adviceRead": "Lees de gids",
     "ctaEyebrow": "Klaar om te starten?",
-    "ctaAccent": "Het gereedschap één klik weg."
+    "ctaAccent": "Het gereedschap één klik weg.",
+    "diffEyebrow": "Wat ons onderscheidt",
+    "diffTitle": "We maken het u gemakkelijk",
+    "diffAccent": "de bouwplaats",
+    "diffDeliveryTitle": "Thuisbezorgd, thuis opgehaald",
+    "diffDeliveryText": "We zetten het materiaal bij uw deur af en komen het weer ophalen. De prijs wordt berekend op basis van de afstand vanaf ons magazijn in Ruisbroek — u hebt geen bestelwagen nodig, zodat u uw tijd kunt besteden aan de bouwplaats.",
+    "diffDeliveryPoint1": "Bij de bestelling gekozen bezorgvenster",
+    "diffDeliveryPoint2": "Of gratis afhalen bij het magazijn, als u dat liever hebt",
+    "diffPackTitle": "Het alles-in-één BricoPack",
+    "diffPackText": "Eén klus, één pakket, één prijs. Alle benodigdheden voor een klusproject gebundeld in één reservering — voor particulieren die zich geen zorgen willen maken.",
+    "diffPackCta": "Bekijk alle BricoPacks",
+    "diffFrom": "vanaf"
   },
   "search": {
     "title": "Ik weet mijn data",

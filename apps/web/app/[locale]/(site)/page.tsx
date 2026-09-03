@@ -37,7 +37,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       { next: { revalidate: 60 } },
     ),
     api<{ products: ProductSummary[] }>(
-      `/api/catalog/products?kind=PACK&pageSize=4&locale=${locale}`,
+      `/api/catalog/products?kind=PACK&pageSize=6&locale=${locale}`,
       { next: { revalidate: 120 } },
     ).catch(() => ({ products: [] as ProductSummary[] })),
     api<{ guides: GuideSummary[] }>(`/api/public/guides?locale=${locale}`, {
@@ -47,6 +47,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   ]);
 
   const popular = (popularRes.products ?? []).filter((p) => p.image).slice(0, 3);
+  const packs = (packsRes.products ?? []).slice(0, 5);
   const toolCount = Math.max(10, Math.floor((popularRes.total ?? 80) / 10) * 10);
   const guides = (guidesRes.guides ?? []).slice(0, 3);
   const cats = categories.slice(0, 4);
@@ -178,6 +179,52 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </section>
       )}
+
+      {/* ─────────────── NOTRE DIFFÉRENCE : LIVRAISON + BRICOPACKS ─────────────── */}
+      <section className="cdiff">
+        <div className="csection__head">
+          <div>
+            <span className="kicker">— {t('diffEyebrow')}</span>
+            <h2>
+              {t('diffTitle')} <i>{t('diffAccent')}</i>
+            </h2>
+          </div>
+        </div>
+        <div className="cdiff__grid reveal">
+          <div className="cdiff__card cdiff__card--delivery">
+            <ITruck />
+            <h3>{t('diffDeliveryTitle')}</h3>
+            <p>{t('diffDeliveryText')}</p>
+            <ul className="cdiff__points">
+              <li>{t('diffDeliveryPoint1')}</li>
+              <li>{t('diffDeliveryPoint2')}</li>
+            </ul>
+            <Link href="/livraison" className="csection__link">
+              {t('trustDelivery')} <IArrowUpRight />
+            </Link>
+          </div>
+          <div className="cdiff__card cdiff__card--pack">
+            <PackageIcon />
+            <h3>{t('diffPackTitle')}</h3>
+            <p>{t('diffPackText')}</p>
+            {packs.length > 0 && (
+              <div className="cdiff__packs">
+                {packs.map((p) => (
+                  <Link key={p.id} href={`/produits/${p.slug}`} className="cdiff__pack">
+                    <span>{p.name.replace(/^BricoPack\s*/i, '')}</span>
+                    <b>
+                      {t('diffFrom')} {formatEUR(p.dailyPrice)}
+                    </b>
+                  </Link>
+                ))}
+              </div>
+            )}
+            <Link href="/catalogue?category=bricopack" className="csection__link">
+              {t('diffPackCta')} <IArrowUpRight />
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* ─────────────── PRIX DÉGRESSIFS ─────────────── */}
       <section className="csection" style={{ paddingBlock: 0 }}>

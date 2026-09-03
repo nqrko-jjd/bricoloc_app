@@ -165,7 +165,18 @@
     "adviceHeadingAccent": "the first time.",
     "adviceRead": "Read the guide",
     "ctaEyebrow": "Ready to start?",
-    "ctaAccent": "The tools one click away."
+    "ctaAccent": "The tools one click away.",
+    "diffEyebrow": "What sets us apart",
+    "diffTitle": "We make it simple for you",
+    "diffAccent": "the building site",
+    "diffDeliveryTitle": "Delivered to your door, collected from your home",
+    "diffDeliveryText": "We’ll deliver the materials to your doorstep and come back to collect them. The price is based on the distance from our Ruisbroek depot — no need for a van, so you can save your time for the building site.",
+    "diffDeliveryPoint1": "Delivery slot selected at the time of ordering",
+    "diffDeliveryPoint2": "Or free collection from the depot, if you prefer",
+    "diffPackTitle": "The all-in-one BricoPack",
+    "diffPackText": "One job, one package, one price. All the tools you need for a building project, all in a single booking — for homeowners who don’t want to have to think about it.",
+    "diffPackCta": "View all BricoPacks",
+    "diffFrom": "from"
   },
   "search": {
     "title": "I know my dates",

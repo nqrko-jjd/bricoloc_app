@@ -1809,6 +1809,33 @@ button { font-family: inherit; }
 .cstep h3 { font-size: 1.35rem; margin: 0 0 8px; }
 .cstep p { color: #677a79; margin: 0; }
 
+/* ---- Notre différence : livraison + BricoPacks ---- */
+.cdiff { padding: clamp(60px, 8vw, 110px) 6vw; }
+.cdiff__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 34px; }
+@media (max-width: 900px) { .cdiff__grid { grid-template-columns: 1fr; } }
+.cdiff__card {
+  border-radius: 28px; padding: clamp(28px, 4vw, 46px);
+  display: flex; flex-direction: column; gap: 14px; align-items: flex-start;
+}
+.cdiff__card--delivery { background: var(--lavender); }
+.cdiff__card--pack { background: var(--red-tint); }
+.cdiff__card > svg { width: 42px; height: 42px; color: var(--primary); }
+.cdiff__card h3 { font-size: clamp(1.5rem, 2.4vw, 1.9rem); margin: 0; letter-spacing: -0.035em; line-height: 1; }
+.cdiff__card p { margin: 0; color: #4a4d6b; line-height: 1.62; max-width: 42ch; }
+.cdiff__points { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 7px; font-weight: 700; color: var(--ink); }
+.cdiff__points li { padding-left: 26px; position: relative; }
+.cdiff__points li::before { content: '\2192'; position: absolute; left: 0; color: var(--primary); font-weight: 900; }
+.cdiff__packs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.cdiff__pack {
+  background: #fff; border-radius: 14px; padding: 10px 14px;
+  display: inline-flex; gap: 9px; align-items: baseline; font-weight: 800; font-size: 0.9rem;
+  transition: transform 0.15s ease;
+}
+.cdiff__pack:hover { text-decoration: none; transform: translateY(-2px); }
+.cdiff__pack b { color: var(--primary); white-space: nowrap; }
+.cdiff__card .csection__link { margin-top: auto; padding-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .cdiff__pack { transition: none; } }
+
 /* ---- Section app (rouge + telephones) ---- */
 .capp {
   display: grid; grid-template-columns: 0.85fr 1.15fr; align-items: center;
