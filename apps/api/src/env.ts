@@ -48,8 +48,14 @@ export const env = {
     process.env.MOLLIE_WEBHOOK_URL?.trim() ||
     `${publicApiUrl.replace(/\/$/, '')}/bricoloc-api/api/checkout/mollie/webhook`,
 
-  /** Stockage local des médias (images produits, contenus). */
-  uploadsDir: path.join(root, 'uploads'),
+  /**
+   * Stockage local des médias. En dev = apps/api/uploads. En prod le code est
+   * compilé sous dist/ : on force le chemin via UPLOADS_DIR (= point de montage
+   * du volume Docker), sinon on retombe sur la résolution relative.
+   */
+  uploadsDir:
+    process.env.UPLOADS_DIR?.trim() ||
+    (root.endsWith(`${path.sep}dist`) ? path.join(root, '..', 'uploads') : path.join(root, 'uploads')),
   /** URL publique de base pour les fichiers servis depuis uploadsDir. */
   mediaBaseUrl: `${publicApiUrl}/uploads`,
 };

@@ -37,12 +37,20 @@ if (__DEV__) console.log('[BRICOLOC] API_URL =', API_URL);
 
 /**
  * Résout une URL d'image renvoyée par l'API.
- * L'API renvoie des chemins relatifs portables (`/uploads/…`) ; on les préfixe
- * ici avec la base de l'API. Les URLs déjà absolues (ou data:) sont laissées.
+ * L'API renvoie des chemins relatifs portables (`/uploads/…`). On les résout
+ * contre l'**origine** de l'API : en prod, l'API est servie sous
+ * `https://domaine/bricoloc-api` mais les médias sont à `https://domaine/uploads/…`.
+ * Les URLs déjà absolues (ou data:) sont laissées telles quelles.
  */
 export function mediaUrl(src?: string | null): string | undefined {
   if (!src) return undefined;
   if (/^(https?:|data:)/i.test(src)) return src;
+  try {
+    // chemin absolu (`/uploads/…`) -> résolu sur l'origine (schéma + host)
+    if (src.startsWith('/')) return new URL(src, API_URL).href;
+  } catch {
+    /* API_URL malformée : on retombe sur la concaténation */
+  }
   return `${API_URL}${src.startsWith('/') ? '' : '/'}${src}`;
 }
 

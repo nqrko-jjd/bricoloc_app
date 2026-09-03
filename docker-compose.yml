@@ -40,6 +40,7 @@ services:
       DEEPL_API_KEY: ${DEEPL_API_KEY:-}
       MOLLIE_API_KEY: ${MOLLIE_API_KEY:-}
       MOLLIE_WEBHOOK_URL: ${MOLLIE_WEBHOOK_URL:-}
+      UPLOADS_DIR: /repo/apps/api/uploads
     volumes:
       - uploads:/repo/apps/api/uploads
 
