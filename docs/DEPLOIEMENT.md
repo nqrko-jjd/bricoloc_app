@@ -36,9 +36,8 @@ Vérifier : `dig +short new.bricoloc.be` doit renvoyer l'IP du VPS avant l'étap
 
 ```bash
 sudo mkdir -p /opt/bricoloc && sudo chown $USER /opt/bricoloc
-git clone <URL_DU_DEPOT> /opt/bricoloc
-cd /opt/bricoloc
-git checkout refonte
+git clone https://github.com/nqrko-jjd/bricoloc_app.git /opt/bricoloc
+cd /opt/bricoloc      # branche main par défaut
 ```
 
 ## 4. Configuration
@@ -112,6 +111,19 @@ docker compose --env-file .env.production cp /tmp/uploads/. api:/repo/apps/api/u
 
 ## 8. Mises à jour
 
+**Automatique** (recommandé) : un `git push` sur `main` déclenche le workflow
+`.github/workflows/deploy.yml` qui se connecte au VPS en SSH et redéploie.
+Prérequis — dans **GitHub → repo → Settings → Secrets and variables → Actions**,
+créer les secrets :
+
+| Secret | Valeur |
+|---|---|
+| `VPS_HOST` | IP publique du VPS |
+| `VPS_USER` | l'utilisateur SSH (ex. `david`) |
+| `VPS_SSH_KEY` | clé privée SSH autorisée sur le VPS (`ssh-keygen -t ed25519`, coller la clé **privée**, mettre la `.pub` dans `~/.ssh/authorized_keys` du VPS) |
+| `VPS_PATH` | `/opt/bricoloc` |
+
+**Manuel** (si besoin) :
 ```bash
 cd /opt/bricoloc && git pull
 docker compose --env-file .env.production up -d --build
