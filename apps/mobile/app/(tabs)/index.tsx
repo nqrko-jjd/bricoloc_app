@@ -38,6 +38,7 @@ export default function HomeScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [popular, setPopular] = useState<ProductSummary[]>([]);
   const [pack, setPack] = useState<ProductSummary | null>(null);
+  const [packCount, setPackCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -46,11 +47,15 @@ export default function HomeScreen() {
       const [cat, pop, packs] = await Promise.all([
         api<{ categories: Category[] }>('/api/catalog/categories'),
         api<{ products: ProductSummary[] }>('/api/catalog/products?pageSize=6&sort=name'),
-        api<{ products: ProductSummary[] }>('/api/catalog/products?kind=PACK&pageSize=1'),
+        api<{ packs: { slug: string; name: string; dailyPrice: number; image: string | null }[] }>(
+          '/api/public/bricopacks',
+        ).catch(() => ({ packs: [] })),
       ]);
       setCategories(cat.categories);
       setPopular((pop.products ?? []).filter((p) => p.image).slice(0, 4));
-      setPack(packs.products?.[0] ?? null);
+      const bp = packs.packs ?? [];
+      setPack((bp[0] ?? null) as any);
+      setPackCount(bp.length);
     } finally {
       setLoading(false);
     }
@@ -154,9 +159,9 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* BricoPack */}
-        {pack && (
+        {packCount > 0 && (
           <Pressable
-            onPress={() => router.push(`/produit/${pack.slug}`)}
+            onPress={() => router.push('/bricopacks' as never)}
             style={{
               marginHorizontal: 20,
               marginTop: 24,
@@ -173,10 +178,6 @@ export default function HomeScreen() {
                 {t('home.packTitle')}
               </Text>
               <Text style={{ color: C.muted, marginTop: 4, fontSize: 13 }}>{t('home.packText')}</Text>
-              <Text style={{ fontWeight: '900', color: C.brico, fontSize: 18, marginTop: 10 }}>
-                {formatEUR(pack.dailyPrice)}
-                <Text style={{ fontWeight: '600', color: C.muted, fontSize: 12 }}> / jour</Text>
-              </Text>
               <View
                 style={{
                   alignSelf: 'flex-start',
@@ -188,15 +189,15 @@ export default function HomeScreen() {
                 }}
               >
                 <Text style={{ color: C.white, fontWeight: '800', fontSize: 13 }}>
-                  {t('home.packCta')}
+                  Voir les {packCount} packs
                 </Text>
               </View>
             </View>
-            {pack.image && (
+            {pack?.image && (
               <Image
                 source={{ uri: mediaUrl(pack.image) }}
                 style={{ width: 110, height: 110, borderRadius: R.md }}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             )}
           </Pressable>
