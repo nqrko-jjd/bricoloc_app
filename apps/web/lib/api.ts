@@ -53,6 +53,34 @@ export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Pro
   return json as T;
 }
 
+/** Upload multipart (fichier) authentifié côté navigateur. */
+export async function uploadFile<T = unknown>(
+  path: string,
+  file: File,
+  opts: { field?: string; auth?: 'user' | 'staff' } = {},
+): Promise<T> {
+  const token =
+    typeof window === 'undefined'
+      ? null
+      : opts.auth === 'staff'
+        ? localStorage.getItem('bricoloc_staff_token')
+        : localStorage.getItem('bricoloc_token');
+  const fd = new FormData();
+  fd.append(opts.field ?? 'file', file);
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: token ? { authorization: `Bearer ${token}` } : {},
+    body: fd,
+  });
+  const text = await res.text();
+  const json = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const message = (json && (json.error?.message || json.message)) || `Erreur ${res.status}`;
+    throw new ApiError(res.status, message, json);
+  }
+  return json as T;
+}
+
 /** Variante cote client : lit le token/cartKey depuis le navigateur. */
 export function clientApi<T = unknown>(
   path: string,

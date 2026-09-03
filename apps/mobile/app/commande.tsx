@@ -8,16 +8,19 @@ import { formatEUR } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button, Field, Badge } from '@/components/ui';
 import { PeriodPicker } from '@/components/PeriodPicker';
 import { AddressField } from '@/components/AddressField';
+import { IdStep } from '@/components/IdStep';
 
-type Phase = 'dates' | 'fulfil' | 'account' | 'review' | 'done';
+type Phase = 'dates' | 'fulfil' | 'account' | 'identity' | 'review' | 'done';
+
+const idOk = (s?: string) => s === 'PENDING' || s === 'VERIFIED';
 
 export default function CommandeScreen() {
-  const { cart, user, setPeriod, setFulfilment, setToken, reloadCart } = useStore();
+  const { cart, user, register, reloadUser, setPeriod, setFulfilment, setToken, reloadCart } =
+    useStore();
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>(cart?.period ? 'fulfil' : 'dates');
   const [mode, setMode] = useState<'PICKUP' | 'DELIVERY'>('PICKUP');
   const [addr, setAddr] = useState({ line1: '', postalCode: '', city: '' });
-  const [authMode, setAuthMode] = useState<'create' | 'guest'>('create');
   const [contact, setContact] = useState({
     firstName: user?.firstName ?? '',
     lastName: user?.lastName ?? '',
@@ -32,6 +35,10 @@ export default function CommandeScreen() {
     { id: string; name: string; line1: string; postalCode: string; city: string; isMain: boolean; transferHours: number }[]
   >([]);
   const [pointId, setPointId] = useState('');
+
+  useEffect(() => {
+    if (phase === 'identity' && idOk(user?.idDocStatus)) setPhase('review');
+  }, [phase, user?.idDocStatus]);
 
   useEffect(() => {
     api<{ pickupPoints?: typeof points }>('/api/public/config')
@@ -88,8 +95,6 @@ export default function CommandeScreen() {
             mode === 'DELIVERY'
               ? { mode, address: { ...addr, country: 'BE' } }
               : { mode, pickupPointId: pointId || undefined },
-          contact: user ? undefined : contact,
-          account: !user && authMode === 'create' ? { password } : undefined,
           acceptTerms: true,
           channel: 'MOBILE',
         },
@@ -103,7 +108,14 @@ export default function CommandeScreen() {
       setPhase('done');
       await reloadCart();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Paiement refusé');
+      const anyE = e as { status?: number; payload?: { error?: { code?: string } } };
+      if (anyE?.status === 409 && anyE?.payload?.error?.code === 'ID_REQUIRED') {
+        await reloadUser();
+        setErr('Une copie de votre carte d’identité est nécessaire.');
+        setPhase('identity');
+      } else {
+        setErr(e instanceof Error ? e.message : 'Paiement refusé');
+      }
     } finally {
       setBusy(false);
     }
@@ -206,7 +218,7 @@ export default function CommandeScreen() {
                   ? { mode, address: { ...addr, country: 'BE' } }
                   : { mode },
               );
-              setPhase(user ? 'review' : 'account');
+              setPhase(user ? (idOk(user.idDocStatus) ? 'review' : 'identity') : 'account');
             }}
           />
         </Card>
@@ -214,15 +226,8 @@ export default function CommandeScreen() {
 
       {phase === 'account' && (
         <Card>
-          <H2>3. Vos coordonnées</H2>
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-            <Pressable onPress={() => setAuthMode('create')} style={chip(authMode === 'create')}>
-              <Text style={chipT(authMode === 'create')}>Créer un compte</Text>
-            </Pressable>
-            <Pressable onPress={() => setAuthMode('guest')} style={chip(authMode === 'guest')}>
-              <Text style={chipT(authMode === 'guest')}>Sans compte</Text>
-            </Pressable>
-          </View>
+          <H2>3. Créer votre compte</H2>
+          <P muted>Un compte est nécessaire pour louer (contrat, caution, pièce d’identité).</P>
           <Pressable onPress={() => router.push('/login')}>
             <Text style={{ color: C.loc, fontWeight: '700', marginBottom: 8 }}>
               J&apos;ai déjà un compte →
@@ -238,25 +243,63 @@ export default function CommandeScreen() {
             onChangeText={(v) => setContact({ ...contact, email: v })}
           />
           <Field label="Téléphone" value={contact.phone} keyboardType="phone-pad" onChangeText={(v) => setContact({ ...contact, phone: v })} />
-          {authMode === 'create' && (
-            <Field
-              label="Mot de passe (8 car. min.)"
-              value={password}
-              secureTextEntry
-              onChangeText={setPassword}
-            />
-          )}
+          <Field
+            label="Mot de passe (8 car. min.)"
+            value={password}
+            secureTextEntry
+            onChangeText={setPassword}
+          />
           <Button
-            title="Continuer"
+            title="Créer mon compte"
+            loading={busy}
             disabled={
               !contact.firstName ||
               !contact.lastName ||
               !contact.email ||
               !contact.phone ||
-              (authMode === 'create' && password.length < 8)
+              password.length < 8
             }
+            onPress={async () => {
+              setBusy(true);
+              setErr('');
+              try {
+                await register({
+                  email: contact.email,
+                  password,
+                  firstName: contact.firstName,
+                  lastName: contact.lastName,
+                  phone: contact.phone,
+                  customerType: 'PARTICULIER',
+                });
+                setPhase('identity');
+              } catch (e) {
+                setErr(e instanceof Error ? e.message : 'Création impossible');
+              } finally {
+                setBusy(false);
+              }
+            }}
+          />
+        </Card>
+      )}
+
+      {phase === 'identity' && (
+        <Card>
+          <H2>{user ? '' : '4. '}Pièce d’identité</H2>
+          <IdStep
+            user={user}
+            busy={busy}
+            setBusy={setBusy}
+            setErr={setErr}
+            onDone={async () => {
+              await reloadUser();
+            }}
+          />
+          <Button
+            title="Continuer"
+            disabled={!idOk(user?.idDocStatus)}
             onPress={() => setPhase('review')}
           />
+          <Button title="Retour" variant="ghost" onPress={() => setPhase(user ? 'fulfil' : 'account')} />
         </Card>
       )}
 
@@ -278,7 +321,7 @@ export default function CommandeScreen() {
           </View>
           <Badge text="Paiement de démonstration — aucun débit réel" tone="warn" />
           <Button title="Payer (mode test)" onPress={pay} loading={busy} />
-          <Button title="Retour" variant="ghost" onPress={() => setPhase(user ? 'fulfil' : 'account')} />
+          <Button title="Retour" variant="ghost" onPress={() => setPhase('identity')} />
         </Card>
       )}
     </Screen>

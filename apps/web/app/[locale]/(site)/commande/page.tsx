@@ -2,18 +2,22 @@
 import { Link } from '@/i18n/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
-import { api, clientApi } from '@/lib/api';
+import { api, clientApi, ApiError } from '@/lib/api';
 import { useCart, useSession } from '@/lib/providers';
 import { CartSummary } from '@/components/CartSummary';
+import { IdDocument } from '@/components/IdDocument';
 import { Steps } from '@/components/Steps';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { fromLocalInput, toLocalInput, defaultPeriod } from '@/lib/dates';
 
-type Phase = 'dates' | 'fulfil' | 'account' | 'review' | 'pay' | 'done';
+type Phase = 'dates' | 'fulfil' | 'account' | 'identity' | 'review' | 'pay' | 'done';
+
+/** L'identité est-elle en règle pour commander ? */
+const idOk = (s?: string) => s === 'PENDING' || s === 'VERIFIED';
 
 export default function CommandePage() {
   const { cart, setPeriod, setFulfilment, reload } = useCart();
-  const { user, login, setToken, refresh } = useSession();
+  const { user, login, register, setToken, refresh } = useSession();
 
   const [phase, setPhase] = useState<Phase>('dates');
   const [error, setError] = useState('');
@@ -48,7 +52,7 @@ export default function CommandePage() {
   } | null>(null);
   const [quoting, setQuoting] = useState(false);
 
-  const [authMode, setAuthMode] = useState<'login' | 'create' | 'guest'>('create');
+  const [authMode, setAuthMode] = useState<'login' | 'create'>('create');
   const [contact, setContact] = useState({
     firstName: user?.firstName ?? '',
     lastName: user?.lastName ?? '',
@@ -205,7 +209,7 @@ export default function CommandePage() {
           ? { mode, address: { ...addr, country: 'BE' }, slot }
           : { mode },
       );
-      setPhase(user ? 'review' : 'account');
+      setPhase(user ? (idOk(user.idDocStatus) ? 'review' : 'identity') : 'account');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur');
     } finally {
@@ -219,15 +223,30 @@ export default function CommandePage() {
     try {
       if (authMode === 'login') {
         await login(contact.email, password);
-        await refresh();
+      } else {
+        if (password.length < 8) throw new Error('Mot de passe : 8 caractères minimum.');
+        await register({
+          email: contact.email,
+          password,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          phone: contact.phone,
+          customerType: 'PARTICULIER',
+        });
       }
-      setPhase('review');
+      // La phase `identity` s'auto-avance vers `review` si l'identité est déjà OK.
+      setPhase('identity');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Connexion impossible');
     } finally {
       setBusy(false);
     }
   }
+
+  // Étape identité : passe directement à la vérif si la pièce est déjà fournie.
+  useEffect(() => {
+    if (phase === 'identity' && idOk(user?.idDocStatus)) setPhase('review');
+  }, [phase, user?.idDocStatus]);
 
   async function placeOrder(outcome: 'success' | 'decline') {
     setBusy(true);
@@ -239,15 +258,13 @@ export default function CommandePage() {
         token?: string;
       }>('/api/checkout', {
         method: 'POST',
-        auth: user ? 'user' : 'none',
+        auth: 'user',
         body: {
           period: { start: fromLocalInput(start), end: fromLocalInput(end) },
           fulfilment:
             mode === 'DELIVERY'
               ? { mode, address: { ...addr, country: 'BE' }, slot }
               : { mode, pickupPointId: pickupPointId || undefined },
-          contact: user ? undefined : contact,
-          account: !user && authMode === 'create' ? { password } : undefined,
           promoCode: cart?.promoCode ?? undefined,
           acceptTerms: true,
           channel: 'WEB',
@@ -282,6 +299,15 @@ export default function CommandePage() {
       setPhase('done');
       await reload();
     } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        const code = (e.payload as { error?: { code?: string } })?.error?.code;
+        if (code === 'ID_REQUIRED') {
+          setError(e.message);
+          await refresh();
+          setPhase('identity');
+          return;
+        }
+      }
       setError(e instanceof Error ? e.message : 'Le paiement a échoué');
       setPhase('pay');
     } finally {
@@ -289,7 +315,15 @@ export default function CommandePage() {
     }
   }
 
-  const phaseIndex = { dates: 0, fulfil: 2, account: 3, review: 3, pay: 4, done: 5 }[phase];
+  const phaseIndex = {
+    dates: 0,
+    fulfil: 2,
+    account: 3,
+    identity: 3,
+    review: 3,
+    pay: 4,
+    done: 5,
+  }[phase];
 
   return (
     <div className="section container">
@@ -479,13 +513,10 @@ export default function CommandePage() {
                 >
                   J&apos;ai déjà un compte
                 </button>
-                <button
-                  className={`chip${authMode === 'guest' ? ' active' : ''}`}
-                  onClick={() => setAuthMode('guest')}
-                >
-                  Sans compte
-                </button>
               </div>
+              <p className="small muted" style={{ margin: 0 }}>
+                Un compte est nécessaire pour louer (contrat, caution, pièce d&apos;identité).
+              </p>
 
               {authMode !== 'login' && (
                 <div className="field-2">
@@ -524,16 +555,14 @@ export default function CommandePage() {
                   </div>
                 )}
               </div>
-              {authMode !== 'guest' && (
-                <div className="field">
-                  <label>Mot de passe {authMode === 'create' && '(8 caractères min.)'}</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-              )}
+              <div className="field">
+                <label>Mot de passe {authMode === 'create' && '(8 caractères min.)'}</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
               <div className="row">
                 <button className="btn btn-ghost" onClick={() => setPhase('fulfil')}>
                   Retour
@@ -541,7 +570,35 @@ export default function CommandePage() {
                 <button
                   className="btn btn-primary"
                   onClick={saveAccount}
-                  disabled={busy || (authMode === 'login' && (!contact.email || !password))}
+                  disabled={
+                    busy ||
+                    !contact.email ||
+                    !password ||
+                    (authMode === 'create' &&
+                      (!contact.firstName || !contact.lastName || !contact.phone))
+                  }
+                >
+                  Continuer
+                </button>
+              </div>
+            </div>
+          )}
+
+          {phase === 'identity' && (
+            <div className="card card-pad stack">
+              <h2>3. Pièce d’identité</h2>
+              <IdDocument compact onUploaded={() => setError('')} />
+              <div className="row">
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setPhase(user ? 'fulfil' : 'account')}
+                >
+                  Retour
+                </button>
+                <button
+                  className="btn btn-primary"
+                  disabled={!idOk(user?.idDocStatus)}
+                  onClick={() => setPhase('review')}
                 >
                   Continuer
                 </button>
@@ -593,7 +650,7 @@ export default function CommandePage() {
               <div className="row">
                 <button
                   className="btn btn-ghost"
-                  onClick={() => setPhase(user ? 'fulfil' : 'account')}
+                  onClick={() => setPhase(user ? 'identity' : 'account')}
                 >
                   Retour
                 </button>

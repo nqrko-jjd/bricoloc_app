@@ -8,13 +8,16 @@ import { C } from '@/lib/theme';
 import { t as ti, currentLocale, setLocaleOverride, LOCALES } from '@/lib/i18n';
 import { formatDateTimeBE } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button, Badge } from '@/components/ui';
+import { IdStep } from '@/components/IdStep';
 import type { Notif } from '@/lib/types';
 
 export default function CompteScreen() {
-  const { user, logout } = useStore();
+  const { user, logout, reloadUser } = useStore();
   const router = useRouter();
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [lang, setLang] = useState(currentLocale());
+  const [idBusy, setIdBusy] = useState(false);
+  const [idErr, setIdErr] = useState('');
 
   const load = useCallback(() => {
     if (!user) return;
@@ -70,6 +73,18 @@ export default function CompteScreen() {
         <H2>Coordonnées</H2>
         <P>{user.email}</P>
         <P>{user.phone}</P>
+      </Card>
+
+      <Card>
+        <H2>Pièce d’identité</H2>
+        {idErr ? <Badge text={idErr} tone="err" /> : null}
+        <IdStep
+          user={user}
+          busy={idBusy}
+          setBusy={setIdBusy}
+          setErr={setIdErr}
+          onDone={() => reloadUser()}
+        />
       </Card>
 
       <Card>

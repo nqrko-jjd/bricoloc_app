@@ -7,6 +7,122 @@ import { staffApi, useStaff } from '@/lib/staff';
 import { StatusBadge } from '@/components/StatusBadge';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+const ID_LABEL: Record<string, string> = {
+  NONE: 'Non fournie',
+  PENDING: 'À vérifier',
+  VERIFIED: 'Validée',
+  REJECTED: 'Refusée',
+};
+
+function IdDocCard({
+  id,
+  c,
+  token,
+  onChange,
+  setMsg,
+}: {
+  id: string;
+  c: any;
+  token: string | null;
+  onChange: () => void;
+  setMsg: (s: string) => void;
+}) {
+  const [img, setImg] = useState<string | null>(null);
+  const [why, setWhy] = useState('');
+  const status = c.idDocStatus ?? 'NONE';
+
+  useEffect(() => {
+    if (status === 'NONE') return;
+    let url: string | null = null;
+    fetch(`${API_URL}/api/admin/customers/${id}/id-document/file`, {
+      headers: { authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.blob() : null))
+      .then((b) => {
+        if (b) {
+          url = URL.createObjectURL(b);
+          setImg(url);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [id, status, token, c.idDocUploadedAt]);
+
+  async function review(next: 'VERIFIED' | 'REJECTED') {
+    await staffApi(`/api/admin/customers/${id}/id-document/review`, {
+      method: 'POST',
+      body: { status: next, note: why },
+    });
+    setMsg(next === 'VERIFIED' ? 'Pièce d’identité validée.' : 'Pièce d’identité refusée.');
+    onChange();
+  }
+
+  return (
+    <div className="card card-body stack">
+      <div className="spread">
+        <h3>Pièce d’identité</h3>
+        <span
+          className={`badge${status === 'VERIFIED' ? ' badge-ok' : status === 'REJECTED' ? ' badge-warn' : ''}`}
+        >
+          {ID_LABEL[status] ?? status}
+        </span>
+      </div>
+      {status === 'NONE' ? (
+        <p className="small muted">Le client n’a pas encore transmis de carte d’identité.</p>
+      ) : (
+        <>
+          {img ? (
+            <a href={img} target="_blank" rel="noreferrer">
+              <img
+                src={img}
+                alt="Carte d’identité"
+                style={{ maxWidth: '100%', borderRadius: 8, border: '1px solid var(--border)' }}
+              />
+            </a>
+          ) : (
+            <p className="small muted">Chargement de l’image…</p>
+          )}
+          {c.idDocUploadedAt && (
+            <p className="small muted">Reçue le {formatDateBE(c.idDocUploadedAt)}</p>
+          )}
+          {status !== 'VERIFIED' && (
+            <input
+              placeholder="Motif du refus (optionnel)"
+              value={why}
+              onChange={(e) => setWhy(e.target.value)}
+            />
+          )}
+          <div className="row">
+            {status !== 'VERIFIED' && (
+              <button className="btn btn-primary btn-sm" onClick={() => review('VERIFIED')}>
+                Valider
+              </button>
+            )}
+            {status !== 'REJECTED' && (
+              <button className="btn btn-outline btn-sm" onClick={() => review('REJECTED')}>
+                Refuser
+              </button>
+            )}
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={async () => {
+                if (!confirm('Supprimer définitivement la copie de la pièce d’identité ?')) return;
+                await staffApi(`/api/admin/customers/${id}/id-document`, { method: 'DELETE' });
+                setMsg('Pièce d’identité supprimée.');
+                onChange();
+              }}
+            >
+              Supprimer (RGPD)
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AdminClientDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { token } = useStaff();
@@ -130,6 +246,8 @@ export default function AdminClientDetail({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="stack">
+          <IdDocCard id={id} c={c} token={token()} onChange={load} setMsg={setMsg} />
+
           <div className="card card-body">
             <h3>Réservations</h3>
             {(c.reservations ?? []).map((r: any) => (

@@ -120,10 +120,17 @@ checkoutRouter.post(
       });
     }
 
-    // Compte : cree si demande, sinon guest avec contact obligatoire.
+    // La borne (KIOSK) : commande en personne, contrôle d'identité physique par
+    // le staff -> pas de compte ni de pièce d'identité numérique exigés.
+    const isKiosk = data.channel === 'KIOSK';
+
+    // Compte obligatoire (hors borne) : connecté, ou créé ici avec mot de passe.
     if (!uid) {
       const account = req.body?.account as { password?: string } | undefined;
       if (!data.contact) throw badRequest('Coordonnees requises pour finaliser la commande');
+      if (!isKiosk && !account?.password) {
+        throw badRequest('Un compte est requis pour commander (création ou connexion).');
+      }
       if (account?.password) {
         const existing = await prisma.user.findUnique({
           where: { email: data.contact.email.toLowerCase() },
@@ -141,6 +148,26 @@ checkoutRouter.post(
         uid = user.id;
         issuedToken = signToken({ kind: 'user', id: user.id, email: user.email });
         await prisma.cart.update({ where: { id: cart.id }, data: { userId: uid } });
+      }
+    }
+
+    // Pièce d'identité obligatoire pour valider la commande (hors borne).
+    if (!isKiosk && uid) {
+      const buyer = await prisma.user.findUnique({
+        where: { id: uid },
+        select: { idDocStatus: true },
+      });
+      if (!buyer || buyer.idDocStatus === 'NONE' || buyer.idDocStatus === 'REJECTED') {
+        return res.status(409).json({
+          error: {
+            code: 'ID_REQUIRED',
+            message:
+              buyer?.idDocStatus === 'REJECTED'
+                ? 'Votre pièce d’identité a été refusée. Merci d’en envoyer une nouvelle.'
+                : 'Une copie de votre carte d’identité est nécessaire pour finaliser la commande.',
+          },
+          token: issuedToken,
+        });
       }
     }
 

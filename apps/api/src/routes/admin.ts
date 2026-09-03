@@ -21,6 +21,7 @@ import { productInclude, serializeProductDetail } from '../lib/serialize.js';
 import { generateInvoice } from '../lib/invoice.js';
 import { syncContentTranslations } from '../lib/i18n-content.js';
 import { recomputeReservation } from '../lib/quote.js';
+import { readPrivateFile, deletePrivateFile } from '../lib/media.js';
 import { buildLoiseletRequest } from '../lib/loiselet.js';
 import { adminIoRouter } from './admin-io.js';
 import { randomBytes } from 'node:crypto';
@@ -1135,6 +1136,63 @@ adminRouter.get(
         openTickets: u.supportTickets.filter((t) => t.status !== 'CLOSED').length,
       },
     });
+  }),
+);
+
+/** Pièce d'identité du client : consultation (staff) + validation / refus. */
+adminRouter.get(
+  '/customers/:id/id-document/file',
+  h(async (req, res) => {
+    const u = await prisma.user.findUnique({
+      where: { id: req.params.id! },
+      select: { idDocPath: true, idDocMime: true },
+    });
+    if (!u?.idDocPath) throw notFound('Aucune pièce d’identité');
+    const buf = await readPrivateFile(u.idDocPath);
+    if (!buf) throw notFound('Fichier introuvable');
+    res.setHeader('Content-Type', u.idDocMime ?? 'image/webp');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.send(buf);
+  }),
+);
+
+adminRouter.post(
+  '/customers/:id/id-document/review',
+  requireStaff('RESPONSABLE', 'COMPTABILITE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const status = String(req.body?.status ?? '');
+    if (!['VERIFIED', 'REJECTED'].includes(status)) throw badRequest('Statut invalide');
+    const note = status === 'REJECTED' ? String(req.body?.note ?? '').slice(0, 300) : null;
+    await prisma.user.update({
+      where: { id: req.params.id! },
+      data: { idDocStatus: status, idDocReviewedAt: new Date(), idDocReviewNote: note },
+    });
+    res.json({ ok: true, status });
+  }),
+);
+
+/** RGPD : suppression de la copie de pièce d'identité (fichier + métadonnées). */
+adminRouter.delete(
+  '/customers/:id/id-document',
+  requireStaff('RESPONSABLE', 'COMPTABILITE'),
+  h(async (req, res) => {
+    const u = await prisma.user.findUnique({
+      where: { id: req.params.id! },
+      select: { idDocPath: true },
+    });
+    if (u?.idDocPath) await deletePrivateFile(u.idDocPath);
+    await prisma.user.update({
+      where: { id: req.params.id! },
+      data: {
+        idDocPath: null,
+        idDocMime: null,
+        idDocUploadedAt: null,
+        idDocStatus: 'NONE',
+        idDocReviewedAt: null,
+        idDocReviewNote: null,
+      },
+    });
+    res.status(204).end();
   }),
 );
 

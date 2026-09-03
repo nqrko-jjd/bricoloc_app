@@ -113,6 +113,9 @@ export interface CurrentUser {
   phone: string;
   customerType: string;
   companyName: string | null;
+  idDocStatus?: 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+  idDocUploadedAt?: string | null;
+  idDocReviewNote?: string | null;
 }
 
 export interface Reservation {

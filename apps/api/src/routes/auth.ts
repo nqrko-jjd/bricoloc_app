@@ -22,8 +22,24 @@ function publicUser(u: {
   customerType: string;
   companyName: string | null;
   vatNumber: string | null;
+  idDocStatus?: string;
+  idDocUploadedAt?: Date | null;
+  idDocReviewNote?: string | null;
 }) {
-  return u;
+  return {
+    id: u.id,
+    email: u.email,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    phone: u.phone,
+    customerType: u.customerType,
+    companyName: u.companyName,
+    vatNumber: u.vatNumber,
+    idDocStatus: u.idDocStatus ?? 'NONE',
+    idDocUploadedAt: u.idDocUploadedAt ?? null,
+    idDocReviewNote:
+      (u.idDocStatus ?? 'NONE') === 'REJECTED' ? (u.idDocReviewNote ?? null) : null,
+  };
 }
 
 authRouter.post(

@@ -41,8 +41,10 @@ services:
       MOLLIE_API_KEY: ${MOLLIE_API_KEY:-}
       MOLLIE_WEBHOOK_URL: ${MOLLIE_WEBHOOK_URL:-}
       UPLOADS_DIR: /repo/apps/api/uploads
+      PRIVATE_DIR: /repo/apps/api/private
     volumes:
       - uploads:/repo/apps/api/uploads
+      - private-data:/repo/apps/api/private
 
   web:
     build:
@@ -84,5 +86,6 @@ services:
 volumes:
   db-data:
   uploads:
+  private-data:
   certbot-www:
   certbot-conf:

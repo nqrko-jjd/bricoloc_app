@@ -157,6 +157,15 @@ model User {
   negotiatedDiscountPct Float?
   createdAt             DateTime @default(now())
 
+  /// Copie de la pièce d'identité (recto). Fichier privé hors dossier public,
+  /// servi uniquement via routes authentifiées. Obligatoire pour commander.
+  idDocPath       String?
+  idDocMime       String?
+  idDocUploadedAt DateTime?
+  idDocStatus     String    @default("NONE") // NONE | PENDING | VERIFIED | REJECTED
+  idDocReviewedAt DateTime?
+  idDocReviewNote String?
+
   addresses      Address[]
   reservations   Reservation[]
   carts          Cart[]

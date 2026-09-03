@@ -8,6 +8,7 @@ import { useSession, useCart } from '@/lib/providers';
 import type { Reservation } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
+import { IdDocument } from '@/components/IdDocument';
 
 export default function ComptePage() {
   const { user, loading, logout } = useSession();
@@ -62,6 +63,13 @@ export default function ComptePage() {
       <p className="muted small">
         {user.customerType === 'PRO' ? `Compte pro — ${user.companyName ?? ''}` : 'Compte particulier'}
       </p>
+
+      {user.idDocStatus !== 'VERIFIED' && user.idDocStatus !== 'PENDING' && (
+        <div className="alert alert-warn" style={{ marginTop: 12 }}>
+          <strong>Pièce d’identité requise pour louer.</strong> Ajoutez-la dans l’onglet
+          « Profil » — vous gagnerez du temps à la commande.
+        </div>
+      )}
 
       <div className="chips" style={{ margin: '16px 0' }}>
         {(['reservations', 'notifications', 'adresses', 'profil'] as const).map((t) => (
@@ -146,25 +154,27 @@ export default function ComptePage() {
       )}
 
       {tab === 'profil' && (
-        <div className="card card-body stack">
-          <div className="field-2">
-            <div className="field">
-              <label>Nom</label>
-              <input readOnly value={`${user.firstName} ${user.lastName}`} />
+        <div className="stack">
+          <div className="card card-body stack">
+            <div className="field-2">
+              <div className="field">
+                <label>Nom</label>
+                <input readOnly value={`${user.firstName} ${user.lastName}`} />
+              </div>
+              <div className="field">
+                <label>E-mail</label>
+                <input readOnly value={user.email} />
+              </div>
             </div>
             <div className="field">
-              <label>E-mail</label>
-              <input readOnly value={user.email} />
+              <label>Téléphone</label>
+              <input readOnly value={user.phone} />
             </div>
+            <p className="small muted">
+              Modification du profil disponible via l&apos;application mobile.
+            </p>
           </div>
-          <div className="field">
-            <label>Téléphone</label>
-            <input readOnly value={user.phone} />
-          </div>
-          <p className="small muted">
-            Modification du profil disponible via l&apos;API (`PATCH /api/account/profile`) et
-            l&apos;application mobile.
-          </p>
+          <IdDocument />
         </div>
       )}
     </div>

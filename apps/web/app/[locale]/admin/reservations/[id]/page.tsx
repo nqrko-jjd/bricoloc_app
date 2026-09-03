@@ -111,6 +111,31 @@ export default function AdminReservationDetail({
       </div>
       {msg && <div className="alert alert-ok">{msg}</div>}
 
+      {r.user && (
+        <div
+          className={`alert${
+            r.user.idDocStatus === 'VERIFIED'
+              ? ' alert-ok'
+              : r.user.idDocStatus === 'PENDING' || r.user.idDocStatus === 'REJECTED'
+                ? ' alert-warn'
+                : ' alert-warn'
+          }`}
+        >
+          <strong>
+            {r.user.firstName} {r.user.lastName}
+          </strong>{' '}
+          — Pièce d’identité :{' '}
+          {r.user.idDocStatus === 'VERIFIED'
+            ? 'validée ✓'
+            : r.user.idDocStatus === 'PENDING'
+              ? 'reçue, à vérifier avant le retrait'
+              : r.user.idDocStatus === 'REJECTED'
+                ? 'refusée — relance client nécessaire'
+                : 'non fournie'}{' '}
+          <Link href={`/admin/clients/${r.user.id}`}>ouvrir la fiche client →</Link>
+        </div>
+      )}
+
       <div className="two-col">
         <div className="stack">
           <div className="card card-body">

@@ -58,4 +58,15 @@ export const env = {
     (root.endsWith(`${path.sep}dist`) ? path.join(root, '..', 'uploads') : path.join(root, 'uploads')),
   /** URL publique de base pour les fichiers servis depuis uploadsDir. */
   mediaBaseUrl: `${publicApiUrl}/uploads`,
+
+  /**
+   * Stockage des documents privés (copies de pièce d'identité). JAMAIS servi en
+   * statique : accessible seulement via routes authentifiées. Dossier distinct
+   * du volume public `uploads`.
+   */
+  privateDir:
+    process.env.PRIVATE_DIR?.trim() ||
+    (root.endsWith(`${path.sep}dist`)
+      ? path.join(root, '..', 'private')
+      : path.join(root, 'private')),
 };

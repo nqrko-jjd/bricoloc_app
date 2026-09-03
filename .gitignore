@@ -22,3 +22,6 @@ web-build/
 # assets lourds hors git (sync manuelle vers VPS)
 apps/api/uploads/
 !apps/api/uploads/.gitkeep
+
+# documents privés (pièces d'identité) — jamais versionnés
+apps/api/private/

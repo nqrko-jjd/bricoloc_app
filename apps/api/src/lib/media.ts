@@ -6,7 +6,7 @@
  *  - accompagnée d'une vignette 400 px (`<nom>.thumb.webp`).
  * Un `MediaAsset` est créé pour alimenter une bibliothèque réutilisable en admin.
  */
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { nanoid } from 'nanoid';
 import sharp, { type Metadata } from 'sharp';
@@ -100,4 +100,60 @@ export async function storeImage(
     bytes: asset.bytes,
     mime: asset.mime,
   };
+}
+
+const ID_DOC_MAX_EDGE = 2200;
+
+/**
+ * Stocke une copie de pièce d'identité dans le dossier PRIVÉ (jamais servi en
+ * statique). Convertie en WebP, réduite. Pas de MediaAsset (donnée sensible).
+ * Un seul fichier par utilisateur : `id/<userId>.webp` (écrase le précédent).
+ */
+export async function storeIdDocument(
+  userId: string,
+  file: { buffer: Buffer; mimetype?: string; originalname: string },
+): Promise<{ path: string; mime: string; bytes: number }> {
+  let probe: Metadata;
+  try {
+    probe = await sharp(file.buffer).metadata();
+  } catch {
+    throw badRequest('Image illisible — envoyez une photo nette de votre carte (JPEG ou PNG).');
+  }
+  if (!probe.format || !ACCEPTED_FORMATS.has(probe.format) || probe.format === 'svg') {
+    throw badRequest(`Format non supporté : ${probe.format ?? 'inconnu'}`);
+  }
+  const rel = path.posix.join('id', `${userId}.webp`);
+  const abs = path.join(env.privateDir, rel);
+  await mkdir(path.dirname(abs), { recursive: true });
+  const buf = await sharp(file.buffer)
+    .rotate()
+    .resize({
+      width: ID_DOC_MAX_EDGE,
+      height: ID_DOC_MAX_EDGE,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 82 })
+    .toBuffer();
+  await writeFile(abs, buf);
+  return { path: rel, mime: 'image/webp', bytes: buf.byteLength };
+}
+
+/** Lit un fichier privé (pièce d'identité) pour le streamer via une route authentifiée. */
+export async function readPrivateFile(relPath: string): Promise<Buffer | null> {
+  // Anti-traversal : on n'accepte qu'un chemin relatif simple sous privateDir.
+  const abs = path.join(env.privateDir, relPath);
+  if (!abs.startsWith(path.join(env.privateDir, ''))) return null;
+  try {
+    return await readFile(abs);
+  } catch {
+    return null;
+  }
+}
+
+/** Supprime un fichier privé (RGPD : purge de la pièce d'identité). */
+export async function deletePrivateFile(relPath: string): Promise<void> {
+  const abs = path.join(env.privateDir, relPath);
+  if (!abs.startsWith(path.join(env.privateDir, ''))) return;
+  await rm(abs, { force: true });
 }

@@ -24,6 +24,7 @@ export default function AdminClients() {
               <th>E-mail</th>
               <th>Type</th>
               <th>Société</th>
+              <th>Pièce d’identité</th>
               <th>Remise négociée</th>
               <th>Réservations</th>
               <th>Depuis</th>
@@ -54,6 +55,25 @@ export default function AdminClients() {
                   </select>
                 </td>
                 <td className="small">{c.companyName ?? '—'}</td>
+                <td>
+                  <span
+                    className={`badge${
+                      c.idDocStatus === 'VERIFIED'
+                        ? ' badge-ok'
+                        : c.idDocStatus === 'PENDING' || c.idDocStatus === 'REJECTED'
+                          ? ' badge-warn'
+                          : ''
+                    }`}
+                  >
+                    {c.idDocStatus === 'VERIFIED'
+                      ? 'Validée'
+                      : c.idDocStatus === 'PENDING'
+                        ? 'À vérifier'
+                        : c.idDocStatus === 'REJECTED'
+                          ? 'Refusée'
+                          : '—'}
+                  </span>
+                </td>
                 <td>
                   <input
                     type="number"

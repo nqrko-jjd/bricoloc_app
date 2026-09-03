@@ -59,9 +59,11 @@ export const CART_KEY = 'bricoloc_cart_key';
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  payload: unknown;
+  constructor(status: number, message: string, payload?: unknown) {
     super(message);
     this.status = status;
+    this.payload = payload;
   }
 }
 
@@ -93,7 +95,11 @@ export async function api<T = unknown>(path: string, opts: Opts = {}): Promise<T
   const text = await res.text();
   const json = text ? JSON.parse(text) : null;
   if (!res.ok) {
-    throw new ApiError(res.status, json?.error?.message || json?.message || `Erreur ${res.status}`);
+    throw new ApiError(
+      res.status,
+      json?.error?.message || json?.message || `Erreur ${res.status}`,
+      json,
+    );
   }
   return json as T;
 }

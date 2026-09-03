@@ -211,6 +211,9 @@ export interface CurrentUser {
   customerType: 'PARTICULIER' | 'PRO';
   companyName: string | null;
   vatNumber: string | null;
+  idDocStatus: 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+  idDocUploadedAt: string | null;
+  idDocReviewNote?: string | null;
 }
 
 export interface Reservation {
