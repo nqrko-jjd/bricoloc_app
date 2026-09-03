@@ -1,0 +1,884 @@
+{
+ "keep": [
+  {
+   "code": "O-0068",
+   "name": "PIHER P4 ETAI 200-375",
+   "stock": 3,
+   "used": 0,
+   "total": 3,
+   "rack": "",
+   "target": "Étai 200 – 375"
+  },
+  {
+   "code": "O-0002",
+   "name": "ALTREX CROCHET DE FAITE",
+   "stock": 2,
+   "used": 0,
+   "total": 2,
+   "rack": "",
+   "target": "Échelle crochet de faite"
+  },
+  {
+   "code": "O-0131",
+   "name": "CAROTTEUSE E ETN 162/3",
+   "stock": 0,
+   "used": 2,
+   "total": 2,
+   "rack": "E-03-A",
+   "target": "Carotteuse diamant à eau/sec"
+  },
+  {
+   "code": "O-0076",
+   "name": "RIGID MICRO CA_100",
+   "stock": 1,
+   "used": 1,
+   "total": 2,
+   "rack": "",
+   "target": "Caméra inspection"
+  },
+  {
+   "code": "O-0001",
+   "name": "AGP PULVERIATEUR HVLP T328",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-02-D",
+   "target": "Pulvérisateur de peinture HVLP"
+  },
+  {
+   "code": "O-0005",
+   "name": "ALTREX ECHELLE DE TOIT 2M",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "",
+   "target": "Échelle de toit 2 m"
+  },
+  {
+   "code": "O-0115",
+   "name": "DWD241-QS MALAXEUR",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "",
+   "target": "Malaxeur de mortier"
+  },
+  {
+   "code": "O-0019",
+   "name": "EUROM HKG 10 BE",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-05-B",
+   "target": "Canon à chaleur gaz 10 kw"
+  },
+  {
+   "code": "O-0029",
+   "name": "KARCHER HDS790",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "",
+   "target": "Nettoyeur haute pression eau chaude"
+  },
+  {
+   "code": "O-0049",
+   "name": "MAKITA DBO180ZJ",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-03-C",
+   "target": "Ponceuse excentrique sans fil 125mm"
+  },
+  {
+   "code": "O-0046",
+   "name": "MAKITA DDA351",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-03-B",
+   "target": "Perceuse d’angle sans fil"
+  },
+  {
+   "code": "O-0139",
+   "name": "NETTOYEUR HP - K 2160 TST",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-10",
+   "target": "Nettoyeur haute pression 200 bar"
+  },
+  {
+   "code": "O-0070",
+   "name": "PRODIAXIO DX200",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "R-10-B1",
+   "target": "Coupe carrelage électrique portable"
+  },
+  {
+   "code": "O-0073",
+   "name": "REMKO AMT 80 E",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "R-03-D3",
+   "target": "Déshumidificateur 80 L"
+  }
+ ],
+ "add": [
+  {
+   "code": "O-0119",
+   "name": "ASPIRATEUR 700W - ASPIRO DRY 11",
+   "stock": 1,
+   "used": 4,
+   "total": 5,
+   "rack": "E-10"
+  },
+  {
+   "code": "O-0021",
+   "name": "FLEX MX02",
+   "stock": 2,
+   "used": 3,
+   "total": 5,
+   "rack": "R-351"
+  },
+  {
+   "code": "O-0120",
+   "name": "LAMPE CHANTIER SL 6-22",
+   "stock": 1,
+   "used": 2,
+   "total": 3,
+   "rack": "E-08-D"
+  },
+  {
+   "code": "O-0040",
+   "name": "MAKITA DGA506",
+   "stock": 1,
+   "used": 2,
+   "total": 3,
+   "rack": "E-03-B"
+  },
+  {
+   "code": "O-0057",
+   "name": "MAKITA DJV181ZJ",
+   "stock": 1,
+   "used": 2,
+   "total": 3,
+   "rack": "E-03-B"
+  },
+  {
+   "code": "O-0072",
+   "name": "REHEAT B3000",
+   "stock": 3,
+   "used": 0,
+   "total": 3,
+   "rack": "R-513"
+  },
+  {
+   "code": "O-0111",
+   "name": "SCIE SABRE SR 6-22",
+   "stock": 2,
+   "used": 1,
+   "total": 3,
+   "rack": "R-481"
+  },
+  {
+   "code": "O-0097",
+   "name": "AEG - HBS100",
+   "stock": 1,
+   "used": 1,
+   "total": 2,
+   "rack": ""
+  },
+  {
+   "code": "O-0004",
+   "name": "ALTREX ECHELLE DE TOIT 3M",
+   "stock": 2,
+   "used": 0,
+   "total": 2,
+   "rack": ""
+  },
+  {
+   "code": "O-0173",
+   "name": "CHARGEUR MAKITA - DC18RC",
+   "stock": 1,
+   "used": 1,
+   "total": 2,
+   "rack": "E-08-C"
+  },
+  {
+   "code": "O-0099",
+   "name": "FESTOOL RO150",
+   "stock": 0,
+   "used": 2,
+   "total": 2,
+   "rack": "E-03-C"
+  },
+  {
+   "code": "O-0170",
+   "name": "LASER FU MULTICROSS 4D",
+   "stock": 2,
+   "used": 0,
+   "total": 2,
+   "rack": "E-08-B"
+  },
+  {
+   "code": "O-0058",
+   "name": "MAKITA DCF300",
+   "stock": 1,
+   "used": 1,
+   "total": 2,
+   "rack": "E-03-D"
+  },
+  {
+   "code": "O-0045",
+   "name": "MAKITA DTM 51",
+   "stock": 0,
+   "used": 2,
+   "total": 2,
+   "rack": ""
+  },
+  {
+   "code": "O-0166",
+   "name": "MEUL. ANG. FX L811125",
+   "stock": 2,
+   "used": 0,
+   "total": 2,
+   "rack": ""
+  },
+  {
+   "code": "O-0089",
+   "name": "STANLEY ST 23 240 E",
+   "stock": 0,
+   "used": 2,
+   "total": 2,
+   "rack": "R-499"
+  },
+  {
+   "code": "O-0140",
+   "name": "TONDEUSE ELEC - C 40LM35",
+   "stock": 2,
+   "used": 0,
+   "total": 2,
+   "rack": "E-09-B"
+  },
+  {
+   "code": "O-0006",
+   "name": "ALTREX REMORQUE ECHAFAUDAGE DE LUXE",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0003",
+   "name": "ALTREX RS TOWER 52",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0007",
+   "name": "ARROW T50",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-05-B"
+  },
+  {
+   "code": "O-0158",
+   "name": "ASPI DW - DVX30SAPTA",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-10"
+  },
+  {
+   "code": "O-0008",
+   "name": "BATTIPAV SUPER PRO 450",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "R-10-B1"
+  },
+  {
+   "code": "O-0009",
+   "name": "BATTIPAV SUPER PRO 750",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "R-10-B1"
+  },
+  {
+   "code": "O-0010",
+   "name": "BOSCH GMS 120",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-08-D"
+  },
+  {
+   "code": "O-0014",
+   "name": "BRICOLOC AUGE A MORTIER GRUE 200L",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "R-03-A1"
+  },
+  {
+   "code": "O-0015",
+   "name": "BRICOLOC FURET 5M",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-10"
+  },
+  {
+   "code": "O-0164",
+   "name": "CAM. INS. 30M - RP RC2",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-02-D"
+  },
+  {
+   "code": "O-0141",
+   "name": "COUPE-BORD. - C 40T07",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-09-C"
+  },
+  {
+   "code": "O-0016",
+   "name": "EDMA TOP GRAFER 20/22 AGRAFEUSE",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-01-C"
+  },
+  {
+   "code": "O-0018",
+   "name": "EIBENSTOCK EDS125",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-04-D"
+  },
+  {
+   "code": "O-0020",
+   "name": "EUROM HKG 15 BE",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-05-B"
+  },
+  {
+   "code": "O-0022",
+   "name": "FUTECH LINE TRACKER MULTICROSS 3D",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-05-D"
+  },
+  {
+   "code": "O-0025",
+   "name": "GEBERIT ESG-40/200",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-02-D"
+  },
+  {
+   "code": "O-0024",
+   "name": "GEBERIT MANCHONEUSE KSS-160",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-02-D"
+  },
+  {
+   "code": "O-0114",
+   "name": "GFB 6X-22",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0026",
+   "name": "GRAKO ULTRAMAX AIRLESS PORTATIF",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-02-D"
+  },
+  {
+   "code": "O-0162",
+   "name": "H TE 6-22",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-02-A"
+  },
+  {
+   "code": "O-0159",
+   "name": "H TE60-22",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0027",
+   "name": "HILTI GX100",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-02-A"
+  },
+  {
+   "code": "O-0028",
+   "name": "HUSQVARNA TS100R",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "R-10-A1"
+  },
+  {
+   "code": "O-0030",
+   "name": "KRANZLE 1152 TST",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-10"
+  },
+  {
+   "code": "O-0161",
+   "name": "LASER H PM30-MG",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-02-A"
+  },
+  {
+   "code": "O-0110",
+   "name": "LHS-E 225 EQ",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0031",
+   "name": "M-TEC M300",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0033",
+   "name": "MAFFEL MT55CC",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-04-B"
+  },
+  {
+   "code": "O-0032",
+   "name": "MAFFEL RAIL 30M (POUR MT55CC)",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0039",
+   "name": "MAKITA 9558HN",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-04-C"
+  },
+  {
+   "code": "O-0125",
+   "name": "MAKITA DCG 180",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-02-C"
+  },
+  {
+   "code": "O-0106",
+   "name": "MAKITA DF330D",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0060",
+   "name": "MAKITA DHP481",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-03-B"
+  },
+  {
+   "code": "O-0047",
+   "name": "MAKITA DHR243",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0146",
+   "name": "MAKITA DHS680",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-03-B"
+  },
+  {
+   "code": "O-0055",
+   "name": "MAKITA DJR188",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0101",
+   "name": "MAKITA GA5040",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0041",
+   "name": "MAKITA GA9030R",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-04-B"
+  },
+  {
+   "code": "O-0036",
+   "name": "MAKITA GN900SE",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-02-A"
+  },
+  {
+   "code": "O-0044",
+   "name": "MAKITA HM1214C",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-03-A"
+  },
+  {
+   "code": "O-0037",
+   "name": "MAKITA RP2300FCX1",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-04-D"
+  },
+  {
+   "code": "O-0104",
+   "name": "MAKITA TD 090D",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0102",
+   "name": "MAKITA TM3010",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0034",
+   "name": "MAKITA VC3011L",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-10"
+  },
+  {
+   "code": "O-0062",
+   "name": "METABO FMS200 INTEC",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-03-C"
+  },
+  {
+   "code": "O-0065",
+   "name": "METABO KGS216",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "R-513"
+  },
+  {
+   "code": "O-0103",
+   "name": "METABO LSV 5-225",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0165",
+   "name": "MEUL. ANG. RO AG8000",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-03-B"
+  },
+  {
+   "code": "O-0128",
+   "name": "MILWAUKEE M18 FN18 GS",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-03-B"
+  },
+  {
+   "code": "O-0066",
+   "name": "MONDELIN LEVPANO 1",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-01-D"
+  },
+  {
+   "code": "O-0067",
+   "name": "NUPI R63TFE SOUDEUSE NIRON",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0117",
+   "name": "ODOMETRE FATMAX 1-77-108",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0118",
+   "name": "POSTE A SOUDER X1600",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0069",
+   "name": "PREBENA PRP ES40",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0138",
+   "name": "PULV. PEINTURE - GX 21",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-10"
+  },
+  {
+   "code": "O-0116",
+   "name": "PULVERISATEUR PS 3.29",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-10"
+  },
+  {
+   "code": "O-0172",
+   "name": "RAIL MAKITA 3M",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0071",
+   "name": "RAPID AIRTAC PB131",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0163",
+   "name": "REMS EVA SET 520015",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": "E-04-D"
+  },
+  {
+   "code": "O-0075",
+   "name": "REMS POWER PRESS SE BASIC",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0171",
+   "name": "RO ROMAX 4000 - SET TH16/20/26 - SV18 - REMS V15",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-02-A"
+  },
+  {
+   "code": "O-0084",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 12 MM",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0079",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 18 MM",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0081",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 22 MM",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0077",
+   "name": "ROTHENBERGER N3 100 168",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0085",
+   "name": "ROTHENBERGER ROTO070669E",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0112",
+   "name": "SCANNER MURAL PS 85",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0176",
+   "name": "SCIE SAUTEUSE M 4351FCT",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-04-C"
+  },
+  {
+   "code": "O-0086",
+   "name": "SDMO HX300",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0169",
+   "name": "SET SCIE CLOCHE - BLU9599",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-07-D"
+  },
+  {
+   "code": "O-0113",
+   "name": "SF 6H-22",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-02-A"
+  },
+  {
+   "code": "O-0092",
+   "name": "STIGA NJNS 92 HYDRO",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0091",
+   "name": "STIGA REMORQUE BASCULANTE",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "R-04-D1"
+  },
+  {
+   "code": "O-0093",
+   "name": "STIHL HS45",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-09-E"
+  },
+  {
+   "code": "O-0094",
+   "name": "STIHL MS171",
+   "stock": 0,
+   "used": 1,
+   "total": 1,
+   "rack": ""
+  },
+  {
+   "code": "O-0053",
+   "name": "VAPORETO VTT 2085",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-02-D"
+  },
+  {
+   "code": "O-0153",
+   "name": "XCEED EX28RHP",
+   "stock": 1,
+   "used": 0,
+   "total": 1,
+   "rack": "E-03-A"
+  }
+ ]
+}
