@@ -5,6 +5,7 @@ import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
 import { API_URL, clientApi } from '@/lib/api';
 import { useSession } from '@/lib/providers';
 import type { Reservation } from '@/lib/types';
+import { orderPackItems } from '@/lib/pack';
 import { StatusBadge } from '@/components/StatusBadge';
 import { toLocalInput, fromLocalInput } from '@/lib/dates';
 
@@ -53,15 +54,22 @@ export default function ReservationDetailPage({
             <h3>Matériel</h3>
             <table className="table">
               <tbody>
-                {r.items.map((i) => (
+                {orderPackItems(r.items).map((i) => (
                   <tr key={i.id}>
-                    <td>
+                    <td style={i.packRef ? { paddingLeft: 22, opacity: 0.75 } : undefined}>
+                      {i.packRef && <span aria-hidden>↳ </span>}
                       {i.quantity}× {i.nameSnapshot}
-                      {i.kind !== 'CONSUMABLE' && (
+                      {!i.packRef && i.kind !== 'CONSUMABLE' && (
                         <span className="small muted"> · {i.billedDays} j</span>
                       )}
                     </td>
-                    <td style={{ textAlign: 'right' }}>{formatEUR(i.lineHT)}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      {i.packRef ? (
+                        <span className="small muted">inclus</span>
+                      ) : (
+                        formatEUR(i.lineHT)
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

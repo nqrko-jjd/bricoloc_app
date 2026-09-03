@@ -8,6 +8,7 @@ import { C } from '@/lib/theme';
 import { formatEUR, formatDateTimeBE } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button, Badge, Field } from '@/components/ui';
 import type { Reservation } from '@/lib/types';
+import { orderPackItems } from '@/lib/pack';
 
 export default function ReservationDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -47,13 +48,15 @@ export default function ReservationDetail() {
 
       <Card>
         <H2>Matériel</H2>
-        {r.items.map((i) => (
+        {orderPackItems(r.items).map((i) => (
           <View key={i.id} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 }}>
-            <Text style={{ flex: 1 }}>
-              {i.quantity}× {i.nameSnapshot}
-              {i.kind !== 'CONSUMABLE' ? ` · ${i.billedDays} j` : ''}
+            <Text style={{ flex: 1, paddingLeft: i.packRef ? 14 : 0, color: i.packRef ? C.lightGray : undefined }}>
+              {i.packRef ? '↳ ' : ''}{i.quantity}× {i.nameSnapshot}
+              {!i.packRef && i.kind !== 'CONSUMABLE' ? ` · ${i.billedDays} j` : ''}
             </Text>
-            <Text>{formatEUR(i.lineHT)}</Text>
+            <Text style={i.packRef ? { color: C.lightGray, fontSize: 12 } : undefined}>
+              {i.packRef ? 'inclus' : formatEUR(i.lineHT)}
+            </Text>
           </View>
         ))}
         <Text style={{ color: C.lightGray, fontSize: 12, marginTop: 6 }}>

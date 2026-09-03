@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
 import { API_URL } from '@/lib/api';
 import { staffApi, useStaff } from '@/lib/staff';
+import { orderPackItems } from '@/lib/pack';
 import { StatusBadge } from '@/components/StatusBadge';
 import { toLocalInput, fromLocalInput } from '@/lib/dates';
 
@@ -116,10 +117,12 @@ export default function AdminReservationDetail({
             <h3>Lignes {editable && <span className="badge badge-ok">modifiable</span>}</h3>
             <table className="table">
               <tbody>
-                {r.items.map((i: any) => (
+                {orderPackItems(r.items).map((i: any) => (
                   <tr key={i.id}>
-                    <td>
-                      {editable ? (
+                    <td style={i.packRef ? { paddingLeft: 22 } : undefined}>
+                      {i.packRef ? (
+                        <span className="small muted">↳ {i.quantity}× </span>
+                      ) : editable ? (
                         <input
                           type="number"
                           min={1}
@@ -139,28 +142,38 @@ export default function AdminReservationDetail({
                         `${i.quantity}×`
                       )}{' '}
                       {i.nameSnapshot}
-                      <span className="small muted"> · {i.billedDays} j · {i.appliedRule}</span>
+                      <span className="small muted">
+                        {i.packRef
+                          ? ' · inclus dans le pack'
+                          : ` · ${i.billedDays} j · ${i.appliedRule}`}
+                      </span>
                       {i.units?.length > 0 && (
                         <div className="small muted">
                           Exemplaires : {i.units.map((u: any) => u.unit.assetTag).join(', ')}
                         </div>
                       )}
                     </td>
-                    <td style={{ textAlign: 'right' }}>{formatEUR(i.lineHT)}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      {i.packRef ? <span className="small muted">—</span> : formatEUR(i.lineHT)}
+                    </td>
                     {editable && (
                       <td>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() =>
-                            act(
-                              () =>
-                                staffApi(`/api/admin/reservation-items/${i.id}`, { method: 'DELETE' }),
-                              'Ligne supprimée.',
-                            )
-                          }
-                        >
-                          ×
-                        </button>
+                        {!i.packRef && (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() =>
+                              act(
+                                () =>
+                                  staffApi(`/api/admin/reservation-items/${i.id}`, {
+                                    method: 'DELETE',
+                                  }),
+                                'Ligne supprimée.',
+                              )
+                            }
+                          >
+                            ×
+                          </button>
+                        )}
                       </td>
                     )}
                   </tr>

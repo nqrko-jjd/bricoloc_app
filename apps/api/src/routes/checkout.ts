@@ -239,6 +239,7 @@ checkoutRouter.post(
             depositUnit: l.depositUnit,
             billedDays: l.billedDays,
             appliedRule: l.appliedRule,
+            packRef: l.packRef ?? null,
           })),
         },
         payments: {

@@ -237,6 +237,7 @@ export interface Reservation {
     depositUnit: number;
     billedDays: number;
     appliedRule: string;
+    packRef?: string | null;
   }[];
   payments: { id: string; kind: string; status: string; amount: number }[];
   deposit: { amount: number; status: string; capturedAmount: number } | null;

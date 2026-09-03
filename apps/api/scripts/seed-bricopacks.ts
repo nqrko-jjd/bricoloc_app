@@ -728,10 +728,13 @@ async function run() {
   const catId = Object.fromEntries(cats.map((c) => [c.slug, c.id]));
   const prods = await prisma.product.findMany({
     where: { kind: { in: ['MACHINE', 'ACCESSORY', 'CONSUMABLE', 'PPE'] } },
-    select: { slug: true, name: true, dailyPrice: true },
+    select: { id: true, slug: true, name: true, dailyPrice: true, kind: true, deposit: true },
   });
   const priceBySlug = Object.fromEntries(prods.map((p) => [p.slug, p.dailyPrice]));
   const nameBySlug = Object.fromEntries(prods.map((p) => [p.slug, p.name]));
+  const idBySlug = Object.fromEntries(prods.map((p) => [p.slug, p.id]));
+  const kindBySlug = Object.fromEntries(prods.map((p) => [p.slug, p.kind]));
+  const depositBySlug = Object.fromEntries(prods.map((p) => [p.slug, p.deposit ?? 0]));
 
   const wantI18n = translationEnabled();
   let created = 0;
@@ -747,7 +750,13 @@ async function run() {
         }
         return true;
       })
-      .map((it) => ({ ...it, name: nameBySlug[it.slug], dailyPrice: priceBySlug[it.slug] }));
+      .map((it) => ({
+        ...it,
+        name: nameBySlug[it.slug],
+        dailyPrice: priceBySlug[it.slug],
+        productId: idBySlug[it.slug] as string,
+        kind: kindBySlug[it.slug] as string,
+      }));
 
     const sepTotal = items.reduce((a, it) => a + it.dailyPrice, 0);
     const discount = pk.discount ?? 0.3;
@@ -772,6 +781,17 @@ async function run() {
         }
       : undefined;
 
+    // Machines/accessoires réels qui composent le pack -> liens PACK_ITEM + caution.
+    const stockItems = items.filter(
+      (it) => it.productId && (it.kind === 'MACHINE' || it.kind === 'ACCESSORY'),
+    );
+    const qtyByComponent = new Map<string, number>();
+    for (const it of stockItems)
+      qtyByComponent.set(it.productId, (qtyByComponent.get(it.productId) ?? 0) + 1);
+    const packDeposit = Math.round(
+      stockItems.reduce((a, it) => a + (depositBySlug[it.slug] ?? 0), 0),
+    );
+
     const existing = await prisma.product.findUnique({ where: { slug: pk.slug } });
     const data = {
       name: pk.name,
@@ -787,17 +807,28 @@ async function run() {
       dailyPrice: packPrice,
       weekPrice: Math.round(packPrice * 4),
       monthPrice: Math.round(packPrice * 12),
-      deposit: 0,
+      deposit: packDeposit,
       packMeta: packMeta as never,
       ...(i18n ? { i18n: i18n as never } : {}),
     };
 
+    let packId: string;
     if (existing) {
       await prisma.product.update({ where: { id: existing.id }, data });
+      packId = existing.id;
       updated++;
     } else {
-      await prisma.product.create({ data: { slug: pk.slug, ...data } });
+      const row = await prisma.product.create({ data: { slug: pk.slug, ...data } });
+      packId = row.id;
       created++;
+    }
+
+    // Synchronise les liens PACK_ITEM (composition réelle du pack).
+    await prisma.productLink.deleteMany({ where: { fromId: packId, type: 'PACK_ITEM' } });
+    for (const [componentId, quantity] of qtyByComponent) {
+      await prisma.productLink.create({
+        data: { fromId: packId, toId: componentId, type: 'PACK_ITEM', quantity },
+      });
     }
   }
 

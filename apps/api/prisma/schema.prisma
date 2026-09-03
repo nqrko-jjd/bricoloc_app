@@ -405,7 +405,13 @@ model ReservationItem {
   periodStart   DateTime? // override exceptionnel (admin)
   periodEnd     DateTime?
 
+  /// Ligne machine issue de l'éclatement d'un BricoPack : = id produit du pack parent.
+  /// Prix 0 (compris dans le pack), mais consomme bien un exemplaire de la machine.
+  packRef String?
+
   units ReservationUnit[]
+
+  @@index([packRef])
 }
 
 /// Affectation d'un exemplaire physique a une ligne de reservation (au retrait).

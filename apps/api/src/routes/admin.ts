@@ -991,6 +991,29 @@ adminRouter.post(
           depositUnit: product.deposit,
         },
       });
+      // BricoPack : matérialise les machines réelles (0 €) pour immobiliser le stock.
+      if (product.kind === 'PACK') {
+        const bom = await prisma.productLink.findMany({
+          where: { fromId: product.id, type: 'PACK_ITEM' },
+          include: { to: true },
+        });
+        for (const b of bom) {
+          await prisma.reservationItem.create({
+            data: {
+              reservationId: req.params.id!,
+              productId: b.toId,
+              nameSnapshot: b.to.name,
+              kind: 'MACHINE',
+              quantity: qty * Math.max(1, b.quantity),
+              unitPriceHT: 0,
+              lineHT: 0,
+              depositUnit: 0,
+              appliedRule: 'PACK_ITEM',
+              packRef: product.id,
+            },
+          });
+        }
+      }
     }
     await recomputeReservation(req.params.id!);
     res.status(201).json({ ok: true });
@@ -1021,6 +1044,12 @@ adminRouter.delete(
   requireStaff('RESPONSABLE', 'COMPTOIR'),
   h(async (req, res) => {
     const item = await prisma.reservationItem.delete({ where: { id: req.params.id! } });
+    // Supprimer un BricoPack retire aussi ses lignes machines incluses.
+    if (item.kind === 'PACK') {
+      await prisma.reservationItem.deleteMany({
+        where: { reservationId: item.reservationId, packRef: item.productId },
+      });
+    }
     await recomputeReservation(item.reservationId);
     res.status(204).end();
   }),

@@ -125,7 +125,16 @@ export interface Reservation {
   fulfilmentMode: string;
   slot: string | null;
   totals: { totalTVAC: number; depositsTotal: number };
-  items: { id: string; nameSnapshot: string; quantity: number; kind: string; billedDays: number; lineHT: number }[];
+  items: {
+    id: string;
+    productId: string;
+    nameSnapshot: string;
+    quantity: number;
+    kind: string;
+    billedDays: number;
+    lineHT: number;
+    packRef?: string | null;
+  }[];
   payments: { id: string; kind: string; status: string; amount: number }[];
   deposit: { amount: number; status: string } | null;
   invoices: { id: string; number: string; kind: string }[];

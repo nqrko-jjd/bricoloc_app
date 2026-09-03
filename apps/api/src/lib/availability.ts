@@ -58,25 +58,27 @@ export interface CapacityInfo {
   productId: string;
   capacity: number;
   isConsumable: boolean;
+  kind: string;
 }
 
 async function capacityOf(productId: string): Promise<CapacityInfo> {
   const product = await prisma.product.findUnique({
     where: { id: productId },
-    select: { id: true, stockQty: true, isConsumable: true },
+    select: { id: true, stockQty: true, isConsumable: true, kind: true },
   });
-  if (!product) return { productId, capacity: 0, isConsumable: false };
+  if (!product) return { productId, capacity: 0, isConsumable: false, kind: 'MACHINE' };
   if (product.stockQty !== null && product.stockQty !== undefined) {
     return {
       productId,
       capacity: product.stockQty,
       isConsumable: product.isConsumable,
+      kind: product.kind,
     };
   }
   const units = await prisma.productUnit.count({
     where: { productId, state: { in: ['AVAILABLE', 'RENTED'] } },
   });
-  return { productId, capacity: units, isConsumable: product.isConsumable };
+  return { productId, capacity: units, isConsumable: product.isConsumable, kind: product.kind };
 }
 
 /** Quantite deja reservee pour un produit sur une periode donnee. */
@@ -112,6 +114,65 @@ export async function reservedQty(
   return total;
 }
 
+/**
+ * Composition d'un BricoPack : machines reelles qui le composent (liens PACK_ITEM).
+ * Renvoie [] si le produit n'est pas un pack ou n'a pas de composition definie.
+ */
+export async function packComponents(
+  packId: string,
+): Promise<{ productId: string; quantity: number }[]> {
+  const links = await prisma.productLink.findMany({
+    where: { fromId: packId, type: 'PACK_ITEM' },
+    select: { toId: true, quantity: true },
+  });
+  return links.map((l) => ({ productId: l.toId, quantity: Math.max(1, l.quantity) }));
+}
+
+/**
+ * Disponibilite d'un BricoPack = maillon le plus faible : pour chaque machine du
+ * pack, combien de packs complets peut-on servir (dispo machine / qte par pack).
+ * Le pack n'a pas de stock propre.
+ */
+async function packAvailability(
+  packId: string,
+  start: Date,
+  end: Date,
+  requestedQty: number,
+  opts: { excludeReservationId?: string } = {},
+): Promise<AvailabilityResult> {
+  const components = await packComponents(packId);
+  if (components.length === 0) {
+    return {
+      productId: packId,
+      requestedQty,
+      availableQty: 0,
+      totalUnits: 0,
+      status: 'UNAVAILABLE',
+      nearbyPeriod: null,
+      alternativeProductIds: [],
+    };
+  }
+  let packAvail = Infinity;
+  let packTotal = Infinity;
+  for (const c of components) {
+    const a = await availabilityFor(c.productId, start, end, requestedQty * c.quantity, {
+      excludeReservationId: opts.excludeReservationId,
+    });
+    packAvail = Math.min(packAvail, Math.floor(a.availableQty / c.quantity));
+    packTotal = Math.min(packTotal, Math.floor(a.totalUnits / c.quantity));
+  }
+  const availableQty = Number.isFinite(packAvail) ? Math.max(0, packAvail) : 0;
+  return {
+    productId: packId,
+    requestedQty,
+    availableQty,
+    totalUnits: Number.isFinite(packTotal) ? Math.max(0, packTotal) : 0,
+    status: statusFor(requestedQty, availableQty),
+    nearbyPeriod: null,
+    alternativeProductIds: [],
+  };
+}
+
 export async function availabilityFor(
   productId: string,
   start: Date,
@@ -120,6 +181,12 @@ export async function availabilityFor(
   opts: { withAlternatives?: boolean; excludeReservationId?: string } = {},
 ): Promise<AvailabilityResult> {
   const cap = await capacityOf(productId);
+
+  if (cap.kind === 'PACK') {
+    return packAvailability(productId, start, end, requestedQty, {
+      excludeReservationId: opts.excludeReservationId,
+    });
+  }
 
   // Un consommable : disponible tant qu'il reste du stock (pas de blocage dans le temps).
   if (cap.isConsumable) {

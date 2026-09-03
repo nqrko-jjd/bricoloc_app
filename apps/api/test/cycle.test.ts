@@ -118,7 +118,7 @@ test('cycle complet : de la creation machine a la facture finale', async () => {
   assert.ok(catalog.json.products.some((p: { id: string }) => p.id === productId));
 
   // Une 2e machine existante pour un panier multi-articles.
-  const other = await api('/api/catalog/products?category=nettoyage&pageSize=1');
+  const other = await api('/api/catalog/products?category=nettoyage&kind=MACHINE&pageSize=1');
   const otherId = other.json.products[0].id as string;
 
   // 3. Le client cree un panier et ajoute plusieurs outils (sans dates).

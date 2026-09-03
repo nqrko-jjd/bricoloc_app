@@ -33,6 +33,8 @@ export interface QuoteLine {
   depositUnit: number;
   depositLine: number;
   isConsumable: boolean;
+  /** Ligne machine issue de l'éclatement d'un BricoPack (= id produit du pack). */
+  packRef?: string | null;
 }
 
 export interface QuoteInput {
@@ -124,25 +126,42 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
   const ps = pricingSettings(settings);
   const rate = vatRate(settings);
 
-  const lines: QuoteLine[] = input.lines.map((l) => {
+  // Composition des BricoPacks présents dans le panier (liens PACK_ITEM).
+  const packIds = input.lines.filter((l) => l.product.kind === 'PACK').map((l) => l.product.id);
+  const packBom = new Map<string, { component: Product; quantity: number }[]>();
+  if (packIds.length) {
+    for (const id of packIds) packBom.set(id, []);
+    const bomLinks = await prisma.productLink.findMany({
+      where: { fromId: { in: packIds }, type: 'PACK_ITEM' },
+      include: { to: true },
+    });
+    for (const bl of bomLinks) {
+      packBom.get(bl.fromId)?.push({ component: bl.to, quantity: Math.max(1, bl.quantity) });
+    }
+  }
+
+  const buildLines = (l: QuoteLineInput): QuoteLine[] => {
     const start = l.periodStart ?? input.periodStart;
     const end = l.periodEnd ?? input.periodEnd;
 
     if (l.product.isConsumable) {
       const unit = round2(l.product.dailyPrice); // pour un consommable, dailyPrice = prix de vente unitaire
-      return {
-        productId: l.product.id,
-        name: l.product.name,
-        kind: l.product.kind,
-        quantity: l.quantity,
-        billedDays: 0,
-        appliedRule: 'CONSUMABLE',
-        unitPriceHT: unit,
-        lineHT: round2(unit * l.quantity),
-        depositUnit: 0,
-        depositLine: 0,
-        isConsumable: true,
-      };
+      return [
+        {
+          productId: l.product.id,
+          name: l.product.name,
+          kind: l.product.kind,
+          quantity: l.quantity,
+          billedDays: 0,
+          appliedRule: 'CONSUMABLE',
+          unitPriceHT: unit,
+          lineHT: round2(unit * l.quantity),
+          depositUnit: 0,
+          depositLine: 0,
+          isConsumable: true,
+          packRef: null,
+        },
+      ];
     }
 
     const r = computeRentalPrice({
@@ -152,30 +171,79 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
       customerType: input.customerType,
       settings: ps,
     });
-    return {
-      productId: l.product.id,
-      name: l.product.name,
-      kind: l.product.kind,
-      quantity: l.quantity,
-      billedDays: r.billedDays,
-      appliedRule: r.appliedRule,
-      unitPriceHT: r.unitPrice,
-      lineHT: r.linePrice,
-      depositUnit: l.product.deposit,
-      depositLine: r.depositTotal,
-      isConsumable: false,
-    };
-  });
+
+    // BricoPack : ligne parente (prix pack, caution = somme des machines) +
+    // lignes machines à 0 € qui immobilisent le stock réel.
+    if (l.product.kind === 'PACK') {
+      const bom = packBom.get(l.product.id) ?? [];
+      const depositUnit = round2(
+        bom.reduce((a, b) => a + (b.component.deposit ?? 0) * b.quantity, 0),
+      );
+      const parent: QuoteLine = {
+        productId: l.product.id,
+        name: l.product.name,
+        kind: 'PACK',
+        quantity: l.quantity,
+        billedDays: r.billedDays,
+        appliedRule: r.appliedRule,
+        unitPriceHT: r.unitPrice,
+        lineHT: r.linePrice,
+        depositUnit,
+        depositLine: round2(depositUnit * l.quantity),
+        isConsumable: false,
+        packRef: null,
+      };
+      const children: QuoteLine[] = bom.map((b) => ({
+        productId: b.component.id,
+        name: b.component.name,
+        kind: 'MACHINE',
+        quantity: l.quantity * b.quantity,
+        billedDays: r.billedDays,
+        appliedRule: 'PACK_ITEM',
+        unitPriceHT: 0,
+        lineHT: 0,
+        depositUnit: 0,
+        depositLine: 0,
+        isConsumable: false,
+        packRef: l.product.id,
+      }));
+      return [parent, ...children];
+    }
+
+    return [
+      {
+        productId: l.product.id,
+        name: l.product.name,
+        kind: l.product.kind,
+        quantity: l.quantity,
+        billedDays: r.billedDays,
+        appliedRule: r.appliedRule,
+        unitPriceHT: r.unitPrice,
+        lineHT: r.linePrice,
+        depositUnit: l.product.deposit,
+        depositLine: r.depositTotal,
+        isConsumable: false,
+        packRef: null,
+      },
+    ];
+  };
+
+  const built = input.lines.map((l) => ({ input: l, out: buildLines(l) }));
+  const lines: QuoteLine[] = built.flatMap((b) => b.out);
 
   const rentalHT = round2(lines.reduce((a, l) => a + l.lineHT, 0));
   const depositsTotal = round2(lines.reduce((a, l) => a + l.depositLine, 0));
 
-  // « Pack composé » : machines éligibles = kind MACHINE, hors BricoPack curaté,
-  // hors Loiselet. Compté = quantité totale.
-  const eligible = lines.filter(
-    (l, i) =>
-      l.kind === 'MACHINE' && !l.isConsumable && input.lines[i]!.product.supplier !== 'LOISELET',
-  );
+  // « Pack composé » : machines libres choisies par le client (hors BricoPack
+  // curaté, hors Loiselet). Les machines incluses dans un pack ne comptent pas.
+  const eligible = built
+    .filter(
+      (b) =>
+        b.input.product.kind === 'MACHINE' &&
+        !b.input.product.isConsumable &&
+        b.input.product.supplier !== 'LOISELET',
+    )
+    .flatMap((b) => b.out);
   const composedPack = computeComposedPackDiscount(
     eligible.reduce((a, l) => a + l.quantity, 0),
     round2(eligible.reduce((a, l) => a + l.lineHT, 0)),
@@ -259,12 +327,45 @@ export async function recomputeReservation(
   const rate = vatRate(settings);
   const customerType = (r.user?.customerType as CustomerType) ?? 'PARTICULIER';
 
+  // Caution des BricoPacks = somme des cautions de leurs machines (liens PACK_ITEM).
+  const packIds = r.items.filter((i) => i.product.kind === 'PACK').map((i) => i.productId);
+  const packDeposit = new Map<string, number>();
+  if (packIds.length) {
+    const bom = await prisma.productLink.findMany({
+      where: { fromId: { in: packIds }, type: 'PACK_ITEM' },
+      include: { to: { select: { deposit: true } } },
+    });
+    for (const id of packIds) packDeposit.set(id, 0);
+    for (const b of bom) {
+      packDeposit.set(
+        b.fromId,
+        (packDeposit.get(b.fromId) ?? 0) + (b.to.deposit ?? 0) * Math.max(1, b.quantity),
+      );
+    }
+  }
+
   let rentalHT = 0;
   let depositsTotal = 0;
 
   for (const item of r.items) {
     const start = item.periodStart ?? r.periodStart;
     const end = item.periodEnd ?? r.periodEnd;
+
+    // Ligne machine incluse dans un pack : reste à 0 €, on ne la re-tarife pas.
+    if (item.packRef) {
+      await prisma.reservationItem.update({
+        where: { id: item.id },
+        data: {
+          nameSnapshot: item.product.name,
+          unitPriceHT: 0,
+          lineHT: 0,
+          depositUnit: 0,
+          appliedRule: 'PACK_ITEM',
+        },
+      });
+      continue;
+    }
+
     if (item.product.isConsumable) {
       const unit = round2(item.product.dailyPrice);
       await prisma.reservationItem.update({
@@ -288,19 +389,23 @@ export async function recomputeReservation(
       customerType,
       settings: ps,
     });
+    const depUnit =
+      item.product.kind === 'PACK'
+        ? round2(packDeposit.get(item.productId) ?? 0)
+        : item.product.deposit;
     await prisma.reservationItem.update({
       where: { id: item.id },
       data: {
         nameSnapshot: item.product.name,
         unitPriceHT: p.unitPrice,
         lineHT: p.linePrice,
-        depositUnit: item.product.deposit,
+        depositUnit: depUnit,
         billedDays: p.billedDays,
         appliedRule: p.appliedRule,
       },
     });
     rentalHT += p.linePrice;
-    depositsTotal += p.depositTotal;
+    depositsTotal += round2(depUnit * item.quantity);
   }
   rentalHT = round2(rentalHT);
   depositsTotal = round2(depositsTotal);
@@ -319,7 +424,11 @@ export async function recomputeReservation(
 
   // Recalcule le « pack composé » sur les lignes actuelles.
   const eligible = r.items.filter(
-    (it) => it.product.kind === 'MACHINE' && !it.product.isConsumable && it.product.supplier !== 'LOISELET',
+    (it) =>
+      it.product.kind === 'MACHINE' &&
+      !it.packRef &&
+      !it.product.isConsumable &&
+      it.product.supplier !== 'LOISELET',
   );
   const composed = computeComposedPackDiscount(
     eligible.reduce((a, it) => a + it.quantity, 0),
