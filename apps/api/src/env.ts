@@ -42,6 +42,9 @@ export const env = {
   deeplApiKey: deeplKey,
   deeplApiHost: deeplKey.endsWith(':fx') ? 'https://api-free.deepl.com' : 'https://api.deepl.com',
 
+  /** Clé d'accès à l'API partenaire (parc partagé JJD). Vide = API partenaire désactivée. */
+  partnerApiKey: process.env.PARTNER_API_KEY?.trim() ?? '',
+
   /** Paiement Mollie (vide = paiement mock). URL du webhook = configurable ou dérivée. */
   mollieApiKey: process.env.MOLLIE_API_KEY?.trim() ?? '',
   mollieWebhookUrl:

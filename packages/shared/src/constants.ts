@@ -289,7 +289,14 @@ export type MaintenanceStatus = (typeof MAINTENANCE_STATUSES)[number];
 export const MAINTENANCE_TYPES = ['ENTRETIEN', 'REPARATION', 'CONTROLE'] as const;
 export type MaintenanceType = (typeof MAINTENANCE_TYPES)[number];
 
-export const UNIT_STATES = ['AVAILABLE', 'RENTED', 'MAINTENANCE', 'DAMAGED', 'RETIRED'] as const;
+export const UNIT_STATES = [
+  'AVAILABLE',
+  'RENTED',
+  'ON_SITE', // sorti sur un chantier JJD (parc partagé)
+  'MAINTENANCE',
+  'DAMAGED',
+  'RETIRED',
+] as const;
 export type UnitState = (typeof UNIT_STATES)[number];
 
 export const NOTIFICATION_TYPES = [

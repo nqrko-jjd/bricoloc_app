@@ -22,6 +22,7 @@ import { generateInvoice } from '../lib/invoice.js';
 import { syncContentTranslations } from '../lib/i18n-content.js';
 import { recomputeReservation } from '../lib/quote.js';
 import { readPrivateFile, deletePrivateFile } from '../lib/media.js';
+import { createLoan, returnLoan } from '../lib/parc.js';
 import { buildLoiseletRequest } from '../lib/loiselet.js';
 import { adminIoRouter } from './admin-io.js';
 import { randomBytes } from 'node:crypto';
@@ -1718,6 +1719,95 @@ adminRouter.delete(
   h(async (req, res) => {
     await prisma.guide.delete({ where: { slug: req.params.slug! } }).catch(() => {});
     res.status(204).end();
+  }),
+);
+
+/* ----------------------- Parc partagé (chantiers JJD) ----------------------- */
+
+adminRouter.get(
+  '/parc',
+  h(async (_req, res) => {
+    const [loans, chantiers, consumption] = await Promise.all([
+      prisma.assetLoan.findMany({
+        where: { returnedAt: null },
+        orderBy: { takenAt: 'desc' },
+        include: {
+          chantier: { select: { name: true } },
+          unit: { select: { assetTag: true, product: { select: { name: true } } } },
+        },
+      }),
+      prisma.chantier.findMany({
+        orderBy: [{ active: 'desc' }, { name: 'asc' }],
+        include: { _count: { select: { loans: { where: { returnedAt: null } } } } },
+      }),
+      prisma.consumptionLog.findMany({
+        orderBy: { takenAt: 'desc' },
+        take: 50,
+        include: {
+          product: { select: { name: true } },
+          chantier: { select: { name: true } },
+        },
+      }),
+    ]);
+    res.json({
+      activeLoans: loans.map((l) => ({
+        id: l.id,
+        assetTag: l.unit.assetTag,
+        product: l.unit.product.name,
+        chantier: l.chantier.name,
+        takenAt: l.takenAt,
+        takenBy: l.takenBy,
+      })),
+      chantiers: chantiers.map((c) => ({
+        id: c.id,
+        externalRef: c.externalRef,
+        name: c.name,
+        client: c.client,
+        active: c.active,
+        toolsOut: c._count.loans,
+      })),
+      consumption: consumption.map((c) => ({
+        id: c.id,
+        product: c.product.name,
+        chantier: c.chantier.name,
+        quantity: c.quantity,
+        takenAt: c.takenAt,
+        takenBy: c.takenBy,
+      })),
+    });
+  }),
+);
+
+/** Sortie chantier manuelle (secours si le CRM JJD est indisponible). */
+adminRouter.post(
+  '/parc/loans',
+  requireStaff('RESPONSABLE', 'COMPTOIR', 'PREPARATEUR'),
+  h(async (req, res) => {
+    const { code, chantierId, takenBy, note } = req.body ?? {};
+    if (!code || !chantierId) throw badRequest('code et chantierId requis');
+    const chantier = await prisma.chantier.findUnique({ where: { id: String(chantierId) } });
+    if (!chantier?.externalRef) throw badRequest('Chantier introuvable');
+    const { loan } = await createLoan({ code, chantierRef: chantier.externalRef, takenBy, note });
+    res.status(201).json({ ok: true, loanId: loan.id });
+  }),
+);
+
+adminRouter.post(
+  '/parc/loans/:id/return',
+  requireStaff('RESPONSABLE', 'COMPTOIR', 'PREPARATEUR'),
+  h(async (req, res) => {
+    const loan = await prisma.assetLoan.findUnique({
+      where: { id: req.params.id! },
+      include: { unit: { select: { assetTag: true } } },
+    });
+    if (!loan || loan.returnedAt) throw badRequest('Sortie introuvable ou déjà clôturée');
+    const r = await returnLoan({
+      code: loan.unit.assetTag,
+      returnedBy: req.body?.returnedBy,
+      note: req.body?.note,
+      toState: req.body?.toState,
+    });
+    res.json(r);
   }),
 );
 

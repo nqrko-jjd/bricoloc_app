@@ -17,6 +17,7 @@ import { publicRouter } from './routes/public.js';
 import { geoRouter } from './routes/geo.js';
 import { adminRouter } from './routes/admin.js';
 import { opsRouter } from './routes/ops.js';
+import { partnerRouter } from './routes/partner.js';
 
 export function createApp() {
   const app = express();
@@ -66,6 +67,7 @@ export function createApp() {
   app.use('/api/admin/uploads', uploadsRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/ops', opsRouter);
+  app.use('/api/partner', partnerRouter);
 
   app.use((_req, _res, next) => next(notFound('Route inconnue')));
   app.use(errorHandler);

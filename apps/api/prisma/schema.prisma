@@ -286,6 +286,7 @@ model Product {
   cartItems        CartItem[]
   reservationItems ReservationItem[]
   reviews          Review[]
+  consumptionLogs  ConsumptionLog[]
 }
 
 /// Relations entre articles : accessoire recommande, consommable, EPI, complementaire, contenu de pack.
@@ -324,6 +325,55 @@ model ProductUnit {
   reservationUnits ReservationUnit[]
   damages          Damage[]
   maintenances     Maintenance[]
+  loans            AssetLoan[]
+}
+
+/// Chantier JJD (parc partagé). Synchronisé depuis le CRM JJD via l'API partenaire.
+model Chantier {
+  id          String   @id @default(cuid())
+  /// Identifiant du chantier dans le CRM JJD (clé de synchro).
+  externalRef String?  @unique
+  name        String
+  client      String?
+  address     String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  loans       AssetLoan[]
+  consumption ConsumptionLog[]
+}
+
+/// Sortie d'un exemplaire vers un chantier JJD. Ouvert jusqu'au scan retour.
+/// Immobilise l'exemplaire (state ON_SITE) -> hors location Bricoloc.
+model AssetLoan {
+  id         String      @id @default(cuid())
+  unitId     String
+  unit       ProductUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  chantierId String
+  chantier   Chantier    @relation(fields: [chantierId], references: [id])
+  takenAt    DateTime    @default(now())
+  takenBy    String? // nom de l'opérateur (texte, transmis par le CRM JJD)
+  returnedAt DateTime?
+  returnedBy String?
+  noteOut    String?
+  noteIn     String?
+  createdVia String      @default("PARTNER_API") // PARTNER_API | ADMIN
+
+  @@index([unitId, returnedAt])
+}
+
+/// Consommation d'un produit consommable par un chantier JJD (stock commun).
+model ConsumptionLog {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  chantierId String
+  chantier   Chantier @relation(fields: [chantierId], references: [id])
+  quantity   Int
+  takenAt    DateTime @default(now())
+  takenBy    String?
+  note       String?
 }
 
 model Cart {
