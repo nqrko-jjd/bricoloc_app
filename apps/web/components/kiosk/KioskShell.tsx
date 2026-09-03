@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { SUPPORTED_LOCALES, type Locale } from '@bricoloc/shared';
 import { useCart } from '@/lib/providers';
-import { wipeSession } from '@/lib/kiosk';
+import { wipeSession, exitKiosk } from '@/lib/kiosk';
 import { KioskKeyboard } from './KioskKeyboard';
 
 const IDLE_MS = 120_000;
@@ -57,7 +57,26 @@ export function KioskShell({ children }: { children: ReactNode }) {
   return (
     <div className="kioskm">
       <header className="kioskm__bar">
-        <Link href="/borne" className="kioskm__logo" aria-label="Bricoloc" onClick={wipeSession}>
+        {/* Appui long (3 s) sur le logo = sortie de la borne (personnel). */}
+        <Link
+          href="/borne"
+          className="kioskm__logo"
+          aria-label="Bricoloc"
+          onClick={wipeSession}
+          onPointerDown={() => {
+            const to = setTimeout(() => {
+              exitKiosk();
+              window.location.href = '/';
+            }, 3000);
+            const cancel = () => {
+              clearTimeout(to);
+              window.removeEventListener('pointerup', cancel);
+              window.removeEventListener('pointercancel', cancel);
+            };
+            window.addEventListener('pointerup', cancel);
+            window.addEventListener('pointercancel', cancel);
+          }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/img/logo-bricoloc.webp" alt="Bricoloc" />
         </Link>
