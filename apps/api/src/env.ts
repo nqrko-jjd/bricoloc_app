@@ -42,6 +42,12 @@ export const env = {
   deeplApiKey: deeplKey,
   deeplApiHost: deeplKey.endsWith(':fx') ? 'https://api-free.deepl.com' : 'https://api.deepl.com',
 
+  /** Paiement Mollie (vide = paiement mock). URL du webhook = configurable ou dérivée. */
+  mollieApiKey: process.env.MOLLIE_API_KEY?.trim() ?? '',
+  mollieWebhookUrl:
+    process.env.MOLLIE_WEBHOOK_URL?.trim() ||
+    `${publicApiUrl.replace(/\/$/, '')}/bricoloc-api/api/checkout/mollie/webhook`,
+
   /** Stockage local des médias (images produits, contenus). */
   uploadsDir: path.join(root, 'uploads'),
   /** URL publique de base pour les fichiers servis depuis uploadsDir. */

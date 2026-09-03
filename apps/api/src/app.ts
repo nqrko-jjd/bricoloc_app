@@ -27,6 +27,8 @@ export function createApp() {
     }),
   );
   app.use(express.json({ limit: '8mb' }));
+  // Webhooks (Mollie) : corps application/x-www-form-urlencoded.
+  app.use(express.urlencoded({ extended: false }));
   app.use(morgan('dev'));
 
   // Réécrit les URLs média absolues (http://host/uploads/…) en chemins relatifs

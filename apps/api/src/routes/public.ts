@@ -5,6 +5,7 @@ import { h } from '../lib/http.js';
 import { getSettings } from '../lib/settings.js';
 import { quoteDelivery } from '../lib/delivery.js';
 import { serializeProductSummary, productInclude } from '../lib/serialize.js';
+import { mollieEnabled, mollieTestMode } from '../lib/mollie.js';
 
 export const publicRouter = Router();
 
@@ -35,6 +36,8 @@ publicRouter.get(
           transferHours: Number(p.transferHours ?? 0),
         })),
       demo: true,
+      paymentProvider: mollieEnabled() ? 'mollie' : 'mock',
+      paymentTestMode: mollieEnabled() ? mollieTestMode() : true,
     });
   }),
 );

@@ -37,6 +37,7 @@ export default function CommandePage() {
     { id: string; name: string; line1: string; postalCode: string; city: string; isMain: boolean; transferHours: number }[]
   >([]);
   const [pickupPointId, setPickupPointId] = useState('');
+  const [payProvider, setPayProvider] = useState<'mock' | 'mollie'>('mock');
   const pickupPoint = pickupPoints.find((p) => p.id === pickupPointId) ?? pickupPoints[0];
   const [delivQuote, setDelivQuote] = useState<{
     served: boolean;
@@ -65,11 +66,14 @@ export default function CommandePage() {
   } | null>(null);
 
   useEffect(() => {
-    api<{ pickupPoints?: typeof pickupPoints }>('/api/public/config')
+    api<{ pickupPoints?: typeof pickupPoints; paymentProvider?: 'mock' | 'mollie' }>(
+      '/api/public/config',
+    )
       .then((c) => {
         const pts = c.pickupPoints ?? [];
         setPickupPoints(pts);
         setPickupPointId(pts.find((p) => p.isMain)?.id ?? pts[0]?.id ?? '');
+        setPayProvider(c.paymentProvider === 'mollie' ? 'mollie' : 'mock');
       })
       .catch(() => undefined);
   }, []);
@@ -231,6 +235,7 @@ export default function CommandePage() {
     try {
       const checkout = await clientApi<{
         reservation: { id: string };
+        payment: { provider: string };
         token?: string;
       }>('/api/checkout', {
         method: 'POST',
@@ -249,6 +254,19 @@ export default function CommandePage() {
         },
       });
       if (checkout.token) await setToken(checkout.token);
+
+      // Paiement réel Mollie : redirection vers la page de paiement.
+      if (checkout.payment.provider === 'mollie' && outcome === 'success') {
+        const start = await clientApi<{ checkoutUrl: string | null }>(
+          '/api/checkout/mollie/start',
+          { method: 'POST', auth: 'user', body: { reservationId: checkout.reservation.id } },
+        );
+        if (start.checkoutUrl) {
+          window.location.href = start.checkoutUrl;
+          return;
+        }
+        throw new Error('Paiement Mollie indisponible.');
+      }
 
       const pay = await clientApi<{
         number: string;
@@ -592,10 +610,16 @@ export default function CommandePage() {
 
           {phase === 'pay' && (
             <div className="card card-pad stack">
-              <h2>5. Paiement — mode démonstration</h2>
-              <div className="alert alert-info">
-                Aucun paiement réel. Choisissez une carte de test :
-              </div>
+              <h2>5. Paiement</h2>
+              {payProvider === 'mollie' ? (
+                <div className="alert alert-info">
+                  Vous allez être redirigé vers la page de paiement sécurisée (Bancontact, carte…).
+                </div>
+              ) : (
+                <div className="alert alert-info">
+                  Mode démonstration — aucun paiement réel.
+                </div>
+              )}
               <p className="price">{formatEUR(cart.quote?.totals.amountDue ?? 0)}</p>
               <div className="row">
                 <button
@@ -603,15 +627,17 @@ export default function CommandePage() {
                   disabled={busy}
                   onClick={() => placeOrder('success')}
                 >
-                  {busy ? '…' : 'Payer (carte « success »)'}
+                  {busy ? '…' : payProvider === 'mollie' ? 'Payer' : 'Payer (carte « success »)'}
                 </button>
-                <button
-                  className="btn btn-ghost"
-                  disabled={busy}
-                  onClick={() => placeOrder('decline')}
-                >
-                  Simuler un refus
-                </button>
+                {payProvider === 'mock' && (
+                  <button
+                    className="btn btn-ghost"
+                    disabled={busy}
+                    onClick={() => placeOrder('decline')}
+                  >
+                    Simuler un refus
+                  </button>
+                )}
               </div>
             </div>
           )}

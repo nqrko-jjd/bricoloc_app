@@ -38,6 +38,8 @@ services:
       CORS_ORIGINS: ${SITE_URL}
       EXPO_PUSH_ENABLED: ${EXPO_PUSH_ENABLED:-false}
       DEEPL_API_KEY: ${DEEPL_API_KEY:-}
+      MOLLIE_API_KEY: ${MOLLIE_API_KEY:-}
+      MOLLIE_WEBHOOK_URL: ${MOLLIE_WEBHOOK_URL:-}
     volumes:
       - uploads:/repo/apps/api/uploads
 

@@ -11,9 +11,73 @@ import { getSettings } from '../lib/settings.js';
 import { newQrToken, qrDataUrl } from '../lib/qr.js';
 import { generateInvoice } from '../lib/invoice.js';
 import { notify, NOTIF_TEMPLATES } from '../lib/notifications.js';
+import { env } from '../env.js';
+import { mollieEnabled, mollieTestMode, createPayment, getPayment } from '../lib/mollie.js';
 
 export const checkoutRouter = Router();
 checkoutRouter.use(attachPrincipal);
+
+/**
+ * Finalise le paiement du loyer : marque PAID, confirme la réservation, vide le
+ * panier, génère la facture, notifie. Idempotent (ne refait rien si déjà CONFIRMED).
+ * Partagé par le paiement mock et le webhook Mollie.
+ */
+async function finalizeRental(reservationId: string, externalRef: string, meta: Record<string, unknown>) {
+  const reservation = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    include: { payments: true, user: true },
+  });
+  if (!reservation) throw notFound('Réservation introuvable');
+  const payment = reservation.payments.find((p) => p.kind === 'RENTAL');
+  if (!payment) throw badRequest('Aucun paiement de location');
+
+  if (reservation.status !== 'DRAFT') {
+    // déjà finalisée (double webhook, retour navigateur…)
+    const invoice = await prisma.invoice.findFirst({
+      where: { reservationId: reservation.id, kind: 'RESERVATION' },
+    });
+    return { reservation, invoiceNumber: invoice?.number ?? null, alreadyDone: true };
+  }
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { status: 'PAID', externalRef, meta: meta as never },
+  });
+  await prisma.reservation.update({ where: { id: reservation.id }, data: { status: 'CONFIRMED' } });
+  if (reservation.userId) {
+    await prisma.cart.deleteMany({ where: { userId: reservation.userId } });
+  }
+  const invoice = await generateInvoice(reservation.id, 'RESERVATION');
+  if (reservation.userId) {
+    const tpl = NOTIF_TEMPLATES.RESERVATION_CONFIRMED({ number: reservation.number });
+    await notify({
+      userId: reservation.userId,
+      type: 'RESERVATION_CONFIRMED',
+      title: tpl.title,
+      body: tpl.body,
+      data: { reservationId: reservation.id, number: reservation.number },
+    });
+  }
+  return { reservation, invoiceNumber: invoice.number, alreadyDone: false };
+}
+
+async function confirmedPayload(reservationId: string, invoiceNumber: string | null) {
+  const r = await prisma.reservation.findUniqueOrThrow({ where: { id: reservationId } });
+  return {
+    status: r.status,
+    reservationId: r.id,
+    number: r.number,
+    qrToken: r.qrToken,
+    qrDataUrl: await qrDataUrl(r.qrToken),
+    invoiceNumber,
+    fulfilment: {
+      mode: r.fulfilmentMode,
+      slot: r.slot,
+      address: r.address,
+      pickupPoint: r.pickupPoint,
+    },
+  };
+}
 
 /**
  * Cree une reservation DRAFT a partir du panier :
@@ -182,7 +246,7 @@ checkoutRouter.post(
             kind: 'RENTAL',
             amount: quote.totals.totalTVAC,
             status: 'PENDING',
-            provider: 'mock',
+            provider: mollieEnabled() ? 'mollie' : 'mock',
           },
         },
         deposit: {
@@ -214,30 +278,31 @@ checkoutRouter.post(
       payment: {
         id: reservation.payments[0]!.id,
         amountDue: quote.totals.amountDue,
-        provider: 'mock',
-        testMode: true,
-        note: 'Paiement de DEMONSTRATION. Utilisez outcome="success" ou "decline".',
+        provider: mollieEnabled() ? 'mollie' : 'mock',
+        testMode: mollieEnabled() ? mollieTestMode() : true,
+        note: mollieEnabled()
+          ? 'Paiement via Mollie.'
+          : 'Paiement de DEMONSTRATION. Utilisez outcome="success" ou "decline".',
       },
       token: issuedToken,
     });
   }),
 );
 
-/** Paiement de demonstration : finalise la reservation. */
+/** Paiement de démonstration (mock / borne) : finalise la réservation. */
 checkoutRouter.post(
   '/pay',
   h(async (req, res) => {
     const { reservationId, outcome } = mockPaySchema.parse(req.body);
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
-      include: { payments: true, deposit: true, user: true },
+      include: { payments: true, user: true },
     });
-    if (!reservation) throw notFound('Reservation introuvable');
-    if (reservation.status !== 'DRAFT') throw badRequest('Reservation deja finalisee');
-
+    if (!reservation) throw notFound('Réservation introuvable');
     if (req.principal?.kind === 'user' && reservation.userId && reservation.userId !== req.principal.id) {
       throw forbidden();
     }
+    if (reservation.status !== 'DRAFT') throw badRequest('Réservation déjà finalisée');
 
     const payment = reservation.payments.find((p) => p.kind === 'RENTAL');
     if (!payment) throw badRequest('Aucun paiement en attente');
@@ -247,51 +312,125 @@ checkoutRouter.post(
         where: { id: payment.id },
         data: { status: 'FAILED', meta: { outcome, testMode: true } as never },
       });
-      throw badRequest('Paiement refuse (carte de demonstration "decline").');
+      throw badRequest('Paiement refusé (carte de démonstration « decline »).');
     }
+
+    const { invoiceNumber } = await finalizeRental(reservationId, `mock_${Date.now()}`, {
+      outcome,
+      testMode: true,
+    });
+    res.json(await confirmedPayload(reservationId, invoiceNumber));
+  }),
+);
+
+/* ───────────────────────── Mollie ───────────────────────── */
+
+/** Crée le paiement Mollie et renvoie l'URL de checkout à ouvrir. */
+checkoutRouter.post(
+  '/mollie/start',
+  h(async (req, res) => {
+    if (!mollieEnabled()) throw badRequest('Mollie non configuré');
+    const reservationId = String(req.body?.reservationId ?? '');
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: { payments: true },
+    });
+    if (!reservation) throw notFound('Réservation introuvable');
+    if (req.principal?.kind === 'user' && reservation.userId && reservation.userId !== req.principal.id) {
+      throw forbidden();
+    }
+    if (reservation.status !== 'DRAFT') throw badRequest('Réservation déjà finalisée');
+    const payment = reservation.payments.find((p) => p.kind === 'RENTAL');
+    if (!payment) throw badRequest('Aucun paiement en attente');
+
+    const local = /localhost|127\.0\.0\.1/.test(env.mollieWebhookUrl) || env.mollieWebhookUrl.startsWith('http://');
+    const mp = await createPayment({
+      amount: payment.amount,
+      description: `BRICOLOC ${reservation.number}`,
+      redirectUrl: `${env.siteUrl.replace(/\/$/, '')}/commande/retour?r=${reservation.id}`,
+      webhookUrl: local ? undefined : env.mollieWebhookUrl,
+      metadata: { reservationId: reservation.id, paymentId: payment.id, number: reservation.number },
+    });
 
     await prisma.payment.update({
       where: { id: payment.id },
-      data: {
-        status: 'PAID',
-        externalRef: `mock_${Date.now()}`,
-        meta: { outcome, testMode: true } as never,
-      },
-    });
-    await prisma.reservation.update({
-      where: { id: reservation.id },
-      data: { status: 'CONFIRMED' },
+      data: { provider: 'mollie', externalRef: mp.id, meta: { mollieStatus: mp.status } as never },
     });
 
-    // Clôture du panier associe (nouvelle cle a la prochaine visite).
-    await prisma.cart.deleteMany({ where: { userId: reservation.userId ?? '___' } });
+    res.json({ checkoutUrl: mp._links?.checkout?.href ?? null, molliePaymentId: mp.id });
+  }),
+);
 
-    const invoice = await generateInvoice(reservation.id, 'RESERVATION');
+/** Webhook Mollie : appelé par Mollie quand le statut du paiement change. */
+checkoutRouter.post(
+  '/mollie/webhook',
+  h(async (req, res) => {
+    const id = String(req.body?.id ?? '');
+    if (!id || !mollieEnabled()) return res.status(200).end();
+    try {
+      const mp = await getPayment(id);
+      const reservationId = String(mp.metadata?.reservationId ?? '');
+      if (reservationId && mp.status === 'paid') {
+        await finalizeRental(reservationId, mp.id, { provider: 'mollie', mollieStatus: mp.status });
+      } else if (reservationId && (mp.status === 'failed' || mp.status === 'expired' || mp.status === 'canceled')) {
+        await prisma.payment.updateMany({
+          where: { externalRef: mp.id, kind: 'RENTAL' },
+          data: { status: 'FAILED', meta: { mollieStatus: mp.status } as never },
+        });
+      }
+    } catch {
+      /* on répond 200 quand même : Mollie réessaiera si besoin via le prochain event */
+    }
+    res.status(200).end();
+  }),
+);
 
-    if (reservation.userId) {
-      const tpl = NOTIF_TEMPLATES.RESERVATION_CONFIRMED({ number: reservation.number });
-      await notify({
-        userId: reservation.userId,
-        type: 'RESERVATION_CONFIRMED',
-        title: tpl.title,
-        body: tpl.body,
-        data: { reservationId: reservation.id, number: reservation.number },
-      });
+/**
+ * Statut de la réservation pour la page de retour. Interroge aussi Mollie
+ * directement (ne dépend pas que du webhook — utile en dev / si le webhook tarde).
+ */
+checkoutRouter.get(
+  '/mollie/status',
+  h(async (req, res) => {
+    const reservationId = String(req.query.r ?? '');
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: { payments: true },
+    });
+    if (!reservation) throw notFound('Réservation introuvable');
+    const payment = reservation.payments.find((p) => p.kind === 'RENTAL');
+
+    if (reservation.status === 'DRAFT' && payment?.externalRef && mollieEnabled()) {
+      try {
+        const mp = await getPayment(payment.externalRef);
+        if (mp.status === 'paid') {
+          await finalizeRental(reservationId, mp.id, { provider: 'mollie', mollieStatus: mp.status });
+        } else if (['failed', 'expired', 'canceled'].includes(mp.status)) {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: 'FAILED', meta: { mollieStatus: mp.status } as never },
+          });
+        }
+      } catch {
+        /* ignore */
+      }
     }
 
+    const fresh = await prisma.reservation.findUniqueOrThrow({
+      where: { id: reservationId },
+      include: { payments: true },
+    });
+    const rental = fresh.payments.find((p) => p.kind === 'RENTAL');
+    const paid = fresh.status === 'CONFIRMED';
+    const invoice = paid
+      ? await prisma.invoice.findFirst({ where: { reservationId, kind: 'RESERVATION' } })
+      : null;
+
     res.json({
-      status: 'CONFIRMED',
-      reservationId: reservation.id,
-      number: reservation.number,
-      qrToken: reservation.qrToken,
-      qrDataUrl: await qrDataUrl(reservation.qrToken),
-      invoiceNumber: invoice.number,
-      fulfilment: {
-        mode: reservation.fulfilmentMode,
-        slot: reservation.slot,
-        address: reservation.address,
-        pickupPoint: reservation.pickupPoint,
-      },
+      ...(paid ? await confirmedPayload(reservationId, invoice?.number ?? null) : { number: fresh.number }),
+      status: fresh.status,
+      paid,
+      failed: rental?.status === 'FAILED',
     });
   }),
 );
