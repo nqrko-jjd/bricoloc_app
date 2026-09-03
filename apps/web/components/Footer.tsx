@@ -41,7 +41,6 @@ export function Footer() {
             <h4>{tf('pickupDelivery')}</h4>
             <Link href="/click-collect">{t('clickCollect')}</Link>
             <Link href="/livraison">{tf('deliverySite')}</Link>
-            <Link href="/borne">{t('kiosk')}</Link>
             <Link href="/application">{tf('app')}</Link>
           </nav>
 

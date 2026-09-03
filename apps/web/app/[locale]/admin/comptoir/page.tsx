@@ -121,6 +121,11 @@ export default function ComptoirPage() {
                     <span className="badge" style={{ marginLeft: 6 }}>
                       {r.fulfilmentMode === 'DELIVERY' ? 'Livr.' : 'Retrait'}
                     </span>
+                    {r.paymentStatus === 'ON_PICKUP' && (
+                      <span className="badge badge-warn" style={{ marginLeft: 6 }}>
+                        💶 À encaisser
+                      </span>
+                    )}
                     <div className="small muted">{(r.items ?? []).slice(0, 2).join(' · ')}</div>
                   </button>
                 ))}

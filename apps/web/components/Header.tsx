@@ -30,7 +30,6 @@ export function Header() {
       <Link href="/bricopacks">{t('bricopacks')}</Link>
       <Link href="/conseils">{t('adviceDiy')}</Link>
       <Link href="/application">{t('app')}</Link>
-      <Link href="/borne">{t('kiosk')}</Link>
     </>
   );
 
