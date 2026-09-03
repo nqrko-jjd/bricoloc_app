@@ -76,6 +76,16 @@ export interface Quote {
     amountDue: number;
     deliveryFeeHT: number;
     discountHT: number;
+    promoDiscountHT?: number;
+    composedPackDiscountHT?: number;
+    composedPackPct?: number;
+  };
+  promoLabel?: string | null;
+  composedPack?: {
+    machineCount: number;
+    pct: number;
+    discountHT: number;
+    next: { minMachines: number; pct: number } | null;
   };
 }
 

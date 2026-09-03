@@ -287,26 +287,79 @@ export interface CartTotals {
   depositsTotal: number;
   /** Montant a encaisser (TVAC + caution). */
   amountDue: number;
+  /** Détail des remises (informatif). */
+  promoDiscountHT?: number;
+  composedPackDiscountHT?: number;
+  composedPackPct?: number;
 }
 
 export function computeCartTotals(input: CartTotalsInput): CartTotals {
   const rentalHT = round2(input.rentalLinesHT.reduce((a, b) => a + b, 0));
-  const totalHT = round2(
-    rentalHT + input.deliveryFeeHT + input.extraFeesHT - input.discountHT,
-  );
+  const discountHT = round2(Math.min(input.discountHT, rentalHT + input.extraFeesHT));
+  const totalHT = round2(rentalHT + input.deliveryFeeHT + input.extraFeesHT - discountHT);
   const vatAmount = round2(totalHT * input.vatRate);
   const totalTVAC = round2(totalHT + vatAmount);
   return {
     rentalHT,
     deliveryFeeHT: round2(input.deliveryFeeHT),
     extraFeesHT: round2(input.extraFeesHT),
-    discountHT: round2(input.discountHT),
+    discountHT,
     totalHT,
     vatRate: input.vatRate,
     vatAmount,
     totalTVAC,
     depositsTotal: round2(input.depositsTotal),
     amountDue: round2(totalTVAC + input.depositsTotal),
+  };
+}
+
+/* ---------------------------------------------------------------------------
+   « Pack composé » — remise selon le nombre de machines dans le panier.
+   --------------------------------------------------------------------------- */
+
+export interface ComposedPackConfig {
+  enabled?: boolean;
+  tiers?: { minMachines: number; pct: number }[];
+}
+export interface ComposedPackResult {
+  /** Nombre de machines éligibles comptées. */
+  machineCount: number;
+  /** Taux de remise appliqué (0 si aucun palier atteint). */
+  pct: number;
+  /** Montant de la remise HT. */
+  discountHT: number;
+  /** Palier suivant (pour inciter : « encore N machines → X % »), ou null. */
+  next: { minMachines: number; pct: number } | null;
+}
+
+/**
+ * @param machineCount  quantité totale de machines éligibles (hors BricoPacks, hors Loiselet)
+ * @param eligibleRentalHT  somme des locations HT de ces machines
+ */
+export function computeComposedPackDiscount(
+  machineCount: number,
+  eligibleRentalHT: number,
+  config: ComposedPackConfig | null | undefined,
+): ComposedPackResult {
+  const tiers = [...(config?.tiers ?? [])].sort((a, b) => a.minMachines - b.minMachines);
+  const off = { machineCount, pct: 0, discountHT: 0, next: tiers[0] ?? null };
+  if (config?.enabled === false || tiers.length === 0 || machineCount < tiers[0]!.minMachines) {
+    return off;
+  }
+  let current = tiers[0]!;
+  let next: { minMachines: number; pct: number } | null = null;
+  for (const t of tiers) {
+    if (machineCount >= t.minMachines) current = t;
+    else {
+      next = t;
+      break;
+    }
+  }
+  return {
+    machineCount,
+    pct: current.pct,
+    discountHT: round2(eligibleRentalHT * current.pct),
+    next,
   };
 }
 

@@ -19,6 +19,10 @@ export default function AdminParametres() {
   const [company, setCompany] = useState<any>({});
   const [loiselet, setLoiselet] = useState<any>({});
   const [points, setPoints] = useState<any[]>([]);
+  const [composed, setComposed] = useState<{ enabled: boolean; tiers: { minMachines: number; pct: number }[] }>({
+    enabled: true,
+    tiers: [],
+  });
   const [msg, setMsg] = useState('');
 
   const load = () =>
@@ -27,6 +31,11 @@ export default function AdminParametres() {
       setCompany(r.settings.company ?? {});
       setLoiselet(r.settings.loiselet ?? {});
       setPoints(Array.isArray(r.settings.pickupPoints) ? r.settings.pickupPoints : []);
+      const cp = r.settings.composedPack ?? {};
+      setComposed({
+        enabled: cp.enabled !== false,
+        tiers: Array.isArray(cp.tiers) ? cp.tiers : [],
+      });
     });
   useEffect(() => {
     load();
@@ -66,6 +75,105 @@ export default function AdminParametres() {
           />
           <span className="small">Règle week-end (vendredi → lundi = 1 jour)</span>
         </label>
+      </div>
+
+      <div className="card card-pad stack">
+        <h3>Pack composé — remise multi-machines</h3>
+        <p className="small muted">
+          Remise automatique selon le nombre de machines dans le panier (même 1 jour). Ne compte
+          pas les BricoPacks curatés ni les machines Loiselet. Cumulable avec la remise Pro ; les
+          BricoPacks curatés restent plus avantageux.
+        </p>
+        <label className="row" style={{ gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={composed.enabled}
+            onChange={(e) => {
+              const next = { ...composed, enabled: e.target.checked };
+              setComposed(next);
+              save('composedPack', next);
+            }}
+          />
+          <span className="small">Activer le pack composé</span>
+        </label>
+        <table className="table" style={{ maxWidth: 420 }}>
+          <thead>
+            <tr>
+              <th>À partir de (machines)</th>
+              <th>Remise (%)</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {composed.tiers.map((t, i) => (
+              <tr key={i}>
+                <td>
+                  <input
+                    type="number"
+                    min={2}
+                    style={{ width: 80 }}
+                    defaultValue={t.minMachines}
+                    onBlur={(e) => {
+                      const tiers = composed.tiers.map((x, j) =>
+                        j === i ? { ...x, minMachines: Number(e.target.value) } : x,
+                      );
+                      const next = { ...composed, tiers };
+                      setComposed(next);
+                      save('composedPack', next);
+                    }}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    min={0}
+                    max={30}
+                    step={1}
+                    style={{ width: 80 }}
+                    defaultValue={Math.round(t.pct * 100)}
+                    onBlur={(e) => {
+                      const tiers = composed.tiers.map((x, j) =>
+                        j === i ? { ...x, pct: Number(e.target.value) / 100 } : x,
+                      );
+                      const next = { ...composed, tiers };
+                      setComposed(next);
+                      save('composedPack', next);
+                    }}
+                  />
+                </td>
+                <td>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      const next = { ...composed, tiers: composed.tiers.filter((_, j) => j !== i) };
+                      setComposed(next);
+                      save('composedPack', next);
+                    }}
+                  >
+                    Retirer
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button
+          className="btn btn-outline btn-sm"
+          onClick={() => {
+            const last = composed.tiers[composed.tiers.length - 1];
+            const next = {
+              ...composed,
+              tiers: [
+                ...composed.tiers,
+                { minMachines: (last?.minMachines ?? 2) + 1, pct: (last?.pct ?? 0.05) + 0.03 },
+              ],
+            };
+            setComposed(next);
+            save('composedPack', next);
+          }}
+        >
+          + Ajouter un palier
+        </button>
       </div>
 
       <div className="card card-pad">

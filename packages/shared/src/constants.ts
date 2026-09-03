@@ -109,6 +109,21 @@ export const DEFAULT_SETTINGS = {
   ],
   cleaningFeeDefault: 20,
   /**
+   * « Pack composé » — remise automatique selon le nombre de machines dans le
+   * panier, même pour une seule journée. Encourage la location groupée.
+   * Compté = quantité totale de machines (hors BricoPacks curatés et hors
+   * Loiselet). S'applique sur la location HT de ces machines. Éditable en admin.
+   */
+  composedPack: {
+    enabled: true,
+    tiers: [
+      { minMachines: 3, pct: 0.05 },
+      { minMachines: 4, pct: 0.08 },
+      { minMachines: 5, pct: 0.12 },
+      { minMachines: 6, pct: 0.15 },
+    ] as { minMachines: number; pct: number }[],
+  },
+  /**
    * Emplacements de rangement au dépôt (racks / étagères, ex. « R-01-A »).
    * Sert à imprimer les étiquettes QR de zone et à l'autocomplétion. La liste
    * effective fusionne ces valeurs avec les emplacements déjà utilisés.

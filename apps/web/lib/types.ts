@@ -131,6 +131,16 @@ export interface CartTotals {
   totalTVAC: number;
   depositsTotal: number;
   amountDue: number;
+  promoDiscountHT?: number;
+  composedPackDiscountHT?: number;
+  composedPackPct?: number;
+}
+
+export interface ComposedPack {
+  machineCount: number;
+  pct: number;
+  discountHT: number;
+  next: { minMachines: number; pct: number } | null;
 }
 
 export interface Quote {
@@ -141,6 +151,7 @@ export interface Quote {
   discountHT: number;
   promoCode?: string | null;
   promoLabel?: string | null;
+  composedPack?: ComposedPack;
   currency: string;
   vatRate: number;
 }

@@ -22,11 +22,30 @@ export function CartSummary({ quote, title = 'Récapitulatif' }: { quote: Quote 
         <span>Location HTVA</span>
         <span>{formatEUR(t.rentalHT)}</span>
       </div>
-      {t.discountHT > 0 && (
+      {(t.composedPackDiscountHT ?? 0) > 0 && (
         <div className="line" style={{ color: 'var(--ok)' }}>
-          <span>Remise {quote.promoLabel ?? ''}</span>
-          <span>- {formatEUR(t.discountHT)}</span>
+          <span>
+            Pack composé
+            {quote.composedPack ? ` · ${quote.composedPack.machineCount} machines` : ''}
+            {t.composedPackPct ? ` (−${Math.round(t.composedPackPct * 100)} %)` : ''}
+          </span>
+          <span>- {formatEUR(t.composedPackDiscountHT!)}</span>
         </div>
+      )}
+      {(t.promoDiscountHT ?? (t.discountHT - (t.composedPackDiscountHT ?? 0))) > 0 && (
+        <div className="line" style={{ color: 'var(--ok)' }}>
+          <span>Code promo {quote.promoLabel ?? ''}</span>
+          <span>
+            - {formatEUR(t.promoDiscountHT ?? t.discountHT - (t.composedPackDiscountHT ?? 0))}
+          </span>
+        </div>
+      )}
+      {quote.composedPack?.next && (
+        <p className="small" style={{ margin: '2px 0 6px', color: 'var(--primary)', fontWeight: 700 }}>
+          + {quote.composedPack.next.minMachines - quote.composedPack.machineCount} machine
+          {quote.composedPack.next.minMachines - quote.composedPack.machineCount > 1 ? 's' : ''} → −
+          {Math.round(quote.composedPack.next.pct * 100)} %
+        </p>
       )}
       {t.deliveryFeeHT > 0 && (
         <div className="line">

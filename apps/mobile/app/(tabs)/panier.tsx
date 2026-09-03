@@ -93,8 +93,28 @@ export default function PanierScreen() {
         {cart.quote ? (
           <>
             <Row label="Location HTVA" value={formatEUR(cart.quote.totals.rentalHT)} />
-            {cart.quote.totals.discountHT > 0 && (
-              <Row label="Remise" value={`- ${formatEUR(cart.quote.totals.discountHT)}`} />
+            {(cart.quote.totals.composedPackDiscountHT ?? 0) > 0 && (
+              <Row
+                label={`Pack composé${cart.quote.totals.composedPackPct ? ` (−${Math.round(cart.quote.totals.composedPackPct * 100)} %)` : ''}`}
+                value={`- ${formatEUR(cart.quote.totals.composedPackDiscountHT ?? 0)}`}
+              />
+            )}
+            {(cart.quote.totals.promoDiscountHT ??
+              cart.quote.totals.discountHT - (cart.quote.totals.composedPackDiscountHT ?? 0)) > 0 && (
+              <Row
+                label="Code promo"
+                value={`- ${formatEUR(cart.quote.totals.promoDiscountHT ?? cart.quote.totals.discountHT - (cart.quote.totals.composedPackDiscountHT ?? 0))}`}
+              />
+            )}
+            {cart.quote.composedPack?.next && (
+              <Text style={{ color: C.brico, fontWeight: '800', fontSize: 12.5, marginVertical: 2 }}>
+                + {cart.quote.composedPack.next.minMachines - cart.quote.composedPack.machineCount}{' '}
+                machine
+                {cart.quote.composedPack.next.minMachines - cart.quote.composedPack.machineCount > 1
+                  ? 's'
+                  : ''}{' '}
+                → −{Math.round(cart.quote.composedPack.next.pct * 100)} %
+              </Text>
             )}
             {cart.quote.totals.deliveryFeeHT > 0 && (
               <Row label="Livraison HTVA" value={formatEUR(cart.quote.totals.deliveryFeeHT)} />

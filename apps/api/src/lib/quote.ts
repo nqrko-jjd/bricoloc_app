@@ -1,9 +1,12 @@
 import type { Product } from '@prisma/client';
 import {
   computeCartTotals,
+  computeComposedPackDiscount,
   computeRentalPrice,
   round2,
   type CartTotals,
+  type ComposedPackConfig,
+  type ComposedPackResult,
   type CustomerType,
   type ProductPricing,
 } from '@bricoloc/shared';
@@ -56,6 +59,8 @@ export interface Quote {
   discountHT: number;
   promoCode?: string | null;
   promoLabel?: string | null;
+  /** « Pack composé » : remise selon le nombre de machines. */
+  composedPack: ComposedPackResult;
   currency: string;
   vatRate: number;
 }
@@ -165,6 +170,18 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
   const rentalHT = round2(lines.reduce((a, l) => a + l.lineHT, 0));
   const depositsTotal = round2(lines.reduce((a, l) => a + l.depositLine, 0));
 
+  // « Pack composé » : machines éligibles = kind MACHINE, hors BricoPack curaté,
+  // hors Loiselet. Compté = quantité totale.
+  const eligible = lines.filter(
+    (l, i) =>
+      l.kind === 'MACHINE' && !l.isConsumable && input.lines[i]!.product.supplier !== 'LOISELET',
+  );
+  const composedPack = computeComposedPackDiscount(
+    eligible.reduce((a, l) => a + l.quantity, 0),
+    round2(eligible.reduce((a, l) => a + l.lineHT, 0)),
+    settings.composedPack as ComposedPackConfig,
+  );
+
   let deliveryFeeHT = 0;
   let deliveryReason: string | undefined;
   if (input.fulfilmentMode === 'DELIVERY') {
@@ -173,7 +190,7 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
     deliveryReason = d.reason;
   }
 
-  let discountHT = 0;
+  let promoDiscountHT = 0;
   let promoLabel: string | null = null;
   if (input.promoCode) {
     const promo = await prisma.promotion.findUnique({
@@ -185,7 +202,7 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
       rentalHT >= promo.minTotalHT &&
       (!promo.expiresAt || promo.expiresAt.getTime() > Date.now());
     if (valid && promo) {
-      discountHT =
+      promoDiscountHT =
         promo.kind === 'PERCENT'
           ? round2((rentalHT * promo.value) / 100)
           : round2(Math.min(promo.value, rentalHT));
@@ -193,6 +210,8 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
         promo.kind === 'PERCENT' ? `-${promo.value}%` : `-${promo.value} € HTVA`;
     }
   }
+
+  const discountHT = round2(promoDiscountHT + composedPack.discountHT);
 
   const totals = computeCartTotals({
     rentalLinesHT: lines.map((l) => l.lineHT),
@@ -202,6 +221,9 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
     discountHT,
     vatRate: rate,
   });
+  totals.promoDiscountHT = round2(promoDiscountHT);
+  totals.composedPackDiscountHT = composedPack.discountHT;
+  totals.composedPackPct = composedPack.pct;
 
   return {
     lines,
@@ -211,6 +233,7 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
     discountHT,
     promoCode: input.promoCode ?? null,
     promoLabel,
+    composedPack,
     currency: String(settings.currency ?? 'EUR'),
     vatRate: rate,
   };
@@ -288,9 +311,30 @@ export async function recomputeReservation(
     deliveryFeeHT = d.feeHT;
   }
 
-  const prev = (r.totals as { extraFeesHT?: number; discountHT?: number } | null) ?? {};
+  const prev =
+    (r.totals as
+      | { extraFeesHT?: number; discountHT?: number; promoDiscountHT?: number; composedPackDiscountHT?: number }
+      | null) ?? {};
   const extraFeesHT = round2(opts.extraFeesHT ?? Number(prev.extraFeesHT ?? 0));
-  const discountHT = round2(opts.extraDiscountHT ?? Number(prev.discountHT ?? 0));
+
+  // Recalcule le « pack composé » sur les lignes actuelles.
+  const eligible = r.items.filter(
+    (it) => it.product.kind === 'MACHINE' && !it.product.isConsumable && it.product.supplier !== 'LOISELET',
+  );
+  const composed = computeComposedPackDiscount(
+    eligible.reduce((a, it) => a + it.quantity, 0),
+    round2(eligible.reduce((a, it) => a + it.lineHT, 0)),
+    settings.composedPack as ComposedPackConfig,
+  );
+  // Part promo/manuelle : override explicite, sinon ce qui restait hors pack composé.
+  const otherDiscount =
+    opts.extraDiscountHT != null
+      ? round2(opts.extraDiscountHT)
+      : round2(
+          Number(prev.promoDiscountHT ?? 0) ||
+            Math.max(0, Number(prev.discountHT ?? 0) - Number(prev.composedPackDiscountHT ?? 0)),
+        );
+  const discountHT = round2(otherDiscount + composed.discountHT);
 
   const totals = computeCartTotals({
     rentalLinesHT: [rentalHT],
@@ -300,6 +344,9 @@ export async function recomputeReservation(
     discountHT,
     vatRate: rate,
   });
+  totals.promoDiscountHT = otherDiscount;
+  totals.composedPackDiscountHT = composed.discountHT;
+  totals.composedPackPct = composed.pct;
 
   await prisma.reservation.update({
     where: { id: reservationId },
