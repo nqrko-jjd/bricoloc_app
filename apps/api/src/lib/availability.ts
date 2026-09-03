@@ -120,12 +120,16 @@ export async function reservedQty(
  */
 export async function packComponents(
   packId: string,
-): Promise<{ productId: string; quantity: number }[]> {
+): Promise<{ productId: string; quantity: number; supplier: string }[]> {
   const links = await prisma.productLink.findMany({
     where: { fromId: packId, type: 'PACK_ITEM' },
-    select: { toId: true, quantity: true },
+    select: { toId: true, quantity: true, to: { select: { supplier: true } } },
   });
-  return links.map((l) => ({ productId: l.toId, quantity: Math.max(1, l.quantity) }));
+  return links.map((l) => ({
+    productId: l.toId,
+    quantity: Math.max(1, l.quantity),
+    supplier: l.to.supplier,
+  }));
 }
 
 /**
@@ -155,18 +159,23 @@ async function packAvailability(
   let packAvail = Infinity;
   let packTotal = Infinity;
   for (const c of components) {
+    // Une machine partenaire (Loiselet) est fournie sur demande : elle ne
+    // bloque pas la dispo du pack (le pack devient simplement "sur demande").
+    if (c.supplier === 'LOISELET') continue;
     const a = await availabilityFor(c.productId, start, end, requestedQty * c.quantity, {
       excludeReservationId: opts.excludeReservationId,
     });
     packAvail = Math.min(packAvail, Math.floor(a.availableQty / c.quantity));
     packTotal = Math.min(packTotal, Math.floor(a.totalUnits / c.quantity));
   }
-  const availableQty = Number.isFinite(packAvail) ? Math.max(0, packAvail) : 0;
+  // packAvail encore infini => toutes les machines sont partenaires : pack "sur demande".
+  const availableQty = Number.isFinite(packAvail) ? Math.max(0, packAvail) : requestedQty;
+  const totalUnits = Number.isFinite(packTotal) ? Math.max(0, packTotal) : requestedQty;
   return {
     productId: packId,
     requestedQty,
     availableQty,
-    totalUnits: Number.isFinite(packTotal) ? Math.max(0, packTotal) : 0,
+    totalUnits,
     status: statusFor(requestedQty, availableQty),
     nearbyPeriod: null,
     alternativeProductIds: [],
