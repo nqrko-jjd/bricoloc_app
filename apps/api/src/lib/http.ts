@@ -36,8 +36,18 @@ export function errorHandler(
   _next: NextFunction,
 ) {
   if (err instanceof ZodError) {
+    const flat = err.flatten();
+    const fields = Object.entries(flat.fieldErrors)
+      .map(([k, v]) => `${k} (${(v ?? []).join(', ')})`)
+      .concat(flat.formErrors)
+      .filter(Boolean)
+      .join(' · ');
     return res.status(400).json({
-      error: { code: 'VALIDATION', message: 'Donnees invalides', details: err.flatten() },
+      error: {
+        code: 'VALIDATION',
+        message: fields ? `Données invalides : ${fields}` : 'Données invalides',
+        details: flat,
+      },
     });
   }
   if (err instanceof ApiError) {
