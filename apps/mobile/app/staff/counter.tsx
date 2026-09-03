@@ -31,12 +31,15 @@ export default function StaffCounter() {
     }, [load]),
   );
 
+  function openFlow(number: string) {
+    router.push({ pathname: '/staff/flow/[number]', params: { number } } as never);
+  }
+
   async function onScan(code: string) {
     try {
       const r: any = await staffApi(`/api/ops/resolve/${encodeURIComponent(code)}`);
-      if (r.type === 'reservation') return router.push(`/staff/flow/${encodeURIComponent(r.number)}` as any);
-      if (r.type === 'unit' && r.activeReservation)
-        return router.push(`/staff/flow/${encodeURIComponent(r.activeReservation.number)}` as any);
+      if (r.type === 'reservation') return openFlow(r.number);
+      if (r.type === 'unit' && r.activeReservation) return openFlow(r.activeReservation.number);
     } catch {
       /* ignore */
     }
@@ -61,7 +64,7 @@ export default function StaffCounter() {
                   title={r.number}
                   subtitle={`${r.customer} · ${r.lines} art. · ${r.fulfilmentMode === 'DELIVERY' ? 'Livr.' : 'Retrait'}${r.pickupPoint ? ` · ${r.pickupPoint}` : ''}`}
                   right={<Pill text={r.status} tone={b.tone} />}
-                  onPress={() => router.push(`/staff/flow/${encodeURIComponent(r.number)}` as any)}
+                  onPress={() => openFlow(r.number)}
                 />
               ))
             )}

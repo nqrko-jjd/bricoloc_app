@@ -45,7 +45,8 @@ export default function StaffHome() {
   async function onScan(code: string) {
     try {
       const r: any = await staffApi(`/api/ops/resolve/${encodeURIComponent(code)}`);
-      if (r.type === 'reservation') return router.push(`/staff/flow/${encodeURIComponent(r.number)}` as any);
+      if (r.type === 'reservation')
+        return router.push({ pathname: '/staff/flow/[number]', params: { number: r.number } } as never);
       if (r.type === 'unit') return router.push(`/staff/unit/${r.id}` as any);
       if (r.type === 'product') return router.push(`/staff/machine/${r.id}` as any);
     } catch {
