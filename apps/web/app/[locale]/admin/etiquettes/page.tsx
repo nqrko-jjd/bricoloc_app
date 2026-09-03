@@ -24,6 +24,7 @@ export default function AdminEtiquettes() {
   const [labels, setLabels] = useState<Label[]>([]);
   const [filter, setFilter] = useState('');
   const [busy, setBusy] = useState(false);
+  const [dense, setDense] = useState(false);
 
   useEffect(() => {
     staffApi<{ machines: StockRow[] }>('/api/admin/stock').then((r) =>
@@ -114,30 +115,39 @@ export default function AdminEtiquettes() {
         </div>
 
         {labels.length > 0 && (
-          <div className="row" style={{ gap: 10, alignItems: 'center' }}>
+          <div className="row" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <strong>{labels.length} étiquette(s) prêtes</strong>
+            <label className="row" style={{ gap: 6, alignItems: 'center' }}>
+              <input type="checkbox" checked={dense} onChange={(e) => setDense(e.target.checked)} />
+              <span className="small">Petit format (4 / rangée)</span>
+            </label>
             <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
               🖨 Imprimer
             </button>
             <button className="btn btn-ghost btn-sm" onClick={() => setLabels([])}>
               Effacer
             </button>
+            <span className="small muted">
+              À l&apos;impression : marges « par défaut », décocher en-têtes/pieds de page.
+            </span>
           </div>
         )}
       </div>
 
-      <div className="label-sheet">
+      <div className={`label-sheet${dense ? ' label-sheet--dense' : ''}`}>
         {labels.map((l) => (
           <div key={l.unitId} className="label">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={l.qrDataUrl} alt="" className="label__qr" />
             <div className="label__body">
-              <strong className="label__tag">
-                {l.assetTag}
-                {l.storageLocation ? <span className="label__loc"> · 📍 {l.storageLocation}</span> : null}
-              </strong>
-              <span className="label__name">{l.productName}</span>
-              <Barcode value={l.barcode} height={30} unit={1.3} />
+              <strong className="label__tag">{l.assetTag}</strong>
+              <span className="label__name">
+                {l.productName}
+                {l.storageLocation ? ` · 📍 ${l.storageLocation}` : ''}
+              </span>
+              <span className="label__code">
+                <Barcode value={l.barcode} height={22} unit={0.9} showText={false} />
+              </span>
               <span className="label__brand">BRICOLOC</span>
             </div>
           </div>
