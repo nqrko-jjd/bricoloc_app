@@ -11,8 +11,9 @@ import { ScanInput } from '@/components/staff/ScanInput';
 const BUCKETS: { key: string; label: string; tone: 'warn' | 'ok' | 'muted' | 'err' }[] = [
   { key: 'toPrepare', label: 'À préparer', tone: 'warn' },
   { key: 'ready', label: 'Prêtes', tone: 'ok' },
-  { key: 'out', label: 'Retours du jour', tone: 'muted' },
+  { key: 'out', label: 'Retours aujourd’hui', tone: 'warn' },
   { key: 'overdue', label: 'En retard', tone: 'err' },
+  { key: 'ongoing', label: 'Locations en cours', tone: 'muted' },
 ];
 
 export default function StaffCounter() {
@@ -58,15 +59,21 @@ export default function StaffCounter() {
             {rows.length === 0 ? (
               <Text style={{ color: C.muted, paddingVertical: 6 }}>—</Text>
             ) : (
-              rows.map((r) => (
-                <ListRow
-                  key={r.id}
-                  title={r.number}
-                  subtitle={`${r.customer} · ${r.lines} art. · ${r.fulfilmentMode === 'DELIVERY' ? 'Livr.' : 'Retrait'}${r.pickupPoint ? ` · ${r.pickupPoint}` : ''}`}
-                  right={<Pill text={r.status} tone={b.tone} />}
-                  onPress={() => openFlow(r.number)}
-                />
-              ))
+              rows.map((r) => {
+                const dated = ['out', 'overdue', 'ongoing'].includes(b.key) && r.periodEnd;
+                const retour = dated
+                  ? ` · retour ${new Date(r.periodEnd).toLocaleDateString('fr-BE', { day: '2-digit', month: '2-digit' })}`
+                  : '';
+                return (
+                  <ListRow
+                    key={r.id}
+                    title={r.number}
+                    subtitle={`${r.customer} · ${r.lines} art. · ${r.fulfilmentMode === 'DELIVERY' ? 'Livr.' : 'Retrait'}${r.pickupPoint ? ` · ${r.pickupPoint}` : ''}${retour}`}
+                    right={<Pill text={r.status} tone={b.tone} />}
+                    onPress={() => openFlow(r.number)}
+                  />
+                );
+              })
             )}
           </View>
         );

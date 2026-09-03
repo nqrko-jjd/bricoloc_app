@@ -113,6 +113,10 @@ opsRouter.get(
           (r) => (r.status === 'OUT' || r.status === 'RETURN_PENDING') && r.periodEnd < startOfDay,
         )
         .map(map),
+      // Locations en cours (sorties, retour prévu après aujourd'hui).
+      ongoing: rows
+        .filter((r) => (r.status === 'OUT' || r.status === 'RETURN_PENDING') && r.periodEnd >= endOfDay)
+        .map(map),
     });
   }),
 );
