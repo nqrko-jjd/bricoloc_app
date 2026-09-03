@@ -55,4 +55,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=25s \
   CMD curl -fsS http://localhost:4000/health || exit 1
 
 # Aligne le schéma sur Postgres puis démarre l'API.
-CMD ["sh", "-c", "npm run db:deploy && node dist/index.js"]
+# tsc (rootDir ".") émet dans dist/src/ — pas dist/.
+CMD ["sh", "-c", "npm run db:deploy && node dist/src/index.js"]
