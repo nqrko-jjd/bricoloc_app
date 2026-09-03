@@ -210,7 +210,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {packs.length > 0 && (
               <div className="cdiff__packs">
                 {packs.map((p) => (
-                  <Link key={p.id} href={`/produits/${p.slug}`} className="cdiff__pack">
+                  <Link key={p.id} href={`/bricopacks/${p.slug}`} className="cdiff__pack">
                     <span>{p.name.replace(/^BricoPack\s*/i, '')}</span>
                     <b>
                       {t('diffFrom')} {formatEUR(p.dailyPrice)}
@@ -219,7 +219,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 ))}
               </div>
             )}
-            <Link href="/catalogue?category=bricopack" className="csection__link">
+            <Link href="/bricopacks" className="csection__link">
               {t('diffPackCta')} <IArrowUpRight />
             </Link>
           </div>

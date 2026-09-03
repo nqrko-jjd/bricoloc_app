@@ -246,6 +246,12 @@ model Product {
   weightKg Float?
   bulky    Boolean @default(false)
 
+  /// BricoPack (kind = PACK) : famille, niveau, équipe, remise, outils inclus
+  /// (slug + rôle + « pourquoi »), consommables suggérés, packs liés.
+  /// { family, level, teamSize, popular, discountPct, items:[{slug,role,why}],
+  ///   consumables:[{label,detail,price,slug}], related:[slug] }
+  packMeta Json?
+
   dailyPrice     Float
   weekendPrice   Float?
   weekPrice      Float?

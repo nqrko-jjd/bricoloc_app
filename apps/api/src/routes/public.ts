@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { BRAND, pickText, SOURCE_LOCALE, type I18nText, type Locale } from '@bricoloc/shared';
 import { prisma } from '../db.js';
-import { h } from '../lib/http.js';
+import { h, notFound } from '../lib/http.js';
 import { getSettings } from '../lib/settings.js';
 import { quoteDelivery } from '../lib/delivery.js';
 import { serializeProductSummary, productInclude } from '../lib/serialize.js';
@@ -132,6 +132,131 @@ publicRouter.post(
         fulfilmentMode: r.fulfilmentMode,
         slot: r.slot,
         items: r.items.map((i) => ({ name: i.nameSnapshot, quantity: i.quantity, kind: i.kind })),
+      },
+    });
+  }),
+);
+
+/* -------------------- Gamme BricoPack -------------------- */
+
+type PackMeta = {
+  family?: string;
+  level?: string;
+  teamSize?: string;
+  popular?: boolean;
+  discountPct?: number;
+  separateTotal?: number;
+  items?: { slug: string; role: string; why: string; name?: string; dailyPrice?: number }[];
+  consumables?: { label: string; detail: string; price: number; slug?: string | null }[];
+  related?: string[];
+};
+
+const packName = (p: { name: string; i18n: unknown }, locale: Locale) => {
+  if (locale === SOURCE_LOCALE) return p.name;
+  const bag = (p.i18n as { name?: I18nText } | null)?.name;
+  return pickText(bag, locale, SOURCE_LOCALE) || p.name;
+};
+const packIntro = (p: { shortDescription: string | null; i18n: unknown }, locale: Locale) => {
+  const src = p.shortDescription ?? '';
+  if (locale === SOURCE_LOCALE) return src;
+  const bag = (p.i18n as { shortDescription?: I18nText } | null)?.shortDescription;
+  return pickText(bag, locale, SOURCE_LOCALE) || src;
+};
+
+publicRouter.get(
+  '/bricopacks',
+  h(async (req, res) => {
+    const locale = (String(req.query.locale ?? 'fr') as Locale) ?? 'fr';
+    const rows = await prisma.product.findMany({
+      where: { kind: 'PACK', published: true },
+      select: {
+        slug: true,
+        name: true,
+        shortDescription: true,
+        i18n: true,
+        images: true,
+        dailyPrice: true,
+        packMeta: true,
+      },
+    });
+    const packs = rows
+      .map((p) => {
+        const m = (p.packMeta ?? {}) as PackMeta;
+        return {
+          slug: p.slug,
+          name: packName(p, locale),
+          intro: packIntro(p, locale),
+          family: m.family ?? 'autres',
+          level: m.level ?? null,
+          teamSize: m.teamSize ?? null,
+          popular: !!m.popular,
+          dailyPrice: p.dailyPrice,
+          separateTotal: m.separateTotal ?? null,
+          toolCount: m.items?.length ?? 0,
+          image: (p.images as string[] | null)?.[0] ?? null,
+        };
+      })
+      .sort((a, b) => Number(b.popular) - Number(a.popular) || a.name.localeCompare(b.name));
+    res.json({ packs, count: packs.length });
+  }),
+);
+
+publicRouter.get(
+  '/bricopacks/:slug',
+  h(async (req, res) => {
+    const locale = (String(req.query.locale ?? 'fr') as Locale) ?? 'fr';
+    const p = await prisma.product.findFirst({
+      where: { slug: req.params.slug, kind: 'PACK' },
+    });
+    if (!p || !p.published) throw notFound('BricoPack introuvable');
+    const m = (p.packMeta ?? {}) as PackMeta;
+
+    const itemSlugs = (m.items ?? []).map((i) => i.slug);
+    const tools = await prisma.product.findMany({
+      where: { slug: { in: itemSlugs } },
+      select: { slug: true, name: true, i18n: true, images: true, dailyPrice: true, category: { select: { slug: true } } },
+    });
+    const toolBySlug = Object.fromEntries(tools.map((t) => [t.slug, t]));
+
+    const items = (m.items ?? []).map((it) => {
+      const t = toolBySlug[it.slug];
+      return {
+        slug: it.slug,
+        role: it.role,
+        why: it.why,
+        name: t ? packName(t, locale) : it.name ?? it.slug,
+        dailyPrice: t?.dailyPrice ?? it.dailyPrice ?? 0,
+        image: t ? ((t.images as string[] | null)?.[0] ?? null) : null,
+      };
+    });
+    const separateTotal = m.separateTotal ?? items.reduce((a, i) => a + i.dailyPrice, 0);
+
+    const related = await prisma.product.findMany({
+      where: { slug: { in: m.related ?? [] }, kind: 'PACK', published: true },
+      select: { slug: true, name: true, i18n: true, packMeta: true },
+    });
+
+    res.json({
+      pack: {
+        id: p.id,
+        slug: p.slug,
+        name: packName(p, locale),
+        intro: packIntro(p, locale),
+        family: m.family ?? 'autres',
+        level: m.level ?? null,
+        teamSize: m.teamSize ?? null,
+        popular: !!m.popular,
+        dailyPrice: p.dailyPrice,
+        separateTotal,
+        savingPerDay: Math.max(0, separateTotal - p.dailyPrice),
+        discountPct: m.discountPct ?? null,
+        items,
+        consumables: m.consumables ?? [],
+        related: related.map((r) => ({
+          slug: r.slug,
+          name: packName(r, locale),
+          family: ((r.packMeta ?? {}) as PackMeta).family ?? null,
+        })),
       },
     });
   }),

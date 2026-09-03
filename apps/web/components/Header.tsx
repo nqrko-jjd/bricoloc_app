@@ -27,7 +27,7 @@ export function Header() {
   const links = (
     <>
       <Link href="/catalogue">{t('rentTool')}</Link>
-      <Link href="/catalogue?kind=PACK">{t('bricopacks')}</Link>
+      <Link href="/bricopacks">{t('bricopacks')}</Link>
       <Link href="/conseils">{t('adviceDiy')}</Link>
       <Link href="/application">{t('app')}</Link>
       <Link href="/borne">{t('kiosk')}</Link>
