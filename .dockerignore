@@ -7,6 +7,9 @@
 **/*.log
 **/*.tsbuildinfo
 .git
+.env
+.env.*
+!.env.example
 apps/mobile
 apps/api/prisma/*.db
 apps/api/prisma/*.db-journal
