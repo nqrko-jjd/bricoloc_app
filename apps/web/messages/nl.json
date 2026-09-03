@@ -275,7 +275,8 @@
     "availPartial": "{available} beschikbaar van {requested} gevraagd",
     "availNearby": "Niet beschikbaar — vrij vanaf {date}",
     "availNone": "Niet beschikbaar in deze periode",
-    "titleAccent": "per dag."
+    "titleAccent": "per dag.",
+    "loadMore": "Meer laden (nog {count})"
   },
   "topbar": {
     "cc": "Click & Collect in 2u",

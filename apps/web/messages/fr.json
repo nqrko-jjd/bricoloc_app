@@ -87,7 +87,8 @@
     "availPartial": "{available} dispo sur {requested} demandé(s)",
     "availNearby": "Indispo — libre dès le {date}",
     "availNone": "Indisponible sur la période",
-    "titleAccent": "à la journée."
+    "titleAccent": "à la journée.",
+    "loadMore": "Charger plus ({count} restants)"
   },
   "product": {
     "breadcrumbCatalogue": "Catalogue",

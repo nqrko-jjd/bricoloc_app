@@ -20,13 +20,18 @@ function CatalogueInner() {
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const PAGE_SIZE = 24;
 
   const q = params.get('q') ?? '';
   const category = params.get('category') ?? '';
   const kind = params.get('kind') ?? '';
   const sort = params.get('sort') ?? 'name';
   const onlyAvailable = params.get('onlyAvailable') === 'true';
-  const page = Number(params.get('page') ?? '1');
+  const periodStart = cart?.period?.start ?? '';
+  const periodEnd = cart?.period?.end ?? '';
 
   useEffect(() => {
     api<{ categories: Category[] }>(`/api/catalog/categories?locale=${locale}`).then((r) =>
@@ -34,8 +39,14 @@ function CatalogueInner() {
     );
   }, [locale]);
 
+  // Tout changement de filtre remet la pagination à zéro.
   useEffect(() => {
-    setLoading(true);
+    setPage(1);
+  }, [q, category, kind, sort, onlyAvailable, periodStart, periodEnd, locale]);
+
+  useEffect(() => {
+    if (page === 1) setLoading(true);
+    else setLoadingMore(true);
     const sp = new URLSearchParams();
     if (q) sp.set('q', q);
     if (category) sp.set('category', category);
@@ -43,19 +54,28 @@ function CatalogueInner() {
     sp.set('sort', sort);
     sp.set('locale', locale);
     sp.set('page', String(page));
-    sp.set('pageSize', '18');
+    sp.set('pageSize', String(PAGE_SIZE));
     if (cart?.period) {
       sp.set('start', cart.period.start);
       sp.set('end', cart.period.end);
       if (onlyAvailable) sp.set('onlyAvailable', 'true');
     }
+    let cancelled = false;
     api<{ products: ProductSummary[]; total: number }>(`/api/catalog/products?${sp}`)
       .then((r) => {
-        setProducts(r.products);
+        if (cancelled) return;
+        setProducts((prev) => (page === 1 ? r.products : [...prev, ...r.products]));
         setTotal(r.total);
       })
-      .finally(() => setLoading(false));
-  }, [q, category, kind, sort, page, onlyAvailable, cart?.period, locale]);
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+        setLoadingMore(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [q, category, kind, sort, page, onlyAvailable, periodStart, periodEnd, locale]);
 
   function update(next: Record<string, string | null>) {
     const sp = new URLSearchParams(params.toString());
@@ -149,6 +169,23 @@ function CatalogueInner() {
               <ProductCard key={p.id} p={p} />
             ))}
           </div>
+          {products.length < total && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 28 }}>
+              <button
+                className="btn btn-outline"
+                disabled={loadingMore}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                {loadingMore ? (
+                  <>
+                    <span className="spinner" /> {t('loading')}
+                  </>
+                ) : (
+                  t('loadMore', { count: total - products.length })
+                )}
+              </button>
+            </div>
+          )}
         </>
       )}
       </div>

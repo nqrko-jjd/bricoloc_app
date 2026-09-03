@@ -275,7 +275,8 @@
     "availPartial": "{available} available on {requested} requested",
     "availNearby": "Unavailable — available from {date}",
     "availNone": "Unavailable during this period",
-    "titleAccent": "by the day."
+    "titleAccent": "by the day.",
+    "loadMore": "Load more ({count} left)"
   },
   "topbar": {
     "cc": "Click & Collect in 2h",
