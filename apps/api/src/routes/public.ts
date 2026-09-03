@@ -38,6 +38,18 @@ publicRouter.get(
       demo: true,
       paymentProvider: mollieEnabled() ? 'mollie' : 'mock',
       paymentTestMode: mollieEnabled() ? mollieTestMode() : true,
+      composedPack: (() => {
+        const cp = (s.composedPack ?? {}) as {
+          enabled?: boolean;
+          tiers?: { minMachines: number; pct: number }[];
+        };
+        return {
+          enabled: cp.enabled !== false,
+          tiers: [...(Array.isArray(cp.tiers) ? cp.tiers : [])].sort(
+            (a, b) => a.minMachines - b.minMachines,
+          ),
+        };
+      })(),
     });
   }),
 );
@@ -167,6 +179,17 @@ publicRouter.get(
   '/bricopacks',
   h(async (req, res) => {
     const locale = (String(req.query.locale ?? 'fr') as Locale) ?? 'fr';
+    const settings = await getSettings();
+    const cp = (settings.composedPack ?? {}) as {
+      enabled?: boolean;
+      tiers?: { minMachines: number; pct: number }[];
+    };
+    const composedPack = {
+      enabled: cp.enabled !== false,
+      tiers: [...(Array.isArray(cp.tiers) ? cp.tiers : [])].sort(
+        (a, b) => a.minMachines - b.minMachines,
+      ),
+    };
     const rows = await prisma.product.findMany({
       where: { kind: 'PACK', published: true },
       select: {
@@ -197,7 +220,7 @@ publicRouter.get(
         };
       })
       .sort((a, b) => Number(b.popular) - Number(a.popular) || a.name.localeCompare(b.name));
-    res.json({ packs, count: packs.length });
+    res.json({ packs, count: packs.length, composedPack });
   }),
 );
 

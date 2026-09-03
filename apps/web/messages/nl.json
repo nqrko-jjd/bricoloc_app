@@ -176,7 +176,9 @@
     "diffPackTitle": "Het alles-in-één BricoPack",
     "diffPackText": "Eén klus, één pakket, één prijs. Alle benodigdheden voor een klusproject gebundeld in één reservering — voor particulieren die zich geen zorgen willen maken.",
     "diffPackCta": "Bekijk alle BricoPacks",
-    "diffFrom": "vanaf"
+    "diffFrom": "vanaf",
+    "diffComposeText": "Niets past precies? Stel je pack machine per machine samen: vanaf 3 machines geldt de korting automatisch.",
+    "diffComposeCta": "Mijn pack samenstellen"
   },
   "search": {
     "title": "Ik weet mijn data",

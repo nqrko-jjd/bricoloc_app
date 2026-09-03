@@ -219,9 +219,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 ))}
               </div>
             )}
-            <Link href="/bricopacks" className="csection__link">
-              {t('diffPackCta')} <IArrowUpRight />
-            </Link>
+            <p className="cdiff__compose">{t('diffComposeText')}</p>
+            <div className="cdiff__composeLinks">
+              <Link href="/bricopacks" className="csection__link">
+                {t('diffPackCta')} <IArrowUpRight />
+              </Link>
+              <Link href="/bricopacks#composer" className="csection__link">
+                {t('diffComposeCta')} <IArrowUpRight />
+              </Link>
+            </div>
           </div>
         </div>
       </section>

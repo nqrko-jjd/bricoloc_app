@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { api } from '@/lib/api';
 import { PackFilter, type PackCard } from '@/components/bricopacks/PackFilter';
+import { ComposePack } from '@/components/bricopacks/ComposePack';
 import { Truck, ShieldCheck, PackageIcon } from '@/components/icons';
 import { Link } from '@/i18n/navigation';
 
@@ -31,10 +32,15 @@ export default async function BricoPacksPage({ params }: { params: Promise<{ loc
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { packs, count } = await api<{ packs: PackCard[]; count: number }>(
-    `/api/public/bricopacks?locale=${locale}`,
-    { next: { revalidate: 120 } },
-  ).catch(() => ({ packs: [] as PackCard[], count: 0 }));
+  const { packs, count, composedPack } = await api<{
+    packs: PackCard[];
+    count: number;
+    composedPack?: { enabled: boolean; tiers: { minMachines: number; pct: number }[] };
+  }>(`/api/public/bricopacks?locale=${locale}`, { next: { revalidate: 120 } }).catch(() => ({
+    packs: [] as PackCard[],
+    count: 0,
+    composedPack: undefined,
+  }));
 
   return (
     <>
@@ -56,6 +62,10 @@ export default async function BricoPacksPage({ params }: { params: Promise<{ loc
       </section>
 
       <PackFilter packs={packs} families={FAMILIES} />
+
+      {composedPack?.enabled && composedPack.tiers.length > 0 && (
+        <ComposePack tiers={composedPack.tiers} />
+      )}
 
       <section className="bp-bottom">
         <div>

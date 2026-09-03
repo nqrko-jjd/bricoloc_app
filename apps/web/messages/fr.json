@@ -261,7 +261,9 @@
     "adviceHeadingAccent": "dès la première fois.",
     "adviceRead": "Lire le guide",
     "ctaEyebrow": "Prêt à commencer ?",
-    "ctaAccent": "Les outils à portée de clic."
+    "ctaAccent": "Les outils à portée de clic.",
+    "diffComposeText": "Rien ne colle exactement ? Composez votre pack machine par machine : dès 3, la remise s’applique automatiquement.",
+    "diffComposeCta": "Composer mon pack"
   },
   "dateBar": {
     "noDates": "Aucune date choisie — vous pourrez les indiquer plus tard.",

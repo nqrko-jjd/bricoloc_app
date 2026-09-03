@@ -176,7 +176,9 @@
     "diffPackTitle": "The all-in-one BricoPack",
     "diffPackText": "One job, one package, one price. All the tools you need for a building project, all in a single booking — for homeowners who don’t want to have to think about it.",
     "diffPackCta": "View all BricoPacks",
-    "diffFrom": "from"
+    "diffFrom": "from",
+    "diffComposeText": "Nothing fits exactly? Build your own pack machine by machine — from 3, the discount applies automatically.",
+    "diffComposeCta": "Build my pack"
   },
   "search": {
     "title": "I know my dates",
