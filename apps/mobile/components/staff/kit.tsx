@@ -43,7 +43,10 @@ export function StaffScreen({
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
       <StaffHeader title={title} onBack={back} />
       {scroll ? (
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
+        <ScrollView
+          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
+        >
           {children}
         </ScrollView>
       ) : (
