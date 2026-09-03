@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { staffApi } from '@/lib/staff';
 import { C, R } from '@/lib/theme';
 import { StaffScreen, BigButton, Pill } from '@/components/staff/kit';
 import { Photo } from '@/components/staff/Photo';
+import { ScanInput } from '@/components/staff/ScanInput';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -19,16 +21,14 @@ const STATE: Record<string, { label: string; tone: 'ok' | 'warn' | 'err' | 'mute
 export default function StaffUnit() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [unit, setUnit] = useState<any>(null);
-  const [loc, setLoc] = useState('');
   const [flash, setFlash] = useState('');
   const [busy, setBusy] = useState(false);
   const [dmg, setDmg] = useState<string | null>(null);
+  const [rackScan, setRackScan] = useState(false);
 
   const load = useCallback(async () => {
     const r = await staffApi<{ units: any[] }>('/api/admin/units');
-    const u = r.units.find((x) => x.id === id) ?? null;
-    setUnit(u);
-    setLoc(u?.storageLocation ?? '');
+    setUnit(r.units.find((x) => x.id === id) ?? null);
   }, [id]);
   useFocusEffect(
     useCallback(() => {
@@ -36,10 +36,21 @@ export default function StaffUnit() {
     }, [load]),
   );
 
-  async function saveLoc() {
-    if ((unit?.storageLocation ?? '') === loc.trim()) return;
-    await staffApi(`/api/admin/units/${id}`, { method: 'PATCH', body: { storageLocation: loc } });
-    setFlash(`Emplacement enregistré`);
+  async function changeRack(code: string) {
+    const up = code.trim().toUpperCase();
+    let zone = (up.match(/^BRZ-(.+)$/) || [])[1] || '';
+    if (!zone) {
+      try {
+        const r: any = await staffApi(`/api/ops/resolve/${encodeURIComponent(code)}`);
+        if (r.type === 'zone') zone = r.code;
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!zone) zone = up; // saisie manuelle d'un code libre
+    await staffApi(`/api/admin/units/${id}`, { method: 'PATCH', body: { storageLocation: zone } });
+    setRackScan(false);
+    setFlash(`Rangé en ${zone} ✓`);
     await load();
   }
 
@@ -116,25 +127,43 @@ export default function StaffUnit() {
 
       {flash ? <Text style={{ color: C.ok, fontWeight: '800' }}>{flash}</Text> : null}
 
-      {/* Emplacement */}
+      {/* Emplacement — info seule, on change en scannant l'étiquette du rack */}
       <Text style={{ fontWeight: '800', color: C.ink }}>Emplacement</Text>
-      <TextInput
-        value={loc}
-        onChangeText={setLoc}
-        placeholder="R-01-A"
-        autoCapitalize="characters"
-        placeholderTextColor={C.muted}
-        onBlur={saveLoc}
+      <View
         style={{
-          backgroundColor: C.white,
-          borderWidth: 1,
-          borderColor: C.border,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+          backgroundColor: unit.storageLocation ? C.lavender : C.surface2,
           borderRadius: R.sm,
-          paddingHorizontal: 12,
-          paddingVertical: 12,
-          fontSize: 16,
+          padding: 14,
         }}
-      />
+      >
+        <Ionicons name="location" size={20} color={unit.storageLocation ? C.loc : C.muted} />
+        <Text
+          style={{
+            flex: 1,
+            fontSize: 17,
+            fontWeight: '900',
+            color: unit.storageLocation ? C.loc : C.muted,
+          }}
+        >
+          {unit.storageLocation || 'sans emplacement'}
+        </Text>
+      </View>
+      {rackScan ? (
+        <View style={{ gap: 8 }}>
+          <ScanInput onScan={changeRack} hint="Scanne l’étiquette du nouveau rack" />
+          <Text
+            style={{ color: C.brico, fontWeight: '800', textAlign: 'center' }}
+            onPress={() => setRackScan(false)}
+          >
+            Annuler
+          </Text>
+        </View>
+      ) : (
+        <BigButton label="Changer de rack (scanner)" tone="outline" onPress={() => setRackScan(true)} />
+      )}
 
       {/* Accès rapides */}
       <Text style={{ fontWeight: '800', color: C.ink, marginTop: 8 }}>Accès rapides</Text>
