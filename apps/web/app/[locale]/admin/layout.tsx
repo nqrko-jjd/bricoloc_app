@@ -15,6 +15,7 @@ const NAV = [
   ['/admin/produits', 'Catalogue & produits'],
   ['/admin/exemplaires', 'Stock & exemplaires'],
   ['/admin/etiquettes', 'Étiquettes QR'],
+  ['/admin/emplacements', 'Emplacements (racks)'],
   ['/admin/clients', 'Clients'],
   ['/admin/promotions', 'Promotions'],
   ['/admin/zones', 'Livraison'],

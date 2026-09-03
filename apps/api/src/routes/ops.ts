@@ -129,6 +129,10 @@ opsRouter.get(
     const code = req.params.code.trim();
     const up = code.toUpperCase();
 
+    // Étiquette d'emplacement de rangement : « BRZ-R-01-A »
+    const zone = up.match(/^BRZ-(.+)$/);
+    if (zone) return res.json({ type: 'zone', code: zone[1] });
+
     // Réservation
     if (/^(R-|BRL-)/i.test(code) || /^\d{4}-\d+$/.test(code) || /^F?\d{4,}/.test(code)) {
       const r = await prisma.reservation.findFirst({

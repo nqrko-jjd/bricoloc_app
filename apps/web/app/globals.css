@@ -803,12 +803,24 @@ button { font-family: inherit; }
 .label__brand { font-family: var(--font-display); font-weight: 800; font-size: 8pt; color: var(--primary); }
 .label__body svg { max-width: 44mm; height: auto; }
 
+/* Étiquettes d'emplacement / rack (grandes, collées sur l'étagère) */
+.zlabel-sheet { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6mm; }
+.zlabel {
+  display: flex; flex-direction: column; align-items: center; gap: 2mm;
+  padding: 5mm; border: 1px dashed var(--border); border-radius: 8px; break-inside: avoid;
+}
+.zlabel img { width: 40mm; height: 40mm; }
+.zlabel__code { font-family: monospace; font-size: 22pt; font-weight: 800; letter-spacing: 1px; }
+.zlabel__brand { font-family: var(--font-display); font-weight: 800; font-size: 8pt; color: var(--primary); }
+
 @media print {
   .no-print, .admin-side, .demo-ribbon { display: none !important; }
   .admin-main { padding: 0 !important; }
   .admin-shell { display: block !important; }
   .label-sheet { grid-template-columns: repeat(3, 1fr); }
+  .zlabel-sheet { grid-template-columns: repeat(2, 1fr); }
   .label { border-color: #ccc; }
+  .zlabel { border-color: #ccc; }
   body { background: #fff; }
 }
 

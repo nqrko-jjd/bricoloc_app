@@ -108,6 +108,12 @@ export const DEFAULT_SETTINGS = {
     },
   ],
   cleaningFeeDefault: 20,
+  /**
+   * Emplacements de rangement au dépôt (racks / étagères, ex. « R-01-A »).
+   * Sert à imprimer les étiquettes QR de zone et à l'autocomplétion. La liste
+   * effective fusionne ces valeurs avec les emplacements déjà utilisés.
+   */
+  storageZones: [] as string[],
   /** Reduction longue duree appliquee automatiquement (paliers). */
   proDiscountPctDefault: 0.1,
   /** Partenaire Loiselet (grosses machines / pros). Editable en admin. */

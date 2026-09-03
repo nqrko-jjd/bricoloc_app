@@ -58,7 +58,7 @@ physique. Sur le Zebra : **toujours la gâchette**.
 | **Comptoir** | Retrait / retour client, guidé : scan de la résa → encaissement / caution → scan de chaque machine → contrôle + photos → signature client à l'écran → sortie. Retour en miroir (contrôle, dommages, caution, clôture + facture). |
 | **Stock** | Machines (avec photo, emplacement 📍) : dispo / total. Scan ou touche → exemplaires → changement d'état. Onglet Consommables. |
 | **Réparations** | Exemplaires « à réparer » / « en réparation » / « entretien à prévoir ». Scan ou touche → remettre en service / réparation / endommagé / hors service. |
-| **Inventaire** | Scan des exemplaires « disponibles » un par un. Décompte par machine + liste des manquants à la fin. |
+| **Inventaire** | On scanne la machine trouvée **puis l'étiquette QR du rack** où on la pose → emplacement enregistré + machine pointée. (Ou : scanner d'abord une étiquette de zone la rend « active » et chaque machine scannée y est rangée.) Décompte par machine + liste des manquants. Étiquettes de rack : admin → **Emplacements (racks)**. |
 
 ## Caméra lente
 

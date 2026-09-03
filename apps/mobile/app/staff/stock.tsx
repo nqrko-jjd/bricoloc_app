@@ -128,10 +128,23 @@ export default function StaffStock() {
               image={item.image}
               title={item.name}
               subtitle={
-                (locByProduct.get(item.id)?.length ? `📍 ${locByProduct.get(item.id)!.join(', ')} · ` : '') +
-                (item.rented ? `${item.rented} loc. ` : '') +
-                (item.maintenance ? `${item.maintenance} entr. ` : '') +
-                (item.damaged + item.retired ? `${item.damaged + item.retired} HS` : '')
+                <Text numberOfLines={1}>
+                  <Text style={{ color: C.loc, fontWeight: '900' }}>
+                    {locByProduct.get(item.id)?.length
+                      ? `📍 ${locByProduct.get(item.id)!.join(', ')}`
+                      : '📍 sans emplacement'}
+                  </Text>
+                  {(() => {
+                    const extra = [
+                      item.rented ? `${item.rented} loc.` : '',
+                      item.maintenance ? `${item.maintenance} entr.` : '',
+                      item.damaged + item.retired ? `${item.damaged + item.retired} HS` : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ');
+                    return extra ? `   ${extra}` : '';
+                  })()}
+                </Text>
               }
               right={
                 <Pill

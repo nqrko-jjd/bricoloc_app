@@ -568,6 +568,63 @@ adminRouter.post(
   }),
 );
 
+/**
+ * Emplacements de rangement connus : liste déclarée en paramètres
+ * (`storageZones`) fusionnée avec les emplacements déjà utilisés sur des
+ * exemplaires. Sert à l'atelier d'étiquettes de zones et à l'autocomplétion.
+ */
+adminRouter.get(
+  '/zones',
+  h(async (_req, res) => {
+    const s = await getSettings(true);
+    const declared = Array.isArray(s.storageZones) ? (s.storageZones as string[]) : [];
+    const used = (
+      await prisma.productUnit.findMany({
+        where: { storageLocation: { not: null } },
+        select: { storageLocation: true },
+        distinct: ['storageLocation'],
+      })
+    )
+      .map((u) => u.storageLocation!)
+      .filter(Boolean);
+    const zones = [...new Set([...declared, ...used].map((z) => z.trim().toUpperCase()))].sort();
+    res.json({ zones, declared, used });
+  }),
+);
+
+/** Enregistre la liste des emplacements de rangement (paramètre `storageZones`). */
+adminRouter.post(
+  '/zones',
+  requireStaff('RESPONSABLE', 'TECHNICIEN', 'COMPTOIR'),
+  h(async (req, res) => {
+    const raw = Array.isArray(req.body?.zones) ? (req.body.zones as unknown[]) : [];
+    const zones = [
+      ...new Set(
+        raw
+          .map((z) => String(z).trim().toUpperCase())
+          .filter((z) => z.length > 0 && z.length <= 32),
+      ),
+    ].sort();
+    await setSetting('storageZones', zones);
+    res.json({ zones });
+  }),
+);
+
+/** Étiquettes QR pour des emplacements de rangement (payload « BRZ-<CODE> »). */
+adminRouter.post(
+  '/zone-labels',
+  h(async (req, res) => {
+    const raw = Array.isArray(req.body?.zones) ? (req.body.zones as unknown[]) : [];
+    const zones = [
+      ...new Set(raw.map((z) => String(z).trim().toUpperCase()).filter(Boolean)),
+    ].sort();
+    const labels = await Promise.all(
+      zones.map(async (code) => ({ code, qrDataUrl: await qrDataUrl(`BRZ-${code}`) })),
+    );
+    res.json({ labels });
+  }),
+);
+
 /** Change direct de l'état / notes d'un exemplaire (menu contextuel back-office). */
 adminRouter.patch(
   '/units/:id',
