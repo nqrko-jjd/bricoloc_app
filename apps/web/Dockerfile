@@ -6,17 +6,21 @@ WORKDIR /repo
 
 # ---------- build ----------
 FROM base AS build
-ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN npm ci
+# devDependencies incluses explicitement (typescript pour `next build`),
+# quel que soit NODE_ENV.
+RUN npm ci --include=dev
 COPY packages/shared packages/shared
 COPY apps/web apps/web
 RUN npm run build --workspace @bricoloc/shared
 
+# `next build` DOIT tourner en production (sinon prerender /404 casse :
+# « <Html> should not be imported outside of pages/_document »).
+ENV NODE_ENV=production
 # Le navigateur parle à l'API via le proxy same-origin /bricoloc-api -> pas d'URL publique.
 ENV NEXT_PUBLIC_API_URL=""
 # Rewrites resolus au runtime via API_URL ; valeur neutre au build.
