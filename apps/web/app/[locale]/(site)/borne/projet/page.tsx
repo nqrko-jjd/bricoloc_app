@@ -96,7 +96,7 @@ export default function BorneProjet() {
           <button
             key={p.key}
             className="kioskm-tile"
-            onClick={() => router.push(`/catalogue?category=${p.category}`)}
+            onClick={() => router.push(`/borne/catalogue?category=${p.category}`)}
           >
             <span className="kioskm-tile__ic" aria-hidden>
               {p.icon}

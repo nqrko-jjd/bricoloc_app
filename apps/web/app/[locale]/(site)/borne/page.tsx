@@ -1,76 +1,64 @@
 'use client';
 import { useEffect } from 'react';
 import { useLocale } from 'next-intl';
-import { Link, useRouter } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import type { Locale } from '@bricoloc/shared';
 import { enterKiosk } from '@/lib/kiosk';
 import { SearchAutocomplete } from '@/components/SearchAutocomplete';
-import {
-  Search as ISearch,
-  PackageIcon,
-  Sparkles,
-  ArrowUpRight,
-} from '@/components/icons';
+import { Search as ISearch, PackageIcon, Sparkles, ArrowRight } from '@/components/icons';
 
 const T: Record<Locale, Record<string, string>> = {
   fr: {
-    welcome: 'Bienvenue chez Bricoloc',
     q: 'Que souhaitez-vous',
     qa: 'réaliser ?',
-    search: 'Un outil ou un projet…',
+    search: 'Rechercher un outil ou un projet',
     catalogue: 'Catalogue',
-    catalogueSub: 'Tous les outils',
+    catalogueSub: 'Tous les outils à louer',
     pack: 'BricoPacks',
-    packSub: 'Un projet, un pack',
+    packSub: 'Une solution complète pour votre projet',
     projet: 'Par projet',
-    projetSub: 'On choisit pour vous',
+    projetSub: 'On choisit les bons outils',
     resa: 'Ma réservation',
     resaSub: 'Scanner ou saisir mon code',
     infos: 'Infos pratiques',
-    infosSub: 'Retrait, retour, caution',
+    infosSub: 'Horaires, caution et retour',
     help: 'Besoin d’aide ?',
-    helpSub: 'Un conseiller vous accompagne',
   },
   nl: {
-    welcome: 'Welkom bij Bricoloc',
     q: 'Wat wilt u',
     qa: 'realiseren?',
-    search: 'Een tool of een project…',
+    search: 'Zoek een tool of een project',
     catalogue: 'Catalogus',
-    catalogueSub: 'Al het gereedschap',
+    catalogueSub: 'Al het gereedschap te huur',
     pack: 'BricoPacks',
-    packSub: 'Eén project, één pack',
+    packSub: 'Een complete oplossing voor uw project',
     projet: 'Per project',
-    projetSub: 'Wij kiezen voor u',
+    projetSub: 'Wij kiezen het juiste gereedschap',
     resa: 'Mijn reservering',
     resaSub: 'Scan of typ mijn code',
     infos: 'Praktische info',
-    infosSub: 'Ophalen, teruggave, borg',
+    infosSub: 'Uren, borg en teruggave',
     help: 'Hulp nodig?',
-    helpSub: 'Een medewerker helpt u',
   },
   en: {
-    welcome: 'Welcome to Bricoloc',
     q: 'What do you want',
     qa: 'to build?',
-    search: 'A tool or a project…',
+    search: 'Search a tool or a project',
     catalogue: 'Catalogue',
-    catalogueSub: 'All the tools',
+    catalogueSub: 'All the tools for rent',
     pack: 'BricoPacks',
-    packSub: 'One project, one pack',
+    packSub: 'A complete solution for your project',
     projet: 'By project',
-    projetSub: 'We pick for you',
+    projetSub: 'We pick the right tools',
     resa: 'My booking',
     resaSub: 'Scan or type my code',
     infos: 'Practical info',
-    infosSub: 'Pickup, return, deposit',
+    infosSub: 'Hours, deposit and return',
     help: 'Need help?',
-    helpSub: 'An advisor will assist you',
   },
 };
 
 export default function BorneHome() {
-  const router = useRouter();
   const locale = useLocale() as Locale;
   const t = T[locale] ?? T.fr;
 
@@ -78,20 +66,12 @@ export default function BorneHome() {
     enterKiosk();
   }, []);
 
-  const tiles = [
-    { href: '/catalogue', ic: <ISearch />, t: t.catalogue, s: t.catalogueSub, red: false },
-    { href: '/bricopacks', ic: <PackageIcon />, t: t.pack, s: t.packSub, red: true },
-    { href: '/borne/projet', ic: <Sparkles />, t: t.projet, s: t.projetSub, red: false },
-    { href: '/borne/reservation', ic: <span aria-hidden>▣</span>, t: t.resa, s: t.resaSub, red: false },
-    { href: '/borne/infos', ic: <span aria-hidden>ⓘ</span>, t: t.infos, s: t.infosSub, red: false },
-    { href: '/borne/conseiller', ic: <span aria-hidden>?</span>, t: t.help, s: t.helpSub, red: false },
-  ];
-
   return (
     <div className="kioskm-home">
-      <span className="kicker">— {t.welcome}</span>
       <h1>
-        {t.q} <i>{t.qa}</i>
+        {t.q}
+        <br />
+        <i>{t.qa}</i>
       </h1>
 
       <div className="kioskm-home__search">
@@ -99,20 +79,55 @@ export default function BorneHome() {
       </div>
 
       <div className="kioskm-home__grid">
-        {tiles.map((x) => (
-          <Link
-            key={x.href}
-            href={x.href}
-            className={`kioskm-tile${x.red ? ' kioskm-tile--red' : ''}`}
-            onClick={() => x.href === '/borne/projet' && router.prefetch?.('/catalogue')}
-          >
-            <span className="kioskm-tile__ic">{x.ic}</span>
-            <span className="kioskm-tile__t">{x.t}</span>
-            <span className="kioskm-tile__s">{x.s}</span>
-            <ArrowUpRight />
-          </Link>
-        ))}
+        <Link href="/borne/catalogue" className="kioskm-tile">
+          <span className="kioskm-tile__ic">
+            <ISearch />
+          </span>
+          <span className="kioskm-tile__t">{t.catalogue}</span>
+          <span className="kioskm-tile__s">{t.catalogueSub}</span>
+          <ArrowRight />
+        </Link>
+
+        <Link href="/borne/bricopacks" className="kioskm-tile kioskm-tile--red">
+          <span className="kioskm-tile__ic">
+            <PackageIcon />
+          </span>
+          <span className="kioskm-tile__t">{t.pack}</span>
+          <span className="kioskm-tile__s">{t.packSub}</span>
+          <ArrowRight />
+        </Link>
+
+        <Link href="/borne/projet" className="kioskm-tile">
+          <span className="kioskm-tile__ic">
+            <Sparkles />
+          </span>
+          <span className="kioskm-tile__t">{t.projet}</span>
+          <span className="kioskm-tile__s">{t.projetSub}</span>
+          <ArrowRight />
+        </Link>
+
+        <Link href="/borne/reservation" className="kioskm-tile kioskm-tile--navy">
+          <span className="kioskm-tile__ic" aria-hidden>
+            ▣
+          </span>
+          <span className="kioskm-tile__t">{t.resa}</span>
+          <span className="kioskm-tile__s">{t.resaSub}</span>
+          <ArrowRight />
+        </Link>
+
+        <Link href="/borne/infos" className="kioskm-tile">
+          <span className="kioskm-tile__ic" aria-hidden>
+            ⓘ
+          </span>
+          <span className="kioskm-tile__t">{t.infos}</span>
+          <span className="kioskm-tile__s">{t.infosSub}</span>
+          <ArrowRight />
+        </Link>
       </div>
+
+      <Link href="/borne/conseiller" className="kioskm-home__help">
+        <span aria-hidden>?</span> {t.help}
+      </Link>
     </div>
   );
 }
