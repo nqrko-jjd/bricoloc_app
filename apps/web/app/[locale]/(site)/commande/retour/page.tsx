@@ -1,11 +1,28 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+export default function PaymentReturnPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="section container">
+          <h1>Paiement</h1>
+          <div className="card card-pad center" style={{ maxWidth: 520, margin: '0 auto' }}>
+            <span className="spinner" />
+          </div>
+        </div>
+      }
+    >
+      <ReturnInner />
+    </Suspense>
+  );
+}
 
 type Status = {
   status: string;
@@ -17,7 +34,7 @@ type Status = {
   fulfilment?: { mode: string; pickupPoint?: { name: string; line1: string; postalCode: string; city: string; transferHours: number } | null };
 };
 
-export default function PaymentReturnPage() {
+function ReturnInner() {
   const params = useSearchParams();
   const r = params.get('r') ?? '';
   const [st, setSt] = useState<Status | null>(null);
