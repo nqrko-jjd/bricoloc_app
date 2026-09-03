@@ -74,6 +74,13 @@ services:
       - uploads:/srv/uploads:ro
       - certbot-www:/var/www/certbot
       - certbot-conf:/etc/letsencrypt
+      # Co-hébergement JJD (même VPS) : ce nginx route aussi new.jjd-consult.be.
+      # Le fichier est fourni par le dépôt JJD cloné dans /opt/jjd ; monté en
+      # optionnel (:ro) — présent seulement si JJD est déployé.
+      - /opt/jjd/deploy/nginx/new.jjd-consult.be.conf:/etc/nginx/conf.d/new.jjd-consult.be.conf:ro
+    networks:
+      - default
+      - edge
 
   # Renouvellement automatique du certificat (toutes les 12 h, no-op si pas dû).
   certbot:
@@ -90,3 +97,10 @@ volumes:
   private-data:
   certbot-www:
   certbot-conf:
+
+networks:
+  default:
+  # Réseau partagé avec la pile JJD (co-hébergée). Créé à la main sur le VPS :
+  #   docker network create edge
+  edge:
+    external: true
