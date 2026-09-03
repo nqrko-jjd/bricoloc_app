@@ -161,23 +161,46 @@ test('cycle complet : de la creation machine a la facture finale', async () => {
   // 6. Retrait (Click & Collect).
   await api('/api/cart/fulfilment', { method: 'PUT', cartKey, body: { mode: 'PICKUP' } });
 
-  // 7. + 8. Le client cree son compte pendant le checkout et paie en mode test.
+  // 7. + 8. Le client cree son compte pendant le checkout.
   const email = `e2e-${Date.now()}@bricoloc.example`;
+  const checkoutBody = {
+    period,
+    fulfilment: { mode: 'PICKUP' as const },
+    contact: { firstName: 'Eve', lastName: 'End2End', email, phone: '+32470111222' },
+    account: { password: 'motdepasse123' },
+    acceptTerms: true,
+    channel: 'WEB' as const,
+  };
+  // Premiere tentative : bloquee tant que la piece d'identite n'est pas fournie.
+  const gated = await api('/api/checkout', { method: 'POST', cartKey, body: checkoutBody });
+  assert.equal(gated.status, 409);
+  assert.equal(gated.json.error.code, 'ID_REQUIRED');
+  const newUserToken = gated.json.token as string;
+  assert.ok(newUserToken, 'un token doit etre emis pour permettre l upload de la CI');
+
+  // Le client envoie une photo de sa carte d'identite (1x1 PNG).
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  );
+  const fd = new FormData();
+  fd.append('file', new Blob([png], { type: 'image/png' }), 'ci.png');
+  const idUp = await fetch(`${base}/api/account/id-document`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${newUserToken}` },
+    body: fd,
+  });
+  assert.equal(idUp.status, 201, await idUp.text());
+
   const checkout = await api('/api/checkout', {
     method: 'POST',
     cartKey,
-    body: {
-      period,
-      fulfilment: { mode: 'PICKUP' },
-      contact: { firstName: 'Eve', lastName: 'End2End', email, phone: '+32470111222' },
-      account: { password: 'motdepasse123' },
-      acceptTerms: true,
-      channel: 'WEB',
-    },
+    token: newUserToken,
+    body: checkoutBody,
   });
   assert.equal(checkout.status, 201, JSON.stringify(checkout.json));
   const reservationId = checkout.json.reservation.id as string;
-  const userToken = checkout.json.token as string;
+  const userToken = (checkout.json.token as string) ?? newUserToken;
   assert.ok(userToken, 'un token de compte doit etre emis');
   assert.ok(checkout.json.payment.testMode, 'le paiement doit etre en mode demonstration');
 
