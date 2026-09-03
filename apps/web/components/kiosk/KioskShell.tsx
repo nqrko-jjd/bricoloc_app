@@ -1,31 +1,30 @@
 'use client';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { useParams, usePathname as useNextPathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { SUPPORTED_LOCALES, type Locale } from '@bricoloc/shared';
 import { useCart } from '@/lib/providers';
-import { exitKiosk, wipeSession } from '@/lib/kiosk';
+import { wipeSession } from '@/lib/kiosk';
 import { KioskKeyboard } from './KioskKeyboard';
 
 const IDLE_MS = 120_000;
 
-const L: Record<string, { restart: string; res: string; help: string; exit: string }> = {
-  fr: { restart: 'Recommencer', res: 'Ma réservation', help: 'Aide', exit: 'Quitter' },
-  nl: { restart: 'Opnieuw', res: 'Mijn reservering', help: 'Hulp', exit: 'Sluiten' },
-  en: { restart: 'Restart', res: 'My booking', help: 'Help', exit: 'Exit' },
+const L: Record<string, { restart: string; res: string; help: string }> = {
+  fr: { restart: 'Recommencer', res: 'Ma réservation', help: 'Aide' },
+  nl: { restart: 'Opnieuw', res: 'Mijn reservering', help: 'Hulp' },
+  en: { restart: 'Restart', res: 'My booking', help: 'Help' },
 };
 
 /**
  * Coque plein écran de la borne tactile. Pas de châssis dessiné : la page
- * OCCUPE l'écran (orientation libre). En-tête : logo officiel + langue +
- * « Ma réservation » + panier + Recommencer. Remise à zéro automatique après
- * 2 min d'inactivité.
+ * OCCUPE l'écran (orientation libre). En-tête minimal en pastilles (logo +
+ * langue + « Ma réservation » + aide + panier). Aucune sortie : on reste
+ * dans la borne. Remise à zéro automatique après 2 min d'inactivité.
  */
 export function KioskShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const nextPath = useNextPathname();
   const params = useParams();
   const locale = useLocale() as Locale;
   const t = L[locale] ?? L.fr;
@@ -33,9 +32,10 @@ export function KioskShell({ children }: { children: ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const count = cart?.itemCount ?? 0;
-  const nextLocale = SUPPORTED_LOCALES[(SUPPORTED_LOCALES.indexOf(locale) + 1) % SUPPORTED_LOCALES.length];
+  const nextLocale =
+    SUPPORTED_LOCALES[(SUPPORTED_LOCALES.indexOf(locale) + 1) % SUPPORTED_LOCALES.length];
+  const home = pathname === '/borne';
 
-  // Remise à zéro sur inactivité.
   useEffect(() => {
     function reset() {
       if (timer.current) clearTimeout(timer.current);
@@ -54,8 +54,6 @@ export function KioskShell({ children }: { children: ReactNode }) {
     };
   }, [pathname, router]);
 
-  const home = pathname === '/borne';
-
   return (
     <div className="kioskm">
       <header className="kioskm__bar">
@@ -67,7 +65,7 @@ export function KioskShell({ children }: { children: ReactNode }) {
         <div className="kioskm__actions">
           {!home && (
             <button
-              className="kioskm__btn"
+              className="kioskm__c kioskm__c--wide"
               onClick={() => {
                 wipeSession();
                 router.push('/borne');
@@ -76,15 +74,8 @@ export function KioskShell({ children }: { children: ReactNode }) {
               <span aria-hidden>↺</span> {t.restart}
             </button>
           )}
-          <Link href="/borne/reservation" className="kioskm__btn">
-            <span aria-hidden>▣</span> {t.res}
-          </Link>
-          <Link href="/panier" className="kioskm__btn kioskm__btn--cart">
-            <span aria-hidden>🛒</span>
-            {count > 0 && <span className="kioskm__badge">{count}</span>}
-          </Link>
           <button
-            className="kioskm__btn"
+            className="kioskm__c"
             onClick={() =>
               // @ts-expect-error params dynamiques transmis tels quels
               router.replace({ pathname, params }, { locale: nextLocale })
@@ -93,15 +84,20 @@ export function KioskShell({ children }: { children: ReactNode }) {
           >
             {locale.toUpperCase()}
           </button>
-          <button
-            className="kioskm__btn kioskm__btn--exit"
-            onClick={() => {
-              exitKiosk();
-              window.location.href = nextPath.replace(/\/borne.*$/, '') || '/';
-            }}
+          <Link href="/borne/reservation" className="kioskm__c" aria-label={t.res} title={t.res}>
+            ▣
+          </Link>
+          <Link href="/borne/conseiller" className="kioskm__c" aria-label={t.help} title={t.help}>
+            ?
+          </Link>
+          <Link
+            href="/panier"
+            className="kioskm__c kioskm__c--cart"
+            aria-label="Panier"
           >
-            {t.exit}
-          </button>
+            🛒
+            {count > 0 && <span className="kioskm__badge">{count}</span>}
+          </Link>
         </div>
       </header>
 

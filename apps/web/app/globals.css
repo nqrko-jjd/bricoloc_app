@@ -2605,26 +2605,28 @@ button { font-family: inherit; }
   min-height: 68px;
 }
 .kioskm__logo img { height: 40px; width: auto; display: block; }
-.kioskm__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-.kioskm__btn {
+.kioskm__actions { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+.kioskm__c {
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  min-height: 52px;
-  padding: 0 18px;
-  border-radius: var(--r-pill, 999px);
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
   border: 1.5px solid var(--line, #e6e6ef);
   background: var(--surface, #fff);
   color: var(--navy-deep, #08065d);
   font-weight: 800;
-  font-size: 0.95rem;
+  font-size: 1.15rem;
   cursor: pointer;
+  flex-shrink: 0;
 }
-.kioskm__btn:hover { text-decoration: none; }
-.kioskm__btn:active { transform: scale(0.97); }
-.kioskm__btn--cart { background: var(--navy, #08065d); color: #fff; border-color: var(--navy, #08065d); font-size: 1.2rem; padding: 0 16px; }
-.kioskm__btn--exit { border-color: transparent; color: var(--muted-fg); font-weight: 700; }
+.kioskm__c:hover { text-decoration: none; }
+.kioskm__c:active { transform: scale(0.95); }
+.kioskm__c--wide { width: auto; padding: 0 18px; font-size: 0.95rem; }
+.kioskm__c--cart { background: var(--navy, #08065d); color: #fff; border-color: var(--navy, #08065d); }
 .kioskm__badge {
   position: absolute; top: -4px; right: -4px;
   background: var(--primary); color: #fff;
