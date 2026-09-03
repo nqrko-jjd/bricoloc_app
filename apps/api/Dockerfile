@@ -9,13 +9,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl curl \
 # ---------- dépendances complètes + build ----------
 FROM base AS build
 ENV NODE_ENV=development
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 RUN npm ci
 COPY packages/shared packages/shared
 COPY apps/api apps/api
+# URL factice : oriente `set-db-provider` + `prisma generate` vers le client PostgreSQL
+# (aucune connexion au build). Le vrai DATABASE_URL est injecté au runtime.
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 RUN npm run build --workspace @bricoloc/shared \
  && npm run build --workspace @bricoloc/api
 
