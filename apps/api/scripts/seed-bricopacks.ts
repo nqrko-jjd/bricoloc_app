@@ -12,9 +12,34 @@
  * ⚠️ Contenus rédigés au plus proche du concept mais à FAIRE VALIDER par David
  * (quels outils exactement, quels consommables, quels prix).
  */
-import '../src/env.js';
-import { prisma } from '../src/db.js';
-import { buildI18nText, translationEnabled } from '../src/lib/translate.js';
+import { existsSync, readFileSync } from 'node:fs';
+import { PrismaClient } from '@prisma/client';
+
+// En prod le conteneur n'embarque pas src/ : on lit apps/api/.env si présent
+// (dev), sinon l'environnement fournit déjà DATABASE_URL / DEEPL_API_KEY.
+{
+  const p = new URL('../.env', import.meta.url);
+  if (existsSync(p)) {
+    for (const line of readFileSync(p, 'utf8').split('\n')) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*"?([^"\n]*)"?\s*$/);
+      if (m && m[1] && process.env[m[1]] === undefined) process.env[m[1]] = m[2];
+    }
+  }
+}
+const prisma = new PrismaClient();
+
+/** Traduction FR→NL/EN si une clé DeepL est configurée (sinon on saute). */
+const translationEnabled = () => !!process.env.DEEPL_API_KEY?.trim();
+async function buildI18nText(fr: string): Promise<Record<string, string>> {
+  if (!translationEnabled()) return { fr };
+  try {
+    const mod: any = await import('../src/lib/translate.js').catch(() => null);
+    if (mod?.buildI18nText) return mod.buildI18nText(fr);
+  } catch {
+    /* pas de src/ en prod → on garde juste le FR */
+  }
+  return { fr };
+}
 
 type Item = { slug: string; role: string; why: string };
 type Conso = { label: string; detail: string; price: number };
