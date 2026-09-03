@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
-import { Image, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { staffApi } from '@/lib/staff';
-import { mediaUrl } from '@/lib/api';
 import { C, R } from '@/lib/theme';
 import { StaffScreen, BigButton, Pill } from '@/components/staff/kit';
+import { Photo } from '@/components/staff/Photo';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -106,17 +106,11 @@ export default function StaffUnit() {
 
   return (
     <StaffScreen title={unit.assetTag}>
-      <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-        <Image
-          source={{ uri: mediaUrl(unit.product?.images?.[0]) }}
-          style={{ width: 72, height: 72, borderRadius: 12, backgroundColor: C.surface2 }}
-          resizeMode="contain"
-        />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: C.ink }}>{unit.product?.name}</Text>
-          <View style={{ flexDirection: 'row' }}>
-            <Pill text={st.label} tone={st.tone} />
-          </View>
+      <Photo uri={unit.product?.images?.[0]} height={200} />
+      <View style={{ gap: 6 }}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: C.ink }}>{unit.product?.name}</Text>
+        <View style={{ flexDirection: 'row' }}>
+          <Pill text={st.label} tone={st.tone} />
         </View>
       </View>
 

@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { staffApi } from '@/lib/staff';
-import { mediaUrl } from '@/lib/api';
 import { C } from '@/lib/theme';
 import { StaffScreen, ListRow, Pill } from '@/components/staff/kit';
+import { Photo } from '@/components/staff/Photo';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -48,20 +48,14 @@ export default function StaffMachine() {
 
   return (
     <StaffScreen title={machine.name}>
-      <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-        <Image
-          source={{ uri: mediaUrl(machine.image) }}
-          style={{ width: 84, height: 84, borderRadius: 14, backgroundColor: C.surface2 }}
-          resizeMode="contain"
-        />
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, color: C.ink }}>
-            <Text style={{ color: C.ok, fontWeight: '900' }}>{machine.availableNow} dispo</Text> ·{' '}
-            {machine.rented} en location · {machine.maintenance} entretien ·{' '}
-            {machine.damaged + machine.retired} HS
-          </Text>
-          <Text style={{ color: C.muted, marginTop: 2 }}>{machine.total} exemplaires</Text>
-        </View>
+      <Photo uri={machine.image} height={240} />
+      <View>
+        <Text style={{ fontSize: 15, color: C.ink }}>
+          <Text style={{ color: C.ok, fontWeight: '900' }}>{machine.availableNow} dispo</Text> ·{' '}
+          {machine.rented} en location · {machine.maintenance} entretien ·{' '}
+          {machine.damaged + machine.retired} HS
+        </Text>
+        <Text style={{ color: C.muted, marginTop: 2 }}>{machine.total} exemplaires</Text>
       </View>
 
       {units.length > 0 && (
