@@ -14,6 +14,7 @@ type Pack = {
   slug: string;
   name: string;
   intro: string;
+  image: string | null;
   family: string;
   level: string | null;
   teamSize: string | null;
@@ -76,21 +77,29 @@ export default async function BricoPackDetail({
   return (
     <>
       {/* ---------- HERO ---------- */}
-      <section className="bpd-hero">
-        <span className="kicker">— BricoPack · {FAM_LABEL[pack.family] ?? pack.family}</span>
-        <h1>
-          {pack.name}
-          <i>.</i>
-        </h1>
-        <p className="bpd-hero__lead">{pack.intro}</p>
-        <div className="bpd-hero__badges">
-          <span>{pack.items.length} outils inclus</span>
-          {pack.level && <span>Niveau {pack.level}</span>}
-          <span>Assistance incluse</span>
+      <section className={`bpd-hero${pack.image ? ' bpd-hero--img' : ''}`}>
+        {pack.image && (
+          <div className="bpd-hero__media" aria-hidden>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pack.image} alt="" />
+          </div>
+        )}
+        <div className="bpd-hero__text">
+          <span className="kicker">— BricoPack · {FAM_LABEL[pack.family] ?? pack.family}</span>
+          <h1>
+            {pack.name}
+            <i>.</i>
+          </h1>
+          <p className="bpd-hero__lead">{pack.intro}</p>
+          <div className="bpd-hero__badges">
+            <span>{pack.items.length} outils inclus</span>
+            {pack.level && <span>Niveau {pack.level}</span>}
+            <span>Assistance incluse</span>
+          </div>
+          <a href="#contenu" className="csection__link">
+            Découvrir le contenu ↓
+          </a>
         </div>
-        <a href="#contenu" className="csection__link">
-          Découvrir le contenu ↓
-        </a>
       </section>
 
       <section className="bpd-tagline">

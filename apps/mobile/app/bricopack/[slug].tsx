@@ -15,6 +15,7 @@ type Pack = {
   slug: string;
   name: string;
   intro: string;
+  image: string | null;
   family: string;
   level: string | null;
   teamSize: string | null;
@@ -74,14 +75,44 @@ export default function BricoPackDetail() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
-      <View style={{ padding: 12 }}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={C.ink} />
-        </Pressable>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={pack.image ? [] : ['top']}>
+      <Pressable
+        onPress={() => router.back()}
+        hitSlop={12}
+        style={{
+          position: 'absolute',
+          top: pack.image ? 48 : 14,
+          left: 14,
+          zIndex: 5,
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: pack.image ? 'rgba(255,255,255,0.92)' : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Ionicons name="chevron-back" size={26} color={C.ink} />
+      </Pressable>
 
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 130 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 130 }}>
+        {pack.image ? (
+          <Image
+            source={{ uri: mediaUrl(pack.image) }}
+            style={{ width: '100%', height: 250 }}
+            resizeMode="cover"
+          />
+        ) : null}
+        <View
+          style={{
+            padding: 20,
+            paddingTop: pack.image ? 22 : 54,
+            backgroundColor: C.bg,
+            borderTopLeftRadius: pack.image ? 26 : 0,
+            borderTopRightRadius: pack.image ? 26 : 0,
+            marginTop: pack.image ? -26 : 0,
+          }}
+        >
         {/* Hero */}
         <Text
           style={{
@@ -309,6 +340,7 @@ export default function BricoPackDetail() {
             ))}
           </>
         )}
+        </View>
       </ScrollView>
 
       {/* Barre réservation */}

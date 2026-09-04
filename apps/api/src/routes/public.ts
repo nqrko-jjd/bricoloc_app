@@ -322,6 +322,7 @@ publicRouter.get(
         slug: p.slug,
         name: packName(p, locale),
         intro: packIntro(p, locale),
+        image: (p.images as string[] | null)?.[0] ?? null,
         family: m.family ?? 'autres',
         level: m.level ?? null,
         teamSize: m.teamSize ?? null,
