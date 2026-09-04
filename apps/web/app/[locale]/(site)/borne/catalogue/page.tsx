@@ -20,6 +20,10 @@ const T: Record<Locale, Record<string, string>> = {
     startLabel: 'Début',
     endLabel: 'Retour',
     datesCta: 'Voir les outils disponibles',
+    datesLater: 'Je choisis mes dates plus tard',
+    datesLaterHint: 'Vous verrez tout le catalogue — certains outils pourraient ne pas être libres à vos dates.',
+    pickDates: '＋ Choisir mes dates',
+    allShown: 'Tout le catalogue (dates non choisies)',
     search: 'Rechercher un outil…',
     all: 'Tout',
     available: 'Disponible',
@@ -59,6 +63,10 @@ const T: Record<Locale, Record<string, string>> = {
     startLabel: 'Start',
     endLabel: 'Terug',
     datesCta: 'Beschikbaar gereedschap tonen',
+    datesLater: 'Ik kies mijn data later',
+    datesLaterHint: 'U ziet de hele catalogus — sommig gereedschap is misschien niet vrij op uw data.',
+    pickDates: '＋ Mijn data kiezen',
+    allShown: 'Volledige catalogus (geen data gekozen)',
     search: 'Zoek gereedschap…',
     all: 'Alles',
     available: 'Beschikbaar',
@@ -98,6 +106,10 @@ const T: Record<Locale, Record<string, string>> = {
     startLabel: 'Start',
     endLabel: 'Return',
     datesCta: 'Show available tools',
+    datesLater: 'I’ll choose my dates later',
+    datesLaterHint: 'You’ll see the whole catalogue — some tools may not be free on your dates.',
+    pickDates: '＋ Choose my dates',
+    allShown: 'Whole catalogue (no dates chosen)',
     search: 'Search a tool…',
     all: 'All',
     available: 'Available',
@@ -191,6 +203,8 @@ function ShopInner() {
     if (periodStart && periodEnd) {
       sp.set('start', periodStart);
       sp.set('end', periodEnd);
+      // Dates choisies → on ne montre que ce qui est réellement disponible.
+      sp.set('onlyAvailable', 'true');
     }
     const id = setTimeout(() => {
       api<{ products: ProductSummary[] }>(`/api/catalog/products?${sp}`)
@@ -318,6 +332,14 @@ function ShopInner() {
             {datesBusy ? '…' : t.datesCta}
           </button>
         </div>
+        <button
+          className="kioskm-shop__later"
+          disabled={datesBusy}
+          onClick={() => setStep(wantCart ? 'cart' : 'browse')}
+        >
+          {t.datesLater} →
+        </button>
+        <p className="kioskm-sub" style={{ textAlign: 'center' }}>{t.datesLaterHint}</p>
       </div>
     );
   }
@@ -475,12 +497,15 @@ function ShopInner() {
         <button className="kioskm-back" onClick={() => router.push('/borne')}>
           {t.back}
         </button>
-        {periodLabel && (
-          <button className="kioskm-shop__period" onClick={() => setStep('dates')}>
-            📅 {periodLabel} <span>✎</span>
-          </button>
-        )}
+        <button className="kioskm-shop__period" onClick={() => setStep('dates')}>
+          {periodLabel ? (
+            <>📅 {periodLabel} <span>✎</span></>
+          ) : (
+            <>{t.pickDates}</>
+          )}
+        </button>
       </div>
+      {!periodLabel && <p className="kioskm-sub">{t.allShown}</p>}
 
       <input
         className="kioskm-shop__search"

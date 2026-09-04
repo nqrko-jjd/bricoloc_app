@@ -2915,6 +2915,11 @@ button { font-family: inherit; }
 }
 .kioskm-shop__period span { color: var(--primary); }
 
+.kioskm-shop__later {
+  display: block; margin: 14px auto 0; padding: 10px 22px; min-height: 48px;
+  border: 0; background: none; color: var(--navy, #08065d);
+  font-weight: 700; font-size: 1rem; text-decoration: underline; cursor: pointer;
+}
 .kioskm-dates { display: flex; flex-wrap: wrap; gap: 16px; margin: 20px 0 28px; }
 .kioskm-dates__f { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px; }
 .kioskm-dates__f span { font-weight: 800; font-size: 1rem; }
