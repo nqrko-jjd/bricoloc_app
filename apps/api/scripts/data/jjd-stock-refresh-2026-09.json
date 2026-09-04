@@ -1,0 +1,1386 @@
+{
+ "exportedAt": "2026-09-04T19:09:42.843Z",
+ "source": "Gestion Stock - Machines (1).xlsx",
+ "rows": [
+  {
+   "code": "O-0001",
+   "name": "AGP PULVERIATEUR HVLP T328",
+   "total": 1,
+   "location": "E-02-D"
+  },
+  {
+   "code": "O-0002",
+   "name": "ALTREX CROCHET DE FAITE",
+   "total": 2,
+   "location": "R-Depot"
+  },
+  {
+   "code": "O-0003",
+   "name": "ALTREX RS TOWER 52",
+   "total": 1,
+   "location": "R-Depot"
+  },
+  {
+   "code": "O-0004",
+   "name": "ALTREX ECHELLE DE TOIT 3M",
+   "total": 2,
+   "location": "R-Depot"
+  },
+  {
+   "code": "O-0005",
+   "name": "ALTREX ECHELLE DE TOIT 2M",
+   "total": 1,
+   "location": "R-Depot"
+  },
+  {
+   "code": "O-0006",
+   "name": "ALTREX REMORQUE ECHAFAUDAGE DE LUXE",
+   "total": 1,
+   "location": "R-Depot"
+  },
+  {
+   "code": "O-0007",
+   "name": "ARROW T50",
+   "total": 1,
+   "location": "E-05-B"
+  },
+  {
+   "code": "O-0008",
+   "name": "BATTIPAV SUPER PRO 450",
+   "total": 1,
+   "location": "R-10-B1"
+  },
+  {
+   "code": "O-0009",
+   "name": "BATTIPAV SUPER PRO 750",
+   "total": 1,
+   "location": "R-10-B1"
+  },
+  {
+   "code": "O-0010",
+   "name": "BOSCH GMS 120",
+   "total": 1,
+   "location": "E-08-D / Chantier : Camionnette Coco"
+  },
+  {
+   "code": "O-0011",
+   "name": "BOSCH GWS 880",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0012",
+   "name": "BOSCH GEL 3 80 p",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0013",
+   "name": "BRICOLOC BRULEUR ROOFING",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0014",
+   "name": "BRICOLOC AUGE A MORTIER GRUE 200L",
+   "total": 1,
+   "location": "R-03-A1"
+  },
+  {
+   "code": "O-0015",
+   "name": "BRICOLOC FURET 5M",
+   "total": 1,
+   "location": "E-10"
+  },
+  {
+   "code": "O-0016",
+   "name": "EDMA TOP GRAFER 20/22 AGRAFEUSE",
+   "total": 1,
+   "location": "E-01-C"
+  },
+  {
+   "code": "O-0017",
+   "name": "EIBENSTOCK RAIL 1,5M",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0018",
+   "name": "EIBENSTOCK EDS125",
+   "total": 1,
+   "location": "E-04-D"
+  },
+  {
+   "code": "O-0019",
+   "name": "EUROM HKG 10 BE",
+   "total": 1,
+   "location": "E-05-B"
+  },
+  {
+   "code": "O-0020",
+   "name": "EUROM HKG 15 BE",
+   "total": 1,
+   "location": "E-05-B"
+  },
+  {
+   "code": "O-0021",
+   "name": "FLEX MX02",
+   "total": 5,
+   "location": "R-351 / Chantier : R-493"
+  },
+  {
+   "code": "O-0022",
+   "name": "FUTECH LINE TRACKER MULTICROSS 3D",
+   "total": 1,
+   "location": "E-05-D"
+  },
+  {
+   "code": "O-0023",
+   "name": "GEBERIT CINTREUSE APLEX MEOLA PUSHFIT D16 32",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0024",
+   "name": "GEBERIT MANCHONEUSE KSS-160",
+   "total": 1,
+   "location": "E-02-D"
+  },
+  {
+   "code": "O-0025",
+   "name": "GEBERIT ESG-40/200",
+   "total": 1,
+   "location": "E-02-D"
+  },
+  {
+   "code": "O-0026",
+   "name": "GRAKO ULTRAMAX AIRLESS PORTATIF",
+   "total": 1,
+   "location": "E-02-D / Chantier : Perso"
+  },
+  {
+   "code": "O-0027",
+   "name": "HILTI GX100",
+   "total": 1,
+   "location": "E-02-A"
+  },
+  {
+   "code": "O-0028",
+   "name": "HUSQVARNA TS100R",
+   "total": 1,
+   "location": "R-10-A1"
+  },
+  {
+   "code": "O-0029",
+   "name": "KARCHER HDS790",
+   "total": 1,
+   "location": "Dépôt"
+  },
+  {
+   "code": "O-0030",
+   "name": "KRANZLE 1152 TST",
+   "total": 1,
+   "location": "E-10"
+  },
+  {
+   "code": "O-0031",
+   "name": "M-TEC M300+",
+   "total": 1,
+   "location": "Dépôt"
+  },
+  {
+   "code": "O-0032",
+   "name": "MAFFEL RAIL 30M (POUR MT55CC)",
+   "total": 1,
+   "location": "Dépôt"
+  },
+  {
+   "code": "O-0033",
+   "name": "MAFFEL MT55CC",
+   "total": 1,
+   "location": "E-04-B"
+  },
+  {
+   "code": "O-0034",
+   "name": "MAKITA VC3011L",
+   "total": 1,
+   "location": "E-10"
+  },
+  {
+   "code": "O-0035",
+   "name": "MAKITA DBM131",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0036",
+   "name": "MAKITA GN900SE",
+   "total": 1,
+   "location": "E-02-A / Chantier : R-351"
+  },
+  {
+   "code": "O-0037",
+   "name": "MAKITA RP2300FCX1",
+   "total": 1,
+   "location": "E-04-D"
+  },
+  {
+   "code": "O-0038",
+   "name": "MAKITA TROLLEY MAKPAC – TR00000001",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0039",
+   "name": "MAKITA 9558HN",
+   "total": 1,
+   "location": "E-04-C"
+  },
+  {
+   "code": "O-0040",
+   "name": "MAKITA DGA506",
+   "total": 3,
+   "location": "E-03-B / Chantier : Camionette Coco"
+  },
+  {
+   "code": "O-0041",
+   "name": "MAKITA GA9030R",
+   "total": 1,
+   "location": "E-04-B"
+  },
+  {
+   "code": "O-0042-A",
+   "name": "MAKITA GA9020R",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0042-B",
+   "name": "MAKITA GA9020R",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0042-C",
+   "name": "MAKITA GA9020R",
+   "total": 1,
+   "location": "R-611"
+  },
+  {
+   "code": "O-0043",
+   "name": "MAKITA HR2470FT",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0044",
+   "name": "MAKITA HM1214C",
+   "total": 1,
+   "location": "E-03-A"
+  },
+  {
+   "code": "O-0045",
+   "name": "MAKITA DTM 51",
+   "total": 2,
+   "location": "/ Chantier : Camionnette Coco"
+  },
+  {
+   "code": "O-0046",
+   "name": "MAKITA DDA351",
+   "total": 1,
+   "location": "E-03-B / Chantier : Camionnette Coco"
+  },
+  {
+   "code": "O-0047",
+   "name": "MAKITA DHR243",
+   "total": 1,
+   "location": "ClicPublic"
+  },
+  {
+   "code": "O-0048",
+   "name": "MAKITA DHR243 + DX02",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0049-A",
+   "name": "MAKITA DBO180ZJ",
+   "total": 1,
+   "location": "E-03-C"
+  },
+  {
+   "code": "O-0049-B",
+   "name": "MAKITA DBO180ZJ",
+   "total": 1,
+   "location": "E-03-C"
+  },
+  {
+   "code": "O-0050",
+   "name": "MAKITA BO6050J",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0051",
+   "name": "MAKITA KP0810CJ",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0052",
+   "name": "MAKITA KP0800J",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0053",
+   "name": "VAPORETO VTT 2085",
+   "total": 1,
+   "location": "E-02-D"
+  },
+  {
+   "code": "O-0054",
+   "name": "MAKITA 2414NB",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0055",
+   "name": "MAKITA DJR188",
+   "total": 1,
+   "location": "Camionnette Coco"
+  },
+  {
+   "code": "O-0056",
+   "name": "MAKITA DJR183",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0057",
+   "name": "MAKITA DJV181ZJ",
+   "total": 3,
+   "location": "E-03-B / Chantier : R-289"
+  },
+  {
+   "code": "O-0058",
+   "name": "MAKITA DCF300",
+   "total": 2,
+   "location": "E-03-D / Chantier : R-152"
+  },
+  {
+   "code": "O-0059",
+   "name": "MAKITA DTD153",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0060",
+   "name": "MAKITA DHP481",
+   "total": 1,
+   "location": "E-03-B"
+  },
+  {
+   "code": "O-0061",
+   "name": "MCCULLOGH M46 125 R",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0062",
+   "name": "METABO FMS200 INTEC",
+   "total": 1,
+   "location": "E-03-C"
+  },
+  {
+   "code": "O-0063",
+   "name": "METABO DSE300 INTEC",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0064",
+   "name": "METABO KS216",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0065",
+   "name": "METABO KGS216",
+   "total": 1,
+   "location": "R-513 / Chantier : R-513"
+  },
+  {
+   "code": "O-0066",
+   "name": "MONDELIN LEVPANO 1",
+   "total": 1,
+   "location": "E-01-D"
+  },
+  {
+   "code": "O-0067",
+   "name": "NUPI R63TFE SOUDEUSE NIRON",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0068",
+   "name": "PIHER P4 ETAI 200-375",
+   "total": 3,
+   "location": "Dépôt"
+  },
+  {
+   "code": "O-0069",
+   "name": "PREBENA PRP ES40",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0070",
+   "name": "PRODIAXIO DX200",
+   "total": 1,
+   "location": "R-10-B1"
+  },
+  {
+   "code": "O-0071",
+   "name": "RAPID AIRTAC PB131",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0072",
+   "name": "REHEAT B3000",
+   "total": 3,
+   "location": "R-513"
+  },
+  {
+   "code": "O-0073",
+   "name": "REMKO AMT 80 E",
+   "total": 1,
+   "location": "R-03-D3"
+  },
+  {
+   "code": "O-0074",
+   "name": "REMS 56004 SCIE TIGRE",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0075",
+   "name": "REMS POWER PRESS SE BASIC",
+   "total": 1,
+   "location": "/ Chantier : Camionnette coco"
+  },
+  {
+   "code": "O-0076",
+   "name": "RIGID MICRO CA_100",
+   "total": 2,
+   "location": "/ Chantier : R-425"
+  },
+  {
+   "code": "O-0077",
+   "name": "ROTHENBERGER N3 100 168",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0078",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 15 MM",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0079",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 18 MM",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0080",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 20 MM",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0081",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 22 MM",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0082",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 10 MM",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0083",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 13 MM",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0084",
+   "name": "ROTHENBERGER CINTREUSE MANUELLE CUIVRE 12 MM",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0085",
+   "name": "ROTHENBERGER ROTO070669E",
+   "total": 1,
+   "location": "Camionnette coco"
+  },
+  {
+   "code": "O-0086",
+   "name": "SDMO HX300",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0087",
+   "name": "SECURX HARNAIS",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0088",
+   "name": "SPIT AC 1630P",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0089",
+   "name": "STANLEY ST 23 240 E",
+   "total": 2,
+   "location": "R-499 / Chantier : R-499"
+  },
+  {
+   "code": "O-0090",
+   "name": "STEINEL HL1910E",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0091",
+   "name": "STIGA REMORQUE BASCULANTE",
+   "total": 1,
+   "location": "R-04-D1"
+  },
+  {
+   "code": "O-0092",
+   "name": "STIGA NJNS 92 HYDRO",
+   "total": 1,
+   "location": "Dépôt"
+  },
+  {
+   "code": "O-0093",
+   "name": "STIHL HS45",
+   "total": 1,
+   "location": "E-09-E"
+  },
+  {
+   "code": "O-0094",
+   "name": "STIHL MS171",
+   "total": 1,
+   "location": "/ Chantier : R-451"
+  },
+  {
+   "code": "O-0095",
+   "name": "SUPERKANTE REGLE DE COUPE PAPIER PEINT",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0096",
+   "name": "TOOLLAND TM76087",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0097",
+   "name": "AEG - HBS100",
+   "total": 2,
+   "location": "/ Chantier : R-493"
+  },
+  {
+   "code": "O-0098",
+   "name": "FLEX VC21L MC",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0099",
+   "name": "FESTOOL RO150",
+   "total": 2,
+   "location": "E-03-c / Chantier : R499"
+  },
+  {
+   "code": "O-0100",
+   "name": "DEWALT 1-70-324",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0101",
+   "name": "MAKITA GA5040",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0102",
+   "name": "MAKITA TM3010",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0103",
+   "name": "METABO LSV 5-225",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0104",
+   "name": "MAKITA TD 090D",
+   "total": 1,
+   "location": "/ Chantier : Camionnette coco"
+  },
+  {
+   "code": "O-0105",
+   "name": "MAKITA DTD 146",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0106",
+   "name": "MAKITA DF330D",
+   "total": 1,
+   "location": "Camionnette coco / Chantier : Camionnette coco"
+  },
+  {
+   "code": "O-0107",
+   "name": "ECHELLE",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0108",
+   "name": "FORET DIAMANT ⌀ 90",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0109",
+   "name": "CLEVEROLL - 20 M",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0110",
+   "name": "LHS-E 225 EQ",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0111",
+   "name": "SCIE SABRE SR 6-22",
+   "total": 3,
+   "location": "R-481 / Chantier : R-481"
+  },
+  {
+   "code": "O-0112",
+   "name": "SCANNER MURAL PS 85",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0113",
+   "name": "SF 6H-22",
+   "total": 1,
+   "location": "E-02-A"
+  },
+  {
+   "code": "O-0114",
+   "name": "GFB 6X-22",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0115",
+   "name": "DWD241-QS MALAXEUR",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0116",
+   "name": "PULVERISATEUR PS 3.29",
+   "total": 1,
+   "location": "E-10"
+  },
+  {
+   "code": "O-0117",
+   "name": "ODOMETRE FATMAX 1-77-108",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0118",
+   "name": "POSTE A SOUDER X1600",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0119",
+   "name": "ASPIRATEUR 700W - ASPIRO DRY 11",
+   "total": 5,
+   "location": "E-10 / Chantier : R 359"
+  },
+  {
+   "code": "O-0120",
+   "name": "LAMPE CHANTIER SL 6-22",
+   "total": 3,
+   "location": "E-08-D / Chantier : Camionnette coco"
+  },
+  {
+   "code": "O-0121",
+   "name": "DRYFAST DAF3000",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0122",
+   "name": "FESTOOL KS 120",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0123",
+   "name": "MARTEAU PIQUEUR POWX 11861",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0124",
+   "name": "EASYLINE EDGE",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0125",
+   "name": "MAKITA DCG 180",
+   "total": 1,
+   "location": "E-02-C / Chantier : R-412"
+  },
+  {
+   "code": "O-0126",
+   "name": "CLOUEUR BETON BX 4-ME-22",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0127",
+   "name": "MILWAUKEE M18 FHX 0",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0128",
+   "name": "MILWAUKEE M18 FN18 GS",
+   "total": 1,
+   "location": "E-03-B"
+  },
+  {
+   "code": "O-0129",
+   "name": "VISSEUSE B GSB 18V-55",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0130-A",
+   "name": "VISSEUSE COMPACT F CXS",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0130-B",
+   "name": "VISSEUSE COMPACT F CXS",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0131",
+   "name": "CAROTTEUSE E ETN 162/3",
+   "total": 2,
+   "location": "E-03-A / Chantier : R-351"
+  },
+  {
+   "code": "O-0132",
+   "name": "CHAUF ELEC 3300w - B3ECA",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0133",
+   "name": "MEULEUSE 1200w BD - KG 1202",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0134",
+   "name": "PONCEUSE BETON - M PC5001C",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0135",
+   "name": "RABOT - B GHO 26-82",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0136",
+   "name": "RAINUREUSE - P PMNF1350",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0137",
+   "name": "PLAQUE VIB. - TPC 60L",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0138",
+   "name": "PULV. PEINTURE - GX 21",
+   "total": 1,
+   "location": "E-10 / Chantier : R-498"
+  },
+  {
+   "code": "O-0139",
+   "name": "NETTOYEUR HP - K 2160 TST",
+   "total": 1,
+   "location": "E-10"
+  },
+  {
+   "code": "O-0140",
+   "name": "TONDEUSE ELEC - C 40LM35",
+   "total": 2,
+   "location": "E-09-B"
+  },
+  {
+   "code": "O-0141",
+   "name": "COUPE-BORD. - C 40T07",
+   "total": 1,
+   "location": "E-09-C"
+  },
+  {
+   "code": "O-0142",
+   "name": "PERCH ELAG - C 40 PS",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0143",
+   "name": "TRONCONEUSE C 40CS12",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0144",
+   "name": "MAKITA DHP489",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0145",
+   "name": "MAKITA DHP486",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0146",
+   "name": "MAKITA DHS680",
+   "total": 1,
+   "location": "E-03-B / Chantier : R-351"
+  },
+  {
+   "code": "O-0147",
+   "name": "MAKITA ML100",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0148",
+   "name": "MAKITA DAS180",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0149",
+   "name": "CHARGEUR MAKITA - DC18RD",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0150",
+   "name": "CHARGEUR MAKITA - DC10WA",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0151",
+   "name": "BATT. MAKITA BL1850B",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0152",
+   "name": "BATT. MAKITA BL8060B",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0153",
+   "name": "XCEED EX28RHP",
+   "total": 1,
+   "location": "E-03-A"
+  },
+  {
+   "code": "O-0154",
+   "name": "ROTHENBERGER - TH20",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0155",
+   "name": "ROTHENBERGER - M16",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0156",
+   "name": "REMS - TH16",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0157",
+   "name": "REMS - V22",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0158",
+   "name": "ASPI DW - DVX30SAPTA",
+   "total": 1,
+   "location": "E-10 / Chantier : Camionnette coco"
+  },
+  {
+   "code": "O-0159",
+   "name": "H TE60-22",
+   "total": 1,
+   "location": "Camionnette coco / Chantier : R-426"
+  },
+  {
+   "code": "O-0160-A",
+   "name": "H CD4-22",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0160-B",
+   "name": "H CD4-22",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0161",
+   "name": "LASER H PM30-MG",
+   "total": 1,
+   "location": "E-02-A / Chantier : R-? Grimbergen"
+  },
+  {
+   "code": "O-0162",
+   "name": "H TE 6-22",
+   "total": 1,
+   "location": "E-02-A / Chantier : R-289"
+  },
+  {
+   "code": "O-0163",
+   "name": "REMS EVA SET 520015",
+   "total": 1,
+   "location": "E-04-D / Chantier : R-719"
+  },
+  {
+   "code": "O-0164",
+   "name": "CAM. INS. 30M - RP RC2",
+   "total": 1,
+   "location": "E-02-D"
+  },
+  {
+   "code": "O-0165",
+   "name": "MEUL. ANG. RO AG8000",
+   "total": 1,
+   "location": "E-03-B"
+  },
+  {
+   "code": "O-0166",
+   "name": "MEUL. ANG. FX L811125",
+   "total": 2,
+   "location": null
+  },
+  {
+   "code": "O-0167",
+   "name": "FEIN AM700",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0168-A",
+   "name": "ASPI H VC40L-x",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0168-B",
+   "name": "ASPI H VC40L-x",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0168-C",
+   "name": "ASPI H VC40L-x",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0169",
+   "name": "SET SCIE CLOCHE - BLU9599",
+   "total": 1,
+   "location": "E-07-D"
+  },
+  {
+   "code": "O-0170",
+   "name": "LASER FU MULTICROSS 4D",
+   "total": 2,
+   "location": "E-08-B"
+  },
+  {
+   "code": "O-0171",
+   "name": "RO ROMAX 4000 - SET TH16/20/26 - SV18 - REMS V15",
+   "total": 1,
+   "location": "E-02-A"
+  },
+  {
+   "code": "O-0172",
+   "name": "RAIL MAKITA 3M",
+   "total": 1,
+   "location": "Dépôt"
+  },
+  {
+   "code": "O-0173",
+   "name": "CHARGEUR MAKITA - DC18RC",
+   "total": 2,
+   "location": "E-08-C / Chantier : Camionette Lucas"
+  },
+  {
+   "code": "O-0174",
+   "name": "MEULEUSE X EX65AG 650W 115MM",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0175",
+   "name": "CISAILLE METAL M JS1602",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0176",
+   "name": "SCIE SAUTEUSE M 4351FCT",
+   "total": 1,
+   "location": "E-04-C"
+  },
+  {
+   "code": "O-0177",
+   "name": "DECOUPEUSE THERM. H K770",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0178",
+   "name": "SCIE CIRC. X EX190CS1",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0179",
+   "name": "PONCEUSE F RTS 400 EQ",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0180",
+   "name": "PISTOLET MASTIC",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0181",
+   "name": "ROTHENBERGER - TH26",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0182",
+   "name": "ROTHENBERGER - TH50",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0183",
+   "name": "ROTHENBERGER - M42",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0184",
+   "name": "GEBERIT MAPRESS - 28",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0185",
+   "name": "REMS - B32",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0186",
+   "name": "COLONNE CAR. EB. EE09646",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0187",
+   "name": "DETAPISSEUSE - W STEAMFORCE",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0188",
+   "name": "POMPE EAU CLAIRE HQ - 5 M³/H",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0189",
+   "name": "POMPE ARROSAGE CP - 3,6 M³/H",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0190",
+   "name": "POMPE ARROSAGE CP - 3 M³/H",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0191",
+   "name": "POMPE EAU CHARGEES VX - 7,5 M³/H",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0192  POMPE EAU CHARGEES GA",
+   "name": "5.5 M³/H",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0191",
+   "name": "COMPRESSEUR AIR ME - 8 BAR",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0192",
+   "name": "KIT PINCE GLISSEMENT PER – 12/16/20/25 MM",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0193-A",
+   "name": "VENTOUSE GRABO PRO – 170 kg",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0193-B",
+   "name": "VENTOUSE GRABO PRO – 170 kg",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0194",
+   "name": "COFFRET DOUILLE MITOOLS - 30 PCS",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0195",
+   "name": "COFFRET DOUILLE PROXXON - 27 PCS",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0196",
+   "name": "DREMEL - 3000",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0197",
+   "name": "POMPE EAU CHARGEES KSB - 9,2 M³/H",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0198",
+   "name": "POMPE EAU CHARGEES K SP 16.000 - 16 M³/H",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0199",
+   "name": "JANSER POWER-STRIPPER - DECAPEUR SOL",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0200",
+   "name": "JANSER COMPACT-STRIPPER - DECAPEUR SOL",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0201",
+   "name": "PINCE A ARRACHER",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0202",
+   "name": "SPIT 351 - BURINEUR",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0203",
+   "name": "JANSER ELEFANT - ARRACHEUR SOLS",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0204",
+   "name": "CLOUEUR MIL FFN-502C",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0205",
+   "name": "CHARGEUR RAPIDE MIL M12-M18",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0206",
+   "name": "BATTERIE MIL M18 5.0AH",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0207",
+   "name": "BATTERIE MIL M12 2.0AH",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0208",
+   "name": "RAINUREUSE HI DCH-150 SL",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0209",
+   "name": "MELANGEUR FX MXE1100",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0210",
+   "name": "TESTO 417 - ANEMOMETRE NUMERIQUE",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0211",
+   "name": "O-0211",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0212",
+   "name": "O-0212",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0213",
+   "name": "O-0213",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0214",
+   "name": "O-0214",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0215",
+   "name": "O-0215",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0216",
+   "name": "O-0216",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0217",
+   "name": "O-0217",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0218",
+   "name": "O-0218",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0219",
+   "name": "O-0219",
+   "total": 1,
+   "location": null
+  },
+  {
+   "code": "O-0220",
+   "name": "O-0220",
+   "total": 1,
+   "location": null
+  }
+ ]
+}

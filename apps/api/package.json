@@ -23,16 +23,17 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "fflate": "^0.8.3",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.3.0",
     "nanoid": "^3.3.8",
     "pdfkit": "^0.15.2",
+    "prisma": "^6.2.1",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.4",
-    "zod": "^3.24.1",
-    "prisma": "^6.2.1",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
