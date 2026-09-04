@@ -22,6 +22,11 @@ const EMPTY = {
   stockQty: '',
   published: true,
   images: [] as string[],
+  // Complétez votre location (fiche produit + borne) : liens vers d'autres produits.
+  recommendedAccessoryIds: [] as string[],
+  consumableIds: [] as string[],
+  ppeIds: [] as string[],
+  complementaryProductIds: [] as string[],
   // Internes
   partSupplier: '',
   supplierRef: '',
@@ -71,6 +76,10 @@ export default function AdminProduits() {
       stockQty: p.stockQty != null ? String(p.stockQty) : '',
       published: p.isDemo ? true : true,
       images: p.images,
+      recommendedAccessoryIds: p.recommendedAccessories.map((x) => x.id),
+      consumableIds: p.consumables.map((x) => x.id),
+      ppeIds: p.ppe.map((x) => x.id),
+      complementaryProductIds: p.complementary.map((x) => x.id),
       partSupplier: p.partSupplier ?? '',
       supplierRef: p.supplierRef ?? '',
       supplierUrl: p.supplierUrl ?? '',
@@ -102,6 +111,10 @@ export default function AdminProduits() {
         deposit: Number(form.deposit),
         published: form.published,
         images: form.images,
+        recommendedAccessoryIds: form.recommendedAccessoryIds,
+        consumableIds: form.consumableIds,
+        ppeIds: form.ppeIds,
+        complementaryProductIds: form.complementaryProductIds,
         stockQty: form.stockQty ? Number(form.stockQty) : null,
         partSupplier: form.partSupplier || null,
         supplierRef: form.supplierRef || null,
@@ -266,6 +279,44 @@ export default function AdminProduits() {
           <ImageDropzone value={form.images} onChange={(v) => set('images', v)} />
         </div>
 
+        {form.kind === 'MACHINE' && (
+          <fieldset className="card card-body" style={{ margin: 0 }}>
+            <legend className="small" style={{ fontWeight: 700 }}>
+              Complétez votre location — proposé sur la fiche produit, la borne et l&apos;appli
+            </legend>
+            <div className="stack" style={{ gap: 14 }}>
+              <LinkPicker
+                label="Accessoires nécessaires"
+                hint="ex. rotabuse pour un nettoyeur haute pression"
+                candidates={products.filter((p) => p.kind === 'ACCESSORY')}
+                value={form.recommendedAccessoryIds}
+                onChange={(v) => set('recommendedAccessoryIds', v)}
+              />
+              <LinkPicker
+                label="Consommables"
+                hint="ex. disques diamant pour une disqueuse, mèches SDS+ pour un perforateur"
+                candidates={products.filter((p) => p.kind === 'CONSUMABLE')}
+                value={form.consumableIds}
+                onChange={(v) => set('consumableIds', v)}
+              />
+              <LinkPicker
+                label="Équipements de protection (EPI)"
+                hint="ex. masque, lunettes, gants"
+                candidates={products.filter((p) => p.kind === 'PPE')}
+                value={form.ppeIds}
+                onChange={(v) => set('ppeIds', v)}
+              />
+              <LinkPicker
+                label="Machines complémentaires"
+                hint="ex. proposer un aspirateur avec une ponceuse"
+                candidates={products.filter((p) => p.kind === 'MACHINE' && p.slug !== form.slug)}
+                value={form.complementaryProductIds}
+                onChange={(v) => set('complementaryProductIds', v)}
+              />
+            </div>
+          </fieldset>
+        )}
+
         <fieldset className="card card-body" style={{ margin: 0 }}>
           <legend className="small" style={{ fontWeight: 700 }}>
             Interne — approvisionnement (jamais affiché au client)
@@ -386,6 +437,111 @@ export default function AdminProduits() {
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Recherche + ajoute des produits liés (accessoires/consommables/EPI/machines). */
+function LinkPicker({
+  label,
+  hint,
+  candidates,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  candidates: ProductDetail[];
+  value: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [q, setQ] = useState('');
+  const selected = value
+    .map((id) => candidates.find((c) => c.id === id))
+    .filter((c): c is ProductDetail => !!c);
+  const options = candidates.filter(
+    (c) => !value.includes(c.id) && c.name.toLowerCase().includes(q.toLowerCase()),
+  );
+
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <p className="small muted" style={{ margin: '0 0 6px' }}>
+        {hint}
+      </p>
+      {selected.length > 0 && (
+        <ul className="stack" style={{ gap: 6, margin: '0 0 8px', padding: 0, listStyle: 'none' }}>
+          {selected.map((s) => (
+            <li
+              key={s.id}
+              className="row"
+              style={{
+                alignItems: 'center',
+                gap: 8,
+                background: 'var(--surface-2)',
+                borderRadius: 8,
+                padding: '6px 10px',
+              }}
+            >
+              <span style={{ flex: 1 }}>{s.name}</span>
+              <span className="small muted">{formatEUR(s.dailyPrice)}</span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => onChange(value.filter((id) => id !== s.id))}
+                aria-label={`Retirer ${s.name}`}
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="row" style={{ gap: 8 }}>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Rechercher un produit…"
+          style={{ flex: 1 }}
+        />
+      </div>
+      {q && (
+        <ul
+          className="stack"
+          style={{
+            gap: 2,
+            margin: '4px 0 0',
+            padding: 0,
+            listStyle: 'none',
+            maxHeight: 180,
+            overflowY: 'auto',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+          }}
+        >
+          {options.length === 0 ? (
+            <li className="small muted" style={{ padding: '6px 10px' }}>
+              Aucun résultat.
+            </li>
+          ) : (
+            options.slice(0, 20).map((o) => (
+              <li key={o.id}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ width: '100%', justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    onChange([...value, o.id]);
+                    setQ('');
+                  }}
+                >
+                  + {o.name}
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
     </div>
   );
 }
