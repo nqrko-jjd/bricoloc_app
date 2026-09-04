@@ -54,6 +54,7 @@ const componentSchema = z.object({
 const upsertSchema = z.object({
   name: z.string().min(2).max(120),
   intro: z.string().max(600).default(''),
+  images: z.array(z.string()).max(12).default([]),
   published: z.boolean().default(false),
   dailyPrice: z.number().min(0).default(0),
   weekPrice: z.number().min(0).nullable().optional(),
@@ -206,6 +207,7 @@ async function packDetail(id: string) {
     slug: p.slug,
     name: p.name,
     intro: p.shortDescription ?? '',
+    images: Array.isArray(p.images) ? (p.images as string[]) : [],
     published: p.published,
     dailyPrice: p.dailyPrice,
     weekPrice: p.weekPrice,
@@ -337,6 +339,7 @@ adminBricoPacksRouter.put(
         name: body.name,
         shortDescription: body.intro,
         description: body.intro,
+        images: body.images as never,
         published: body.published,
         dailyPrice: body.dailyPrice,
         weekPrice: body.weekPrice ?? Math.round(body.dailyPrice * 4),
@@ -358,6 +361,32 @@ adminBricoPacksRouter.put(
       });
 
     res.json({ pack: await packDetail(id) });
+  }),
+);
+
+/* ---------------- Affectation groupée d'images de garde ---------------- */
+adminBricoPacksRouter.post(
+  '/covers',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    const covers = z
+      .array(z.object({ packId: z.string().min(1), url: z.string().min(1) }))
+      .max(60)
+      .parse(req.body?.covers ?? []);
+    let done = 0;
+    for (const c of covers) {
+      const p = await prisma.product.findFirst({
+        where: { id: c.packId, kind: 'PACK' },
+        select: { images: true },
+      });
+      if (!p) continue;
+      const cur = Array.isArray(p.images) ? (p.images as string[]) : [];
+      // On met la nouvelle image en 1re position (garde), sans doublon.
+      const next = [c.url, ...cur.filter((u) => u !== c.url)].slice(0, 12);
+      await prisma.product.update({ where: { id: c.packId }, data: { images: next as never } });
+      done++;
+    }
+    res.json({ updated: done });
   }),
 );
 

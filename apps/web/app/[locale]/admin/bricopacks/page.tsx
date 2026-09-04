@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { staffApi } from '@/lib/staff';
 import { formatEUR } from '@bricoloc/shared';
+import { API_URL } from '@/lib/api';
+import { ImageDropzone } from '@/components/admin/ImageDropzone';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -41,6 +43,7 @@ type PackDetail = {
   slug: string;
   name: string;
   intro: string;
+  images: string[];
   published: boolean;
   dailyPrice: number;
   weekPrice: number | null;
@@ -142,6 +145,7 @@ export default function AdminBricoPacks() {
         body: {
           name: pack.name,
           intro: pack.intro,
+          images: pack.images,
           published: pack.published,
           dailyPrice: pack.dailyPrice,
           weekPrice: pack.weekPrice,
@@ -191,6 +195,8 @@ export default function AdminBricoPacks() {
         (et inversement). Le prix et la caution restent modifiables — des suggestions sont
         calculées d’après les machines choisies.
       </p>
+
+      <BulkCovers rows={rows} onDone={loadList} />
 
       <div className="bp-admin">
         <div className="card card-body bp-admin__list">
@@ -250,6 +256,161 @@ export default function AdminBricoPacks() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ------------------ Import groupé d'images de garde ------------------ */
+function norm(s: string) {
+  return s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+function bestMatch(fileName: string, rows: PackRow[]): string | null {
+  const base = norm(fileName.replace(/\.[a-z0-9]+$/i, ''));
+  const fileTokens = new Set(base.split(' ').filter(Boolean));
+  let best: { id: string; score: number } | null = null;
+  for (const r of rows) {
+    const cand = norm(r.name);
+    const slugN = r.slug.replace(/-/g, ' ');
+    let score = 0;
+    if (cand === base || slugN === base) score = 100;
+    else {
+      const tokens = new Set([...cand.split(' '), ...slugN.split(' ')].filter(Boolean));
+      let hit = 0;
+      for (const tk of fileTokens) if (tokens.has(tk)) hit++;
+      score = fileTokens.size ? (hit / fileTokens.size) * 100 : 0;
+      if (base.includes(cand) || cand.includes(base)) score = Math.max(score, 80);
+    }
+    if (!best || score > best.score) best = { id: r.id, score };
+  }
+  return best && best.score >= 55 ? best.id : null;
+}
+
+function BulkCovers({ rows, onDone }: { rows: PackRow[]; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [items, setItems] = useState<{ name: string; url: string; packId: string | null }[]>([]);
+
+  async function onFiles(files: FileList | null) {
+    if (!files || !files.length) return;
+    setBusy(true);
+    setMsg('');
+    try {
+      const token = localStorage.getItem('bricoloc_staff_token');
+      const fd = new FormData();
+      Array.from(files).forEach((f) => fd.append('files', f));
+      const res = await fetch(`${API_URL}/api/admin/uploads`, {
+        method: 'POST',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error?.message ?? `Erreur ${res.status}`);
+      const uploaded: { url: string }[] = json.media ?? [];
+      const names = Array.from(files).map((f) => f.name);
+      setItems(
+        uploaded.map((m, i) => ({
+          name: names[i] ?? `image ${i + 1}`,
+          url: m.url,
+          packId: bestMatch(names[i] ?? '', rows),
+        })),
+      );
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function apply() {
+    const covers = items.filter((it) => it.packId).map((it) => ({ packId: it.packId!, url: it.url }));
+    if (!covers.length) return;
+    setBusy(true);
+    try {
+      const r = await staffApi<{ updated: number }>('/api/admin/bricopacks/covers', {
+        method: 'POST',
+        body: { covers },
+      });
+      setMsg(`✓ ${r.updated} pack(s) mis à jour`);
+      setItems([]);
+      await onDone();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const matched = items.filter((i) => i.packId).length;
+
+  return (
+    <div className="card card-body stack">
+      <button className="btn btn-ghost btn-sm" onClick={() => setOpen((v) => !v)} style={{ alignSelf: 'flex-start' }}>
+        {open ? '▾' : '▸'} Importer des visuels en lot (zip décompressé / images nommées)
+      </button>
+      {open && (
+        <>
+          <p className="small muted">
+            Choisis plusieurs images d’un coup. Le nom du fichier est rapproché du nom du pack
+            (ex. « Peindre une pièce.jpg » → pack « Peindre une pièce »). Vérifie les
+            correspondances avant d’appliquer.
+          </p>
+          <input type="file" accept="image/*" multiple onChange={(e) => onFiles(e.target.files)} />
+          {msg && (
+            <div className={`alert ${msg.startsWith('✓') ? 'alert-ok' : 'alert-err'}`}>{msg}</div>
+          )}
+          {busy && <p className="small muted">Traitement…</p>}
+          {items.length > 0 && (
+            <>
+              <p className="small">
+                {matched}/{items.length} rapprochés automatiquement.
+              </p>
+              <table className="table table--tight">
+                <tbody>
+                  {items.map((it, i) => (
+                    <tr key={it.url}>
+                      <td style={{ width: 60 }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={it.url.replace(/\.webp$/, '.thumb.webp')}
+                          alt=""
+                          style={{ width: 48, height: 48, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+                        />
+                      </td>
+                      <td className="small">{it.name}</td>
+                      <td>
+                        <select
+                          value={it.packId ?? ''}
+                          onChange={(e) =>
+                            setItems((cur) =>
+                              cur.map((x, j) =>
+                                j === i ? { ...x, packId: e.target.value || null } : x,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="">— ignorer —</option>
+                          {rows.map((r) => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button className="btn btn-primary" disabled={busy || !matched} onClick={apply}>
+                Appliquer {matched} image(s) de garde
+              </button>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -392,6 +553,15 @@ function PackEditor({
             onChange={(e) => patch({ teamSize: e.target.value || null })}
           />
         </div>
+      </div>
+
+      {/* ----------------------- Visuel ----------------------- */}
+      <div className="card card-body stack">
+        <h3 style={{ margin: 0 }}>Image de garde</h3>
+        <p className="small muted">
+          La 1re image est la couverture du pack (accueil, page BricoPacks, borne).
+        </p>
+        <ImageDropzone value={pack.images} onChange={(images) => patch({ images })} max={6} />
       </div>
 
       {/* ----------------------- Composition ----------------------- */}
