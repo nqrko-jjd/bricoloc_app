@@ -1,6 +1,6 @@
 'use client';
 import { Link } from '@/i18n/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
 import { api, clientApi, ApiError } from '@/lib/api';
 import { useCart, useSession } from '@/lib/providers';
@@ -24,6 +24,17 @@ export default function CommandePage() {
   const [phase, setPhase] = useState<Phase>('dates');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Borne : les dates + le retrait sont déjà choisis dans le parcours /borne/catalogue.
+  // On saute directement aux coordonnées pour rester fluide.
+  const skipped = useRef(false);
+  useEffect(() => {
+    if (skipped.current) return;
+    if (kiosk && phase === 'dates' && cart?.period && cart?.fulfilmentMode) {
+      skipped.current = true;
+      setPhase('account');
+    }
+  }, [kiosk, phase, cart?.period, cart?.fulfilmentMode]);
 
   const d = defaultPeriod();
   const [start, setStart] = useState(toLocalInput(cart?.period?.start ?? d.start));

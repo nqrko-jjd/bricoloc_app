@@ -7,13 +7,19 @@ import { api } from '@/lib/api';
 import { useCart } from '@/lib/providers';
 import { useRouter } from '@/i18n/navigation';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
+import { defaultPeriod, toLocalInput, fromLocalInput } from '@/lib/dates';
 import type { Category, ProductSummary, ProductDetail, RecommendationGroup } from '@/lib/types';
 
-type Step = 'browse' | 'cart' | 'extras';
+type Step = 'dates' | 'browse' | 'cart' | 'extras';
 
 const T: Record<Locale, Record<string, string>> = {
   fr: {
     back: '← Accueil',
+    datesTitle: 'Vos dates de location',
+    datesSub: 'Une seule période pour toute la commande — on vérifie la disponibilité de chaque outil.',
+    startLabel: 'Début',
+    endLabel: 'Retour',
+    datesCta: 'Voir les outils disponibles',
     search: 'Rechercher un outil…',
     all: 'Tout',
     available: 'Disponible',
@@ -48,6 +54,11 @@ const T: Record<Locale, Record<string, string>> = {
   },
   nl: {
     back: '← Start',
+    datesTitle: 'Uw huurperiode',
+    datesSub: 'Eén periode voor de hele bestelling — we controleren de beschikbaarheid van elk stuk gereedschap.',
+    startLabel: 'Start',
+    endLabel: 'Terug',
+    datesCta: 'Beschikbaar gereedschap tonen',
     search: 'Zoek gereedschap…',
     all: 'Alles',
     available: 'Beschikbaar',
@@ -82,6 +93,11 @@ const T: Record<Locale, Record<string, string>> = {
   },
   en: {
     back: '← Home',
+    datesTitle: 'Your rental dates',
+    datesSub: 'One period for the whole order — we check every tool’s availability.',
+    startLabel: 'Start',
+    endLabel: 'Return',
+    datesCta: 'Show available tools',
     search: 'Search a tool…',
     all: 'All',
     available: 'Available',
@@ -125,9 +141,18 @@ function ShopInner() {
   const params = useSearchParams();
   const locale = useLocale() as Locale;
   const t = T[locale] ?? T.fr;
-  const { cart, addItem, setQty, removeItem } = useCart();
+  const { cart, addItem, setQty, removeItem, setPeriod, setFulfilment } = useCart();
 
-  const [step, setStep] = useState<Step>(params.get('to') === 'cart' ? 'cart' : 'browse');
+  const wantCart = params.get('to') === 'cart';
+  const hasPeriod = !!cart?.period;
+  const [step, setStep] = useState<Step>(
+    wantCart && hasPeriod ? 'cart' : hasPeriod ? 'browse' : 'dates',
+  );
+
+  const dp = defaultPeriod();
+  const [start, setStart] = useState(toLocalInput(cart?.period?.start ?? dp.start));
+  const [end, setEnd] = useState(toLocalInput(cart?.period?.end ?? dp.end));
+  const [datesBusy, setDatesBusy] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [category, setCategory] = useState(params.get('category') ?? '');
   const [q, setQ] = useState(params.get('q') ?? '');
@@ -154,12 +179,19 @@ function ShopInner() {
       .catch(() => undefined);
   }, [locale]);
 
+  const periodStart = cart?.period?.start ?? '';
+  const periodEnd = cart?.period?.end ?? '';
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     const sp = new URLSearchParams({ locale, sort: 'name', pageSize: '60' });
     if (category) sp.set('category', category);
     if (q.trim()) sp.set('q', q.trim());
+    if (periodStart && periodEnd) {
+      sp.set('start', periodStart);
+      sp.set('end', periodEnd);
+    }
     const id = setTimeout(() => {
       api<{ products: ProductSummary[] }>(`/api/catalog/products?${sp}`)
         .then((r) => {
@@ -173,7 +205,20 @@ function ShopInner() {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [locale, category, q]);
+  }, [locale, category, q, periodStart, periodEnd]);
+
+  async function saveDates() {
+    setDatesBusy(true);
+    try {
+      await setPeriod({ start: fromLocalInput(start), end: fromLocalInput(end) });
+      await setFulfilment({ mode: 'PICKUP' });
+      setStep(wantCart ? 'cart' : 'browse');
+    } catch {
+      /* garde l'ecran dates */
+    } finally {
+      setDatesBusy(false);
+    }
+  }
 
   async function openDetail(slug: string) {
     setDetailImg(0);
@@ -210,45 +255,11 @@ function ShopInner() {
     }
   }
 
-  // Fallback borne : si le produit n'a pas de liens metier, on propose quand
-  // meme consommables + EPI genériques pour ne pas casser le parcours.
-  async function loadFallbackExtras(): Promise<RecommendationGroup[]> {
-    const inCart = new Set((cart?.items ?? []).map((i) => i.productId));
-    const grab = async (kind: string, label: string): Promise<RecommendationGroup | null> => {
-      try {
-        const r = await api<{ products: ProductSummary[] }>(
-          `/api/catalog/products?locale=${locale}&kind=${kind}&sort=name&pageSize=8`,
-        );
-        const products = r.products
-          .filter((p) => !inCart.has(p.id))
-          .slice(0, 6)
-          .map((p) => ({
-            id: p.id,
-            slug: p.slug,
-            name: p.name,
-            kind: p.kind,
-            shortDescription: p.shortDescription,
-            image: p.image,
-            dailyPrice: p.dailyPrice,
-            deposit: p.deposit,
-            isConsumable: p.isConsumable,
-          }));
-        return products.length ? { type: kind, label, products } : null;
-      } catch {
-        return null;
-      }
-    };
-    const groups = await Promise.all([
-      grab('CONSUMABLE', t.grpConsumable),
-      grab('ACCESSORY', t.grpAccessory),
-      grab('PPE', t.grpPpe),
-    ]);
-    return groups.filter((g): g is RecommendationGroup => g !== null);
-  }
-
-  const goExtras = async () => {
-    const own = cart?.recommendations ?? [];
-    const groups = own.length > 0 ? own : await loadFallbackExtras();
+  // Recommandations = uniquement les liens métier réels de la machine
+  // (disqueuse → disques, perfo → mèches, ponceuse → abrasifs…). Pas de
+  // suggestions génériques : si rien de pertinent, on passe directement au paiement.
+  const goExtras = () => {
+    const groups = cart?.recommendations ?? [];
     if (groups.length === 0) {
       router.push('/commande');
       return;
@@ -268,6 +279,48 @@ function ShopInner() {
     (s, i) => s + i.dailyPrice * i.quantity,
     0,
   );
+
+  /* ------------------------------- DATES ------------------------------ */
+  if (step === 'dates') {
+    return (
+      <div className="kioskm-shop">
+        <div className="kioskm-shop__head">
+          <button className="kioskm-back" onClick={() => router.push('/borne')}>
+            {t.back}
+          </button>
+          <h1>{t.datesTitle}</h1>
+          <p className="kioskm-sub">{t.datesSub}</p>
+        </div>
+        <div className="kioskm-dates">
+          <label className="kioskm-dates__f">
+            <span>{t.startLabel}</span>
+            <input
+              type="datetime-local"
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+            />
+          </label>
+          <label className="kioskm-dates__f">
+            <span>{t.endLabel}</span>
+            <input
+              type="datetime-local"
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="kioskm-shop__foot">
+          <button
+            className="btn btn-primary btn-lg"
+            disabled={datesBusy || !start || !end || end <= start}
+            onClick={saveDates}
+          >
+            {datesBusy ? '…' : t.datesCta}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   /* ------------------------------ EXTRAS ------------------------------ */
   if (step === 'extras') {
@@ -411,12 +464,22 @@ function ShopInner() {
   }
 
   /* ------------------------------ BROWSE ------------------------------ */
+  const periodLabel =
+    periodStart && periodEnd
+      ? `${new Date(periodStart).toLocaleDateString(locale)} → ${new Date(periodEnd).toLocaleDateString(locale)}`
+      : '';
+
   return (
     <div className="kioskm-shop">
       <div className="kioskm-shop__head">
         <button className="kioskm-back" onClick={() => router.push('/borne')}>
           {t.back}
         </button>
+        {periodLabel && (
+          <button className="kioskm-shop__period" onClick={() => setStep('dates')}>
+            📅 {periodLabel} <span>✎</span>
+          </button>
+        )}
       </div>
 
       <input

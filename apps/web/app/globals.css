@@ -2899,6 +2899,22 @@ button { font-family: inherit; }
 .kioskm-modal__packlist strong { display: block; font-weight: 700; }
 .kioskm-modal__packlist small { color: var(--muted-fg); }
 
+.kioskm-shop__period {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 8px; padding: 8px 16px; min-height: 44px;
+  border: 2px solid var(--border, #e3e3ea); border-radius: 999px;
+  background: #fff; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+}
+.kioskm-shop__period span { color: var(--primary); }
+
+.kioskm-dates { display: flex; flex-wrap: wrap; gap: 16px; margin: 20px 0 28px; }
+.kioskm-dates__f { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px; }
+.kioskm-dates__f span { font-weight: 800; font-size: 1rem; }
+.kioskm-dates__f input {
+  min-height: 66px; border-radius: 14px; border: 2px solid var(--border, #e3e3ea);
+  padding: 0 18px; font-size: 1.15rem; background: #fff;
+}
+
 @media (max-width: 640px) {
   .kioskm-modal__grid { grid-template-columns: 1fr; }
   .kioskm-shop__foot .btn { min-width: 100%; }
