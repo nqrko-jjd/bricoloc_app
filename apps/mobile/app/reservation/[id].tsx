@@ -5,7 +5,7 @@ import { api, API_URL } from '@/lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TOKEN_KEY } from '@/lib/api';
 import { C } from '@/lib/theme';
-import { icsDataUri } from '@bricoloc/shared';
+import { icsDataUri } from '@/lib/calendar';
 import { formatEUR, formatDateTimeBE } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button, Badge, Field } from '@/components/ui';
 import type { Reservation } from '@/lib/types';
