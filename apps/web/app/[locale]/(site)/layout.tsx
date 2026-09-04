@@ -1,10 +1,6 @@
 import { cookies } from 'next/headers';
 import { setRequestLocale } from 'next-intl/server';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
-import { DateRangeBar } from '@/components/DateRangeBar';
-import { Reveal } from '@/components/Reveal';
-import { KioskShell } from '@/components/kiosk/KioskShell';
+import { SiteChrome } from '@/components/SiteChrome';
 
 export default async function SiteLayout({
   children,
@@ -16,24 +12,10 @@ export default async function SiteLayout({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // Mode borne : plein écran, coque tactile, ni en-tête ni pied de page.
-  const kiosk = (await cookies()).get('bricoloc_kiosk')?.value === '1';
-  if (kiosk) {
-    return (
-      <KioskShell>
-        <main>{children}</main>
-        <Reveal />
-      </KioskShell>
-    );
-  }
+  // Le cookie borne est posé par le middleware sur /borne*. SiteChrome ne
+  // l'honore que sur le parcours borne (/borne/* + /commande) pour ne pas
+  // basculer tout le site en mode borne.
+  const kioskCookie = (await cookies()).get('bricoloc_kiosk')?.value === '1';
 
-  return (
-    <>
-      <Header />
-      <DateRangeBar />
-      <main>{children}</main>
-      <Footer />
-      <Reveal />
-    </>
-  );
+  return <SiteChrome kioskCookie={kioskCookie}>{children}</SiteChrome>;
 }

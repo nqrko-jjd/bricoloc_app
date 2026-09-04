@@ -14,12 +14,22 @@ export default function middleware(req: NextRequest) {
     path === '/borne' ||
     path.startsWith('/borne/') ||
     /^\/(?:nl|en)\/borne(?:\/|$)/.test(path);
+  // Le tunnel de commande garde le mode borne (les pages /borne/* renvoient
+  // vers /commande à la fin du parcours). Toute autre page l'efface : sinon,
+  // avoir visité /borne une fois figeait TOUT le site en mode borne 12 h.
+  const inCheckout =
+    path === '/commande' ||
+    path.startsWith('/commande/') ||
+    /^\/(?:nl|en)\/commande(?:\/|$)/.test(path);
+
   if (onBorne) {
     res.cookies.set('bricoloc_kiosk', '1', {
       path: '/',
       maxAge: 60 * 60 * 12,
       sameSite: 'lax',
     });
+  } else if (!inCheckout) {
+    res.cookies.set('bricoloc_kiosk', '', { path: '/', maxAge: 0 });
   }
   return res;
 }

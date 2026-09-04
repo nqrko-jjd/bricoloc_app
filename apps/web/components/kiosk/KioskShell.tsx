@@ -4,37 +4,23 @@ import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { SUPPORTED_LOCALES, type Locale } from '@bricoloc/shared';
-import { useCart } from '@/lib/providers';
 import { wipeSession, exitKiosk } from '@/lib/kiosk';
 import { KioskKeyboard } from './KioskKeyboard';
 
 const IDLE_MS = 120_000;
 
-const L: Record<string, { restart: string; res: string; help: string }> = {
-  fr: { restart: 'Recommencer', res: 'Ma réservation', help: 'Aide' },
-  nl: { restart: 'Opnieuw', res: 'Mijn reservering', help: 'Hulp' },
-  en: { restart: 'Restart', res: 'My booking', help: 'Help' },
-};
-
 /**
  * Coque plein écran de la borne tactile. Pas de châssis dessiné : la page
- * OCCUPE l'écran (orientation libre). En-tête minimal en pastilles (logo +
- * langue + « Ma réservation » + aide + panier). Aucune sortie : on reste
- * dans la borne. Remise à zéro automatique après 2 min d'inactivité.
+ * OCCUPE l'écran (orientation libre). En-tête réduit au strict minimum :
+ * le logo à gauche, le choix de la langue à droite — rien d'autre (ni
+ * navigation, ni pied de page). Remise à zéro après 2 min d'inactivité.
  */
 export function KioskShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
   const locale = useLocale() as Locale;
-  const t = L[locale] ?? L.fr;
-  const { cart } = useCart();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const count = cart?.itemCount ?? 0;
-  const nextLocale =
-    SUPPORTED_LOCALES[(SUPPORTED_LOCALES.indexOf(locale) + 1) % SUPPORTED_LOCALES.length];
-  const home = pathname === '/borne';
 
   useEffect(() => {
     function reset() {
@@ -81,42 +67,22 @@ export function KioskShell({ children }: { children: ReactNode }) {
           <img src="/img/logo-bricoloc.webp" alt="Bricoloc" />
         </Link>
 
+        {/* Rien d'autre que le logo (à gauche) et le choix de langue (à droite). */}
         <div className="kioskm__actions">
-          {!home && (
+          {SUPPORTED_LOCALES.map((l) => (
             <button
-              className="kioskm__c kioskm__c--wide"
-              onClick={() => {
-                wipeSession();
-                router.push('/borne');
-              }}
+              key={l}
+              className={`kioskm__lang${l === locale ? ' is-on' : ''}`}
+              onClick={() =>
+                // @ts-expect-error params dynamiques transmis tels quels
+                router.replace({ pathname, params }, { locale: l })
+              }
+              aria-label={l.toUpperCase()}
+              aria-current={l === locale}
             >
-              <span aria-hidden>↺</span> {t.restart}
+              {l.toUpperCase()}
             </button>
-          )}
-          <button
-            className="kioskm__c"
-            onClick={() =>
-              // @ts-expect-error params dynamiques transmis tels quels
-              router.replace({ pathname, params }, { locale: nextLocale })
-            }
-            aria-label="Langue"
-          >
-            {locale.toUpperCase()}
-          </button>
-          <Link href="/borne/reservation" className="kioskm__c" aria-label={t.res} title={t.res}>
-            ▣
-          </Link>
-          <Link href="/borne/conseiller" className="kioskm__c" aria-label={t.help} title={t.help}>
-            ?
-          </Link>
-          <Link
-            href="/panier"
-            className="kioskm__c kioskm__c--cart"
-            aria-label="Panier"
-          >
-            🛒
-            {count > 0 && <span className="kioskm__badge">{count}</span>}
-          </Link>
+          ))}
         </div>
       </header>
 

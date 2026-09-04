@@ -2605,7 +2605,15 @@ button { font-family: inherit; }
   min-height: 68px;
 }
 .kioskm__logo img { height: 40px; width: auto; display: block; }
-.kioskm__actions { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+.kioskm__actions { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.kioskm__lang {
+  min-width: 46px; height: 46px; padding: 0 12px;
+  border-radius: 999px; border: 1.5px solid var(--line, #e6e6ef);
+  background: #fff; color: var(--navy-deep, #08065d);
+  font-weight: 800; font-size: 0.95rem; letter-spacing: 0.02em; cursor: pointer;
+}
+.kioskm__lang.is-on { background: var(--navy, #08065d); border-color: var(--navy, #08065d); color: #fff; }
+.kioskm__lang:active { transform: scale(0.95); }
 .kioskm__c {
   position: relative;
   display: inline-flex;

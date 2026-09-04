@@ -160,14 +160,20 @@ export default function CommandePage() {
             </p>
           )}
           <p className="small">Facture : {result.invoiceNumber}</p>
-          <div className="row">
-            <Link href="/compte" className="btn btn-primary">
-              Voir mes réservations
+          {kiosk ? (
+            <Link href="/borne" className="btn btn-primary btn-lg">
+              Terminer
             </Link>
-            <Link href="/catalogue" className="btn btn-ghost">
-              Nouvelle location
-            </Link>
-          </div>
+          ) : (
+            <div className="row">
+              <Link href="/compte" className="btn btn-primary">
+                Voir mes réservations
+              </Link>
+              <Link href="/catalogue" className="btn btn-ghost">
+                Nouvelle location
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -177,7 +183,7 @@ export default function CommandePage() {
     return (
       <div className="section container center">
         <h1>Panier vide</h1>
-        <Link href="/catalogue" className="btn btn-primary">
+        <Link href={kiosk ? '/borne/catalogue' : '/catalogue'} className="btn btn-primary">
           Voir le catalogue
         </Link>
       </div>
