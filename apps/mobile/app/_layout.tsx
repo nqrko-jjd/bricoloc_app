@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { StoreProvider } from '@/lib/store';
+import { ProductQuickViewProvider } from '@/components/ProductQuickView';
 import { StaffProvider, useStaff } from '@/lib/staff';
 import { TEAM_MODE } from '@/lib/config';
 import { setLocaleOverride, type Locale, LOCALES } from '@/lib/i18n';
@@ -45,6 +46,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StoreProvider>
+        <ProductQuickViewProvider>
         <StaffProvider>
           <StatusBar style="light" />
           <BootRedirect />
@@ -68,6 +70,7 @@ export default function RootLayout() {
             <Stack.Screen name="staff" options={{ headerShown: false }} />
           </Stack>
         </StaffProvider>
+        </ProductQuickViewProvider>
       </StoreProvider>
     </SafeAreaProvider>
   );

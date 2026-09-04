@@ -5,6 +5,7 @@ import { api, API_URL } from '@/lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TOKEN_KEY } from '@/lib/api';
 import { C } from '@/lib/theme';
+import { icsDataUri } from '@bricoloc/shared';
 import { formatEUR, formatDateTimeBE } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button, Badge, Field } from '@/components/ui';
 import type { Reservation } from '@/lib/types';
@@ -44,6 +45,28 @@ export default function ReservationDetail() {
           {r.fulfilmentMode === 'DELIVERY' ? 'Livraison' : 'Retrait comptoir'}
           {r.slot ? ` · ${r.slot}` : ''}
         </Text>
+        <Button
+          title="📅 Ajouter à mon agenda"
+          variant="outline"
+          onPress={() =>
+            Linking.openURL(
+              icsDataUri({
+                uid: `resa-${r.number}`,
+                start: r.periodStart,
+                end: r.periodEnd,
+                summary: `Location BRICOLOC ${r.number}`,
+                description: `${orderPackItems(r.items)
+                  .filter((i) => !i.packRef)
+                  .map((i) => `${i.quantity}× ${i.nameSnapshot}`)
+                  .join(', ')}. Code : ${r.number}.`,
+                location:
+                  r.fulfilmentMode === 'DELIVERY'
+                    ? 'Livraison'
+                    : 'BRICOLOC — Gieterijstraat 49, 1601 Ruisbroek',
+              }),
+            )
+          }
+        />
       </Card>
 
       <Card>

@@ -37,25 +37,24 @@ export default function HomeScreen() {
   const { user } = useStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [popular, setPopular] = useState<ProductSummary[]>([]);
-  const [pack, setPack] = useState<ProductSummary | null>(null);
-  const [packCount, setPackCount] = useState(0);
+  const [packs, setPacks] = useState<
+    { slug: string; name: string; dailyPrice: number; image: string | null; toolCount?: number; popular?: boolean }[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
     try {
-      const [cat, pop, packs] = await Promise.all([
+      const [cat, pop, bp] = await Promise.all([
         api<{ categories: Category[] }>('/api/catalog/categories'),
         api<{ products: ProductSummary[] }>('/api/catalog/products?pageSize=6&sort=name'),
-        api<{ packs: { slug: string; name: string; dailyPrice: number; image: string | null }[] }>(
-          '/api/public/bricopacks',
-        ).catch(() => ({ packs: [] })),
+        api<{ packs: typeof packs }>('/api/public/bricopacks').catch(() => ({ packs: [] as typeof packs })),
       ]);
       setCategories(cat.categories);
       setPopular((pop.products ?? []).filter((p) => p.image).slice(0, 4));
-      const bp = packs.packs ?? [];
-      setPack((bp[0] ?? null) as any);
-      setPackCount(bp.length);
+      setPacks(
+        [...(bp.packs ?? [])].sort((a, b) => Number(!!b.popular) - Number(!!a.popular)).slice(0, 10),
+      );
     } finally {
       setLoading(false);
     }
@@ -69,7 +68,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.white }} edges={['top']}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         {/* Header */}
@@ -158,49 +157,77 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        {/* BricoPack */}
-        {packCount > 0 && (
-          <Pressable
-            onPress={() => router.push('/bricopacks' as never)}
-            style={{
-              marginHorizontal: 20,
-              marginTop: 24,
-              backgroundColor: C.redTint,
-              borderRadius: R.lg,
-              padding: 20,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 20, fontWeight: '900', color: C.ink, letterSpacing: -0.5 }}>
-                {t('home.packTitle')}
-              </Text>
-              <Text style={{ color: C.muted, marginTop: 4, fontSize: 13 }}>{t('home.packText')}</Text>
-              <View
-                style={{
-                  alignSelf: 'flex-start',
-                  backgroundColor: C.brico,
-                  borderRadius: R.pill,
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  marginTop: 12,
-                }}
-              >
-                <Text style={{ color: C.white, fontWeight: '800', fontSize: 13 }}>
-                  Voir les {packCount} packs
-                </Text>
-              </View>
-            </View>
-            {pack?.image && (
-              <Image
-                source={{ uri: mediaUrl(pack.image) }}
-                style={{ width: 110, height: 110, borderRadius: R.md }}
-                resizeMode="contain"
-              />
-            )}
-          </Pressable>
+        {/* BricoPacks — slider */}
+        {packs.length > 0 && (
+          <>
+            <SectionHead
+              title={t('home.packTitle') + 's'}
+              onSeeAll={() => router.push('/bricopacks' as never)}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+              decelerationRate="fast"
+              snapToInterval={200}
+            >
+              {packs.map((bp) => (
+                <Pressable
+                  key={bp.slug}
+                  onPress={() => router.push(`/bricopack/${bp.slug}` as never)}
+                  style={{
+                    width: 188,
+                    backgroundColor: C.white,
+                    borderRadius: R.md,
+                    borderWidth: 1,
+                    borderColor: C.border,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <View style={{ height: 108, backgroundColor: C.surface2 }}>
+                    {bp.image ? (
+                      <Image
+                        source={{ uri: mediaUrl(bp.image) }}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="cube-outline" size={30} color={C.brico} />
+                      </View>
+                    )}
+                    {bp.popular ? (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: 8,
+                          left: 8,
+                          backgroundColor: C.brico,
+                          borderRadius: R.pill,
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                        }}
+                      >
+                        <Text style={{ color: C.white, fontSize: 10, fontWeight: '800' }}>POPULAIRE</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <View style={{ padding: 12, gap: 3 }}>
+                    <Text style={{ fontWeight: '800', color: C.ink, fontSize: 13 }} numberOfLines={2}>
+                      {bp.name}
+                    </Text>
+                    {bp.toolCount ? (
+                      <Text style={{ color: C.muted, fontSize: 11 }}>{bp.toolCount} outils</Text>
+                    ) : null}
+                    <Text style={{ fontWeight: '900', color: C.ink, fontSize: 14 }}>
+                      {formatEUR(bp.dailyPrice)}
+                      <Text style={{ fontWeight: '600', color: C.muted, fontSize: 11 }}> / jour</Text>
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </>
         )}
 
         {/* Populaires */}

@@ -12,11 +12,11 @@ import {
   type TextInputProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '@/lib/theme';
 import { mediaUrl } from '@/lib/api';
 import { formatEUR } from '@/lib/format';
+import { useQuickView } from '@/components/ProductQuickView';
 
 export interface ProductMini {
   slug: string;
@@ -39,7 +39,7 @@ export function Screen({
     <SafeAreaView style={{ flex: 1, backgroundColor: C.white }} edges={['top']}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={{ padding: 20, paddingBottom: 48 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
           keyboardShouldPersistTaps="handled"
           refreshControl={refreshing}
         >
@@ -53,6 +53,17 @@ export function Screen({
 }
 
 export function Logo({ size = 22, onDark = false }: { size?: number; onDark?: boolean }) {
+  // Logo officiel (B rouge à 2 flèches + « RICOLOC »). Ratio ≈ 3.35:1.
+  if (!onDark) {
+    return (
+      <Image
+        source={require('../assets/logo.png')}
+        style={{ height: size * 1.7, width: size * 1.7 * 3.35 }}
+        resizeMode="contain"
+      />
+    );
+  }
+  // Sur fond foncé (espace équipe) : « LOC » passe en blanc.
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View
@@ -70,7 +81,7 @@ export function Logo({ size = 22, onDark = false }: { size?: number; onDark?: bo
       </View>
       <Text style={{ fontWeight: '900', fontSize: size, letterSpacing: -0.5 }}>
         <Text style={{ color: C.brico }}>BRICO</Text>
-        <Text style={{ color: onDark ? C.white : C.locDeep }}>LOC</Text>
+        <Text style={{ color: C.white }}>LOC</Text>
       </Text>
     </View>
   );
@@ -174,17 +185,19 @@ export function ProductMiniCard({
   p: ProductMini;
   width?: import('react-native').DimensionValue;
 }) {
+  const qv = useQuickView();
   return (
-    <Link href={`/produit/${p.slug}`} asChild>
       <Pressable
-        style={{
+        onPress={() => qv.open(p.slug)}
+        style={({ pressed }) => ({
           width: width ?? '47%',
           backgroundColor: C.white,
           borderRadius: 18,
           borderWidth: 1,
           borderColor: C.border,
           overflow: 'hidden',
-        }}
+          opacity: pressed ? 0.9 : 1,
+        })}
       >
         <View style={{ height: 120, backgroundColor: C.surface2, alignItems: 'center', justifyContent: 'center' }}>
           <Image
@@ -223,7 +236,6 @@ export function ProductMiniCard({
           ) : null}
         </View>
       </Pressable>
-    </Link>
   );
 }
 

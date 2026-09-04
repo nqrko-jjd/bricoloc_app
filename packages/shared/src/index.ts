@@ -4,4 +4,5 @@ export * from './format.js';
 export * from './barcode.js';
 export * from './pricing.js';
 export * from './availability.js';
+export * from './calendar.js';
 export * from './dto.js';

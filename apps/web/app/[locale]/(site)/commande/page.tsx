@@ -1,7 +1,7 @@
 'use client';
 import { Link } from '@/i18n/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { formatEUR, formatDateTimeBE } from '@bricoloc/shared';
+import { formatEUR, formatDateTimeBE, icsDataUri } from '@bricoloc/shared';
 import { api, clientApi, ApiError } from '@/lib/api';
 import { useCart, useSession } from '@/lib/providers';
 import { useKiosk } from '@/lib/kiosk';
@@ -160,6 +160,25 @@ export default function CommandePage() {
             </p>
           )}
           <p className="small">Facture : {result.invoiceNumber}</p>
+          <a
+            className="btn btn-ghost"
+            href={icsDataUri({
+              uid: `resa-${result.number}`,
+              start: fromLocalInput(start),
+              end: fromLocalInput(end),
+              summary: `Location BRICOLOC ${result.number}`,
+              description: `Réservation ${result.number}. Présentez le QR code au comptoir.`,
+              location:
+                result.fulfilment.mode === 'DELIVERY'
+                  ? 'Livraison'
+                  : result.fulfilment.pickupPoint
+                    ? `${result.fulfilment.pickupPoint.name} — ${result.fulfilment.pickupPoint.line1}, ${result.fulfilment.pickupPoint.postalCode} ${result.fulfilment.pickupPoint.city}`
+                    : 'BRICOLOC — Gieterijstraat 49, 1601 Ruisbroek',
+            })}
+            download={`reservation-${result.number}.ics`}
+          >
+            📅 Ajouter à mon agenda
+          </a>
           {kiosk ? (
             <Link href="/borne" className="btn btn-primary btn-lg">
               Terminer

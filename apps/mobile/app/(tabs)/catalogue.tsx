@@ -183,7 +183,7 @@ export default function CatalogueScreen() {
         keyExtractor={(p) => p.id}
         numColumns={2}
         columnWrapperStyle={{ gap: 14, paddingHorizontal: 20 }}
-        contentContainerStyle={{ paddingTop: 16, paddingBottom: 32, gap: 14 }}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 120, gap: 14 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
         ListEmptyComponent={
           !loading ? (

@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '@/lib/theme';
@@ -9,15 +10,27 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: C.brico,
-        tabBarInactiveTintColor: C.lightGray,
+        tabBarInactiveTintColor: C.muted,
+        // Barre flottante arrondie, détachée du bord (look plus moderne).
         tabBarStyle: {
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: Platform.OS === 'ios' ? 26 : 16,
+          height: 62,
+          borderRadius: 26,
+          borderTopWidth: 0,
           backgroundColor: C.white,
-          borderTopColor: C.border,
-          height: 64,
-          paddingBottom: 9,
-          paddingTop: 7,
+          paddingBottom: 0,
+          paddingTop: 0,
+          elevation: 12,
+          shadowColor: C.locDeep,
+          shadowOpacity: 0.16,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: 8 },
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        tabBarItemStyle: { paddingVertical: 8 },
+        tabBarLabelStyle: { fontSize: 10.5, fontWeight: '800' },
       }}
     >
       <Tabs.Screen
