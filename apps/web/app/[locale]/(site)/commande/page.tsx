@@ -124,6 +124,14 @@ export default function CommandePage() {
     return () => clearTimeout(id);
   }, [mode, addr.line1, addr.postalCode, addr.city, cart?.quote?.totals?.rentalHT]);
 
+  // Étape identité : passe directement à la vérif si la pièce est déjà fournie.
+  // (doit rester AVANT les `return` conditionnels ci-dessous — règle des Hooks :
+  // un Hook déclaré après un early return casse dès que le rendu change de branche,
+  // React #310 « Rendered more hooks than during the previous render ».)
+  useEffect(() => {
+    if (phase === 'identity' && idOk(user?.idDocStatus)) setPhase('review');
+  }, [phase, user?.idDocStatus]);
+
   const canReview = useMemo(() => {
     if (!cart?.period) return false;
     if (mode === 'DELIVERY' && (!addr.line1 || !addr.postalCode || !addr.city)) return false;
@@ -287,11 +295,6 @@ export default function CommandePage() {
       setBusy(false);
     }
   }
-
-  // Étape identité : passe directement à la vérif si la pièce est déjà fournie.
-  useEffect(() => {
-    if (phase === 'identity' && idOk(user?.idDocStatus)) setPhase('review');
-  }, [phase, user?.idDocStatus]);
 
   async function placeOrder(outcome: 'success' | 'decline' | 'onsite') {
     setBusy(true);
