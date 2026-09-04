@@ -20,7 +20,12 @@ catalogRouter.get(
   '/categories',
   h(async (req, res) => {
     const locale = qLocale(req);
-    const cats = await prisma.category.findMany({ orderBy: { position: 'asc' } });
+    // Les BricoPacks ne sont plus une catégorie du catalogue : ils ont leur
+    // propre univers (/bricopacks). On masque la catégorie « bricopack ».
+    const cats = await prisma.category.findMany({
+      where: { slug: { not: 'bricopack' } },
+      orderBy: { position: 'asc' },
+    });
     const counts = await prisma.product.groupBy({
       by: ['categoryId'],
       where: { published: true },
@@ -57,7 +62,10 @@ catalogRouter.get(
       q.start && q.end ? { start: new Date(q.start), end: new Date(q.end) } : null;
 
     const where: Record<string, unknown> = { published: true };
+    // Les BricoPacks (kind PACK) sont exclus du catalogue produits par défaut ;
+    // ils restent accessibles via ?kind=PACK (accueil) et leur page dédiée.
     if (q.kind) where.kind = q.kind;
+    else where.kind = { not: 'PACK' };
     if (q.category) where.category = { slug: q.category };
     if (q.q) {
       where.OR = [

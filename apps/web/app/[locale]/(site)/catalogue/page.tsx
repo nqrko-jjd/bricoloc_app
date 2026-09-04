@@ -111,7 +111,6 @@ function CatalogueInner() {
             <select value={kind} onChange={(e) => update({ kind: e.target.value })}>
               <option value="">{t('typeAll')}</option>
               <option value="MACHINE">{t('typeMachine')}</option>
-              <option value="PACK">{t('typePack')}</option>
               <option value="ACCESSORY">{t('typeAccessory')}</option>
               <option value="CONSUMABLE">{t('typeConsumable')}</option>
               <option value="PPE">{t('typePpe')}</option>

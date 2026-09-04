@@ -25,10 +25,12 @@ import { readPrivateFile, deletePrivateFile } from '../lib/media.js';
 import { createLoan, returnLoan } from '../lib/parc.js';
 import { buildLoiseletRequest } from '../lib/loiselet.js';
 import { adminIoRouter } from './admin-io.js';
+import { adminBricoPacksRouter } from './admin-bricopacks.js';
 import { randomBytes } from 'node:crypto';
 
 export const adminRouter = Router();
 adminRouter.use(attachPrincipal, requireStaff());
+adminRouter.use('/bricopacks', adminBricoPacksRouter);
 
 /* -------------------------- Tableau de bord -------------------------- */
 const DAY = 86_400_000;
