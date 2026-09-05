@@ -6,6 +6,7 @@ import { Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
 import type { ProductDetail, ProductSummary } from '@/lib/types';
 import { ProductPurchasePanel } from '@/components/ProductPurchasePanel';
+import { PriceTiersHead } from '@/components/PriceTiersHead';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductGallery } from '@/components/ProductGallery';
 import { ReviewSection } from '@/components/ReviewSection';
@@ -44,14 +45,6 @@ export async function generateMetadata({
       type: 'website',
     },
   };
-}
-
-function priceTiers(p: ProductDetail) {
-  return [
-    { key: 'priceDay', total: p.dailyPrice, unit: 1 },
-    { key: 'priceWeek', total: p.weekPrice ?? p.dailyPrice * 4, unit: 7 },
-    { key: 'priceMonth', total: p.monthPrice ?? p.dailyPrice * 12, unit: 30 },
-  ];
 }
 
 export default async function ProductPage({
@@ -142,15 +135,7 @@ export default async function ProductPage({
           )}
           {product.shortDescription && <p className="pdetail__lead">{product.shortDescription}</p>}
 
-          <div className="ptiers">
-            {priceTiers(product).map((tier) => (
-              <div key={tier.key} className="ptier">
-                <span className="ptier__label">{t(tier.key)}</span>
-                <span className="ptier__price">{formatEUR(tier.total)}</span>
-                <span className="ptier__vat small muted">{t('vatExcl')}</span>
-              </div>
-            ))}
-          </div>
+          <PriceTiersHead product={product} />
           {product.deposit > 0 && (
             <p className="small muted">
               {t('deposit')} : <strong>{formatEUR(product.deposit)}</strong> — {t('depositHint')}

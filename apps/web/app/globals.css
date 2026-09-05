@@ -1313,6 +1313,28 @@ button { font-family: inherit; }
 .ptier__label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; color: var(--muted-fg); }
 .ptier__price { font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; letter-spacing: -0.03em; color: var(--navy-deep); }
 
+/* Tarifs dégressifs + upsell — panneau d'achat produit */
+.ppanel__tierbadge {
+  display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: var(--r-pill);
+  background: var(--red-tint); color: var(--primary); font-size: 0.75rem; font-weight: 800; vertical-align: middle;
+}
+.ppanel__tiers { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.ppanel__tier {
+  border: 1px solid var(--border); border-radius: var(--r-pill); padding: 4px 10px;
+  font-size: var(--fs-xs); color: var(--muted-fg); background: var(--surface);
+}
+.ppanel__tier strong { color: var(--ink); font-weight: 700; margin-left: 3px; }
+.ppanel__tier.is-active { background: var(--navy); border-color: var(--navy); color: rgba(255,255,255,0.75); }
+.ppanel__tier.is-active strong { color: #fff; }
+.ppanel__upsell {
+  display: block; width: 100%; text-align: left; border: 1px dashed var(--primary); border-radius: var(--r-xs);
+  background: var(--red-tint-2); color: var(--primary-strong); font-weight: 700; font-size: var(--fs-sm);
+  padding: 10px 12px; margin: 4px 0 12px; cursor: pointer;
+}
+.ppanel__upsell:hover { background: var(--red-tint); }
+.ppanel__upsell:disabled { opacity: 0.6; cursor: default; }
+.ppanel__upsell-was { font-weight: 500; color: var(--muted-fg); }
+
 /* Accordéons */
 .pacc { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); padding: 0 16px; }
 .pacc > summary {

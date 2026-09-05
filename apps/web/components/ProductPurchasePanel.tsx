@@ -4,15 +4,23 @@ import { formatEUR } from '@bricoloc/shared';
 import { api } from '@/lib/api';
 import type { Availability, ProductDetail } from '@/lib/types';
 import { useCart } from '@/lib/providers';
+import { usePriceDisplay } from '@/lib/usePriceDisplay';
 import { AvailabilityBadge } from './AvailabilityBadge';
 
+function daysBetween(startIso: string, endIso: string): number {
+  const ms = new Date(endIso).getTime() - new Date(startIso).getTime();
+  return Math.max(1, Math.ceil(ms / 86400000));
+}
+
 export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
-  const { cart, addItem } = useCart();
+  const { cart, addItem, setPeriod } = useCart();
+  const { isPro, display } = usePriceDisplay();
   const [qty, setQty] = useState(1);
   const [avail, setAvail] = useState<Availability | null>(product.availability ?? null);
   const [extras, setExtras] = useState<Record<string, boolean>>({});
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [extending, setExtending] = useState(false);
 
   useEffect(() => {
     if (!cart?.period) {
@@ -53,18 +61,75 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
     }
   }
 
+  const sortedTiers = [...product.tiers].sort((a, b) => a.minDays - b.minDays);
+  const billedDays = cart?.period ? daysBetween(cart.period.start, cart.period.end) : null;
+  const currentTier =
+    billedDays != null
+      ? [...sortedTiers].reverse().find((t) => t.minDays <= billedDays) ?? null
+      : null;
+  const nextTier = billedDays != null ? sortedTiers.find((t) => t.minDays > billedDays) : null;
+  const currentPerDay = currentTier?.perDay ?? product.dailyPrice;
+
+  async function extendToNextTier() {
+    if (!cart?.period || !nextTier || !billedDays) return;
+    setExtending(true);
+    try {
+      const daysNeeded = nextTier.minDays - billedDays;
+      const newEnd = new Date(cart.period.end);
+      newEnd.setDate(newEnd.getDate() + daysNeeded);
+      await setPeriod({ start: cart.period.start, end: newEnd.toISOString() });
+    } finally {
+      setExtending(false);
+    }
+  }
+
   return (
     <div className="card card-pad summary">
       <div className="price" style={{ fontSize: '1.6rem' }}>
-        {formatEUR(product.dailyPrice)}{' '}
+        {formatEUR(display(currentPerDay))}{' '}
         <small>/ {product.isConsumable ? 'unité' : 'jour'}</small>
+        {currentTier && currentTier.minDays > 1 && (
+          <span className="ppanel__tierbadge">-{Math.round((1 - currentTier.perDay / product.dailyPrice) * 100)}%</span>
+        )}
+        <span className="small muted" style={{ marginLeft: 8 }}>
+          {isPro ? 'HTVA' : 'TVAC'}
+        </span>
       </div>
       {!product.isConsumable && (
         <p className="small muted">
-          Week-end {product.weekendPrice ? formatEUR(product.weekendPrice) : '—'} · Semaine{' '}
-          {product.weekPrice ? formatEUR(product.weekPrice) : '—'} · Caution{' '}
+          Week-end {product.weekendPrice ? formatEUR(display(product.weekendPrice)) : '—'} · Semaine{' '}
+          {product.weekPrice ? formatEUR(display(product.weekPrice)) : '—'} · Caution{' '}
           {formatEUR(product.deposit)}
         </p>
+      )}
+
+      {sortedTiers.length > 0 && (
+        <div className="ppanel__tiers">
+          {sortedTiers.map((t) => (
+            <span
+              key={t.minDays}
+              className={`ppanel__tier${currentTier?.minDays === t.minDays ? ' is-active' : ''}`}
+            >
+              {t.minDays}j <strong>{formatEUR(display(t.perDay))}</strong>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {nextTier && billedDays != null && (
+        <button
+          type="button"
+          className="ppanel__upsell"
+          onClick={extendToNextTier}
+          disabled={extending}
+        >
+          🔥 {extending ? '…' : (
+            <>
+              +{nextTier.minDays - billedDays} jour(s) → {formatEUR(display(nextTier.perDay))}/jour
+              <span className="ppanel__upsell-was"> au lieu de {formatEUR(display(currentPerDay))}</span>
+            </>
+          )}
+        </button>
       )}
 
       <div style={{ margin: '12px 0' }}>
@@ -97,7 +162,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
                 <span>
                   {l.name}{' '}
                   <span className="muted">
-                    ({l.group} · {formatEUR(l.dailyPrice)})
+                    ({l.group} · {formatEUR(display(l.dailyPrice))})
                   </span>
                 </span>
               </label>
@@ -122,22 +187,6 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
         <p className="small muted" style={{ marginTop: 8 }}>
           Aucune date choisie — vous pourrez les indiquer avant de valider le panier.
         </p>
-      )}
-
-      {product.tiers.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <strong style={{ color: 'var(--loc)', fontSize: '0.9rem' }}>Tarifs dégressifs</strong>
-          <table className="table" style={{ marginTop: 6 }}>
-            <tbody>
-              {product.tiers.map((t) => (
-                <tr key={t.minDays}>
-                  <td>Dès {t.minDays} j</td>
-                  <td>{formatEUR(t.perDay)} / jour</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       )}
     </div>
   );
