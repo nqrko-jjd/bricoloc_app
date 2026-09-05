@@ -326,8 +326,11 @@
     "s2b": "Uw data: 12 → 15 sep. · 3 dagen",
     "s2pill": "30% korting inbegrepen",
     "ctaTitle": "We verwittigen u bij de lancering",
-    "ctaText": "De app komt eraan voor iOS en Android. Ondertussen is alles al beschikbaar op de site.",
-    "ctaBtn": "Bekijk de catalogus"
+    "ctaText": "De app komt eraan voor iOS en Android. Laat uw e-mail achter en we verwittigen u zodra ze beschikbaar is.",
+    "ctaBtn": "Bekijk de catalogus",
+    "newsletterPlaceholder": "Uw e-mail",
+    "newsletterCta": "Verwittig mij",
+    "newsletterDone": "Genoteerd! We mailen u zodra de app er is."
   },
   "contentPage": {
     "help": "Een vraag?",

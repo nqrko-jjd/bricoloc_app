@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { BRAND, pickText, SOURCE_LOCALE, type I18nText, type Locale } from '@bricoloc/shared';
 import { prisma } from '../db.js';
-import { h, notFound } from '../lib/http.js';
+import { h, notFound, badRequest } from '../lib/http.js';
 import { getSettings } from '../lib/settings.js';
 import { quoteDelivery } from '../lib/delivery.js';
 import { serializeProductSummary, productInclude } from '../lib/serialize.js';
@@ -53,6 +53,25 @@ publicRouter.get(
       homeShowBrand: Boolean(s.homeShowBrand),
       homeShowBadges: s.homeShowBadges === undefined ? true : Boolean(s.homeShowBadges),
     });
+  }),
+);
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Inscription « on vous prévient au lancement » (page /application) etc. */
+publicRouter.post(
+  '/newsletter',
+  h(async (req, res) => {
+    const email = String(req.body?.email ?? '').trim().toLowerCase();
+    const source = req.body?.source ? String(req.body.source).slice(0, 60) : null;
+    const locale = req.body?.locale ? String(req.body.locale).slice(0, 5) : null;
+    if (!EMAIL_RE.test(email)) throw badRequest('Adresse e-mail invalide.');
+    await prisma.newsletterSignup.upsert({
+      where: { email },
+      update: {},
+      create: { email, source, locale },
+    });
+    res.status(201).json({ ok: true });
   }),
 );
 

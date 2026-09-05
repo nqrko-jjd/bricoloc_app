@@ -17,6 +17,16 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
+/// Inscriptions "on vous previent au lancement" (page /application) et
+/// autres captures newsletter futures.
+model NewsletterSignup {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String? // "app-launch" | ...
+  locale    String?
+  createdAt DateTime @default(now())
+}
+
 /// Contenus editoriaux du site (FAQ, conseils, pages legales, blocs d'accueil...).
 /// Une ligne par (key, locale). Le FR est la source ; NL/EN sont creees par DeepL
 /// et marquees autoTranslated tant qu'un humain ne les a pas revues.

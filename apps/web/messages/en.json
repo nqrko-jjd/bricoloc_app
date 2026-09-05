@@ -326,8 +326,11 @@
     "s2b": "Your dates: 12 → 15 Sep · 3 days",
     "s2pill": "30% discount included",
     "ctaTitle": "We’ll let you know at launch",
-    "ctaText": "The app is coming to iOS and Android. In the meantime, everything is already available on the website.",
-    "ctaBtn": "Browse the catalogue"
+    "ctaText": "The app is coming to iOS and Android. Leave your email and we’ll notify you as soon as it’s out.",
+    "ctaBtn": "Browse the catalogue",
+    "newsletterPlaceholder": "Your email",
+    "newsletterCta": "Notify me",
+    "newsletterDone": "Got it! We’ll email you at launch."
   },
   "contentPage": {
     "help": "A question?",

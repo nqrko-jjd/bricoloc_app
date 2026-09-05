@@ -18,7 +18,16 @@ function billedEquivalents(days: number): number {
   return months * MONTH + weeks * WEEK + rest;
 }
 
+const MIN_DAYS = 1;
+const MAX_DAYS = 30;
 const STOPS = [1, 3, 7, 14, 30];
+
+/** Position réelle (0–100%) d'une valeur sur le curseur — pour que les
+ * repères 3j/7j/14j… tombent à l'endroit où le curseur linéaire vaut
+ * vraiment cette durée (avant, les repères étaient espacés également
+ * alors que le curseur est linéaire de 1 à 30 : viser « 3 j. » du doigt
+ * plaçait en réalité le curseur sur ~8 jours). */
+const posOf = (d: number) => ((d - MIN_DAYS) / (MAX_DAYS - MIN_DAYS)) * 100;
 
 export function DegressivePricing() {
   const t = useTranslations('home');
@@ -37,8 +46,8 @@ export function DegressivePricing() {
       </div>
       <input
         type="range"
-        min={1}
-        max={30}
+        min={MIN_DAYS}
+        max={MAX_DAYS}
         value={days}
         onChange={(e) => setDays(Number(e.target.value))}
         aria-label={t('degressiveDuration')}
@@ -48,6 +57,7 @@ export function DegressivePricing() {
           <button
             key={d}
             type="button"
+            style={{ left: `${posOf(d)}%` }}
             className={days === d ? 'is-active' : undefined}
             onClick={() => setDays(d)}
           >

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Link } from '@/i18n/navigation';
+import { PhoneDemo } from '@/components/PhoneDemo';
+import { NewsletterForm } from '@/components/NewsletterForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,21 +50,8 @@ export default async function ApplicationPage({
         </div>
       </header>
 
-      <div className="appviz__screens" aria-hidden>
-        <div className="appviz__screen">
-          <strong>BRICOLOC.</strong>
-          <p>
-            {t('s1a')} 👋
-            <br />
-            {t('s1b')}
-          </p>
-          <span className="appviz__pill">{t('s1pill')}</span>
-        </div>
-        <div className="appviz__screen">
-          <strong>{t('s2a')}</strong>
-          <p>{t('s2b')}</p>
-          <span className="appviz__pill">{t('s2pill')}</span>
-        </div>
+      <div className="appviz__screens">
+        <PhoneDemo extraScreen />
       </div>
 
       <div className="appviz__features">
@@ -80,9 +68,7 @@ export default async function ApplicationPage({
         <div className="container home-cta__inner">
           <h2>{t('ctaTitle')}</h2>
           <p>{t('ctaText')}</p>
-          <Link href="/catalogue" className="btn btn-primary btn-lg">
-            {t('ctaBtn')}
-          </Link>
+          <NewsletterForm source="app-launch" />
         </div>
       </section>
     </div>

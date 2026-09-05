@@ -6,6 +6,7 @@ import { loadContent } from '@/lib/content';
 import type { Category, GuideSummary, ProductSummary, PublicConfig } from '@/lib/types';
 import { SearchAutocomplete } from '@/components/SearchAutocomplete';
 import { DegressivePricing } from '@/components/DegressivePricing';
+import { PhoneDemo } from '@/components/PhoneDemo';
 import {
   CATEGORY_ICON,
   ArrowUpRight,
@@ -310,50 +311,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {t('appCta')} <IArrowUpRight />
           </Link>
         </div>
-        <div className="capp__phones reveal" aria-hidden>
-          <div className="cphone cphone--back">
-            <div className="cphone__screen">
-              <strong>BRICOLOC.</strong>
-              <h4>
-                {t('s1a')}
-                <br />
-                {t('s1b')}
-              </h4>
-              <div className="cphone__chips">
-                <span>⚙️ Forer</span>
-                <span>🪵 Bois</span>
-                <span>🎨 Peinture</span>
-              </div>
-              <div className="cmini">
-                <span className="cmini__ico">⚙️</span>
-                <span>
-                  <b>Ponceuse girafe</b>
-                  <small>{t('s1pill')}</small>
-                </span>
-                <strong>19,90€</strong>
-              </div>
-            </div>
-          </div>
-          <div className="cphone cphone--front">
-            <div className="cphone__screen">
-              <strong>‹ ♡</strong>
-              <h4>{t('s2a')}</h4>
-              <div className="cmini">
-                <span className="cmini__ico">★</span>
-                <span>
-                  <b>4,9 · 126 avis</b>
-                  <small>{t('s2b')}</small>
-                </span>
-              </div>
-              <div className="cmini">
-                <span className="cmini__ico">€</span>
-                <span>
-                  <b>{t('s2pill')}</b>
-                  <small>41,80 €</small>
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="capp__phones reveal">
+          <PhoneDemo />
         </div>
       </section>
 
