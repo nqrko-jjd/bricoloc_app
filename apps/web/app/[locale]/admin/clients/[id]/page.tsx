@@ -5,6 +5,7 @@ import { formatEUR, formatDateBE } from '@bricoloc/shared';
 import { API_URL } from '@/lib/api';
 import { staffApi, useStaff } from '@/lib/staff';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Avatar } from '@/components/admin/Avatar';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const ID_LABEL: Record<string, string> = {
@@ -153,7 +154,8 @@ export default function AdminClientDetail({ params }: { params: Promise<{ id: st
     <div className="stack">
       <p className="small"><Link href="/admin/clients">← Clients</Link></p>
       <div className="spread">
-        <h1>
+        <h1 className="row" style={{ gap: 12, alignItems: 'center' }}>
+          <Avatar firstName={c.firstName} lastName={c.lastName} size={44} />
           {c.firstName} {c.lastName}{' '}
           <span className="badge">{c.customerType}</span>
         </h1>

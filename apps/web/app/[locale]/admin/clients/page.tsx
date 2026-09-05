@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { formatDateBE } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
 import { staffApi } from '@/lib/staff';
+import { Avatar } from '@/components/admin/Avatar';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function AdminClients() {
@@ -34,7 +35,8 @@ export default function AdminClients() {
             {rows.map((c) => (
               <tr key={c.id}>
                 <td>
-                  <Link href={`/admin/clients/${c.id}`}>
+                  <Link href={`/admin/clients/${c.id}`} className="row" style={{ gap: 8, alignItems: 'center' }}>
+                    <Avatar firstName={c.firstName} lastName={c.lastName} size={30} />
                     {c.firstName} {c.lastName}
                   </Link>
                 </td>
