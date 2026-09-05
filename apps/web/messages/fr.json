@@ -88,7 +88,12 @@
     "availNearby": "Indispo — libre dès le {date}",
     "availNone": "Indisponible sur la période",
     "titleAccent": "à la journée.",
-    "loadMore": "Charger plus ({count} restants)"
+    "loadMore": "Charger plus ({count} restants)",
+    "rangePickStart": "Choisissez le premier jour de location",
+    "rangePickEnd": "Choisissez le dernier jour",
+    "rangeSummary": "{count} jour(s) sélectionné(s)",
+    "rangeApply": "Valider ces dates",
+    "rangeCancel": "Annuler"
   },
   "product": {
     "breadcrumbCatalogue": "Catalogue",

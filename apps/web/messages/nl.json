@@ -288,7 +288,12 @@
     "availNearby": "Niet beschikbaar — vrij vanaf {date}",
     "availNone": "Niet beschikbaar in deze periode",
     "titleAccent": "per dag.",
-    "loadMore": "Meer laden (nog {count})"
+    "loadMore": "Meer laden (nog {count})",
+    "rangePickStart": "Kies de eerste huurdag",
+    "rangePickEnd": "Kies de laatste dag",
+    "rangeSummary": "{count} dag(en) geselecteerd",
+    "rangeApply": "Deze data bevestigen",
+    "rangeCancel": "Annuleren"
   },
   "topbar": {
     "cc": "Click & Collect in 2u",

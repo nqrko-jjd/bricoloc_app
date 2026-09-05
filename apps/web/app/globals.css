@@ -3094,6 +3094,52 @@ button { font-family: inherit; }
 .bp-comp__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .bp-comp__row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
 .bp-comp__row > input { flex: 1; min-width: 120px; }
+/* ---- Calendrier de sélection de période (catalogue) ---- */
+.avail-clickable {
+  border: none; font: inherit; cursor: pointer;
+}
+.avail-clickable:hover { background: color-mix(in srgb, var(--primary) 14%, var(--surface-2)); color: var(--primary); }
+
+.rangecal-overlay {
+  position: fixed; inset: 0; background: rgba(8, 6, 93, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 200;
+}
+.rangecal {
+  background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-md);
+  width: 340px; max-width: 100%; padding: 18px; color: var(--ink);
+}
+.rangecal__head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.rangecal__head strong { flex: 1; text-align: center; text-transform: capitalize; font-size: var(--fs-sm); }
+.rangecal__nav, .rangecal__close {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  width: 30px; height: 30px; border-radius: var(--r-pill); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; line-height: 1;
+}
+.rangecal__nav:hover, .rangecal__close:hover { background: var(--surface-2); }
+.rangecal__hint { font-size: var(--fs-xs); color: var(--muted-fg); text-align: center; margin: 0 0 10px; min-height: 1.2em; }
+.rangecal__weekdays, .rangecal__grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+}
+.rangecal__weekdays span {
+  font-size: var(--fs-xs); text-align: center; color: var(--muted-fg); text-transform: capitalize; padding-bottom: 4px;
+}
+.rangecal__cell {
+  aspect-ratio: 1; border: none; background: transparent; color: var(--ink);
+  border-radius: var(--r-xs); cursor: pointer; font-size: var(--fs-sm); font-weight: 600;
+}
+.rangecal__cell:hover:not(:disabled) { background: var(--surface-2); }
+.rangecal__cell:disabled { color: var(--border); cursor: default; }
+.rangecal__cell--empty { cursor: default; }
+.rangecal__cell.is-in-range { background: color-mix(in srgb, var(--primary) 12%, var(--surface)); border-radius: 0; }
+.rangecal__cell.is-start, .rangecal__cell.is-end {
+  background: var(--primary); color: var(--on-primary);
+}
+.rangecal__cell.is-start { border-radius: var(--r-xs) 0 0 var(--r-xs); }
+.rangecal__cell.is-end { border-radius: 0 var(--r-xs) var(--r-xs) 0; }
+.rangecal__cell.is-start.is-end { border-radius: var(--r-xs); }
+.rangecal__foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
 @media (max-width: 900px) {
   .bp-admin { grid-template-columns: 1fr; }
   .bp-admin__list { position: static; max-height: none; }

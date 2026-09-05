@@ -288,7 +288,12 @@
     "availNearby": "Unavailable — available from {date}",
     "availNone": "Unavailable during this period",
     "titleAccent": "by the day.",
-    "loadMore": "Load more ({count} left)"
+    "loadMore": "Load more ({count} left)",
+    "rangePickStart": "Choose the first rental day",
+    "rangePickEnd": "Choose the last day",
+    "rangeSummary": "{count} day(s) selected",
+    "rangeApply": "Confirm these dates",
+    "rangeCancel": "Cancel"
   },
   "topbar": {
     "cc": "Click & Collect in 2h",

@@ -27,7 +27,9 @@ function CatalogueInner() {
 
   const q = params.get('q') ?? '';
   const category = params.get('category') ?? '';
-  const kind = params.get('kind') ?? '';
+  // Par défaut on ne montre que les machines : accessoires/consommables/EPI
+  // servent à compléter une location, pas à parcourir seuls.
+  const kind = params.get('kind') ?? 'MACHINE';
   const sort = params.get('sort') ?? 'name';
   const onlyAvailable = params.get('onlyAvailable') === 'true';
   const periodStart = cart?.period?.start ?? '';
@@ -50,7 +52,7 @@ function CatalogueInner() {
     const sp = new URLSearchParams();
     if (q) sp.set('q', q);
     if (category) sp.set('category', category);
-    if (kind) sp.set('kind', kind);
+    if (kind && kind !== 'ALL') sp.set('kind', kind);
     sp.set('sort', sort);
     sp.set('locale', locale);
     sp.set('page', String(page));
@@ -109,7 +111,7 @@ function CatalogueInner() {
           <div className="field">
             <label>{t('type')}</label>
             <select value={kind} onChange={(e) => update({ kind: e.target.value })}>
-              <option value="">{t('typeAll')}</option>
+              <option value="ALL">{t('typeAll')}</option>
               <option value="MACHINE">{t('typeMachine')}</option>
               <option value="ACCESSORY">{t('typeAccessory')}</option>
               <option value="CONSUMABLE">{t('typeConsumable')}</option>

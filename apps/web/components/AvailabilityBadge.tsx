@@ -1,11 +1,37 @@
 'use client';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Availability } from '@/lib/types';
 import { formatDateBE } from '@bricoloc/shared';
+import { useCart } from '@/lib/providers';
+import { DateRangePicker } from './DateRangePicker';
 
 export function AvailabilityBadge({ a }: { a?: Availability | null }) {
   const t = useTranslations('catalogue');
-  if (!a) return <span className="avail avail-unknown">{t('availChooseDates')}</span>;
+  const { setPeriod } = useCart();
+  const [open, setOpen] = useState(false);
+
+  if (!a)
+    return (
+      <>
+        <button
+          type="button"
+          className="avail avail-unknown avail-clickable"
+          onClick={() => setOpen(true)}
+        >
+          {t('availChooseDates')}
+        </button>
+        {open && (
+          <DateRangePicker
+            onClose={() => setOpen(false)}
+            onApply={(start, end) => {
+              setPeriod({ start: start.toISOString(), end: end.toISOString() });
+              setOpen(false);
+            }}
+          />
+        )}
+      </>
+    );
   if (a.status === 'AVAILABLE')
     return <span className="avail avail-ok">✔ {t('availOk')} ({a.availableQty})</span>;
   if (a.status === 'PARTIAL')
