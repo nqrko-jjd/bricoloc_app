@@ -74,6 +74,8 @@ type Machine = {
   supplier: string;
 };
 
+type ConsoPick = { id: string; label: string; detail: string; price: number; image: string | null };
+
 const FAMILIES = [
   'peinture', 'sols-bois', 'carrelage', 'gros-oeuvre', 'plomberie',
   'electricite', 'jardin', 'nettoyage', 'hauteur', 'manutention', 'autres',
@@ -458,6 +460,30 @@ function PackEditor({
     };
   }, [pickOpen, pickQ]);
 
+  const [consoPickOpen, setConsoPickOpen] = useState(false);
+  const [consoPickQ, setConsoPickQ] = useState('');
+  const [consoPickRes, setConsoPickRes] = useState<ConsoPick[]>([]);
+
+  useEffect(() => {
+    if (!consoPickOpen) return;
+    let cancel = false;
+    const id = setTimeout(() => {
+      staffApi<{ consumables: ConsoPick[] }>(
+        `/api/admin/bricopacks/pick/consumables?q=${encodeURIComponent(consoPickQ)}`,
+      ).then((r) => {
+        if (!cancel) setConsoPickRes(r.consumables);
+      });
+    }, 220);
+    return () => {
+      cancel = true;
+      clearTimeout(id);
+    };
+  }, [consoPickOpen, consoPickQ]);
+
+  function addConsumable(c: ConsoPick) {
+    patch({ consumables: [...pack.consumables, { label: c.label, detail: c.detail, price: c.price }] });
+  }
+
   const chosen = new Set(pack.components.map((c) => c.productId));
 
   function addMachine(m: Machine) {
@@ -746,18 +772,56 @@ function PackEditor({
       <div className="card card-body stack">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0 }}>Consommables suggérés</h3>
-          <button
-            className="btn btn-outline btn-sm"
-            onClick={() =>
-              patch({ consumables: [...pack.consumables, { label: '', detail: '', price: 0 }] })
-            }
-          >
-            + Ligne
-          </button>
+          <div className="row" style={{ gap: 8 }}>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => setConsoPickOpen((v) => !v)}
+            >
+              {consoPickOpen ? 'Fermer' : '+ Depuis le catalogue'}
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() =>
+                patch({ consumables: [...pack.consumables, { label: '', detail: '', price: 0 }] })
+              }
+            >
+              + Ligne libre
+            </button>
+          </div>
         </div>
         <p className="small muted">
-          Texte libre affiché sur la fiche pack (« pensez à… »). Pas encore lié à de vrais produits.
+          Texte libre affiché sur la fiche pack (« pensez à… »). « Depuis le catalogue » pré-remplit
+          libellé/détail/prix depuis une fiche consommable existante — reste modifiable ensuite.
         </p>
+
+        {consoPickOpen && (
+          <div className="card card-body stack" style={{ background: 'var(--surface-2, #f5f5fa)' }}>
+            <input
+              placeholder="Rechercher un consommable…"
+              value={consoPickQ}
+              onChange={(e) => setConsoPickQ(e.target.value)}
+              autoFocus
+            />
+            <div className="bp-pick">
+              {consoPickRes.length === 0 ? (
+                <p className="small muted" style={{ margin: 0 }}>Aucun résultat.</p>
+              ) : (
+                consoPickRes.map((c) => (
+                  <button key={c.id} className="bp-pick__it" onClick={() => addConsumable(c)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {c.image ? <img src={c.image} alt="" /> : <span className="bp-pick__ph" />}
+                    <span className="bp-pick__n">
+                      {c.label}
+                      <span className="small muted"> {formatEUR(c.price)}</span>
+                    </span>
+                    <span>+</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {pack.consumables.map((c, i) => (
           <div key={i} className="bp-comp__row">
             <input

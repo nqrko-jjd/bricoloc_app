@@ -164,6 +164,39 @@ adminBricoPacksRouter.get(
   }),
 );
 
+/* ----------------------- Recherche de consommables ----------------------- */
+adminBricoPacksRouter.get(
+  '/pick/consumables',
+  h(async (req, res) => {
+    const q = String(req.query.q ?? '').trim();
+    const rows = await prisma.product.findMany({
+      where: {
+        kind: 'CONSUMABLE',
+        ...(q ? { OR: [{ name: { contains: q } }, { brand: { contains: q } }] } : {}),
+      },
+      orderBy: { name: 'asc' },
+      take: q ? 40 : 60,
+      select: {
+        id: true,
+        name: true,
+        brand: true,
+        shortDescription: true,
+        images: true,
+        dailyPrice: true,
+      },
+    });
+    res.json({
+      consumables: rows.map((r) => ({
+        id: r.id,
+        label: r.brand ? `${r.brand} · ${r.name}` : r.name,
+        detail: r.shortDescription ?? '',
+        price: r.dailyPrice,
+        image: firstImage(r.images),
+      })),
+    });
+  }),
+);
+
 /* --------------------------------- Détail -------------------------------- */
 async function packDetail(id: string) {
   const p = await prisma.product.findFirst({ where: { id, kind: 'PACK' } });
