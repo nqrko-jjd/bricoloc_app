@@ -216,30 +216,6 @@ export default async function BricoPackDetail({
         </ul>
       </section>
 
-      {/* ---------- PACKS LIÉS ---------- */}
-      {pack.related.length > 0 && (
-        <section className="bpd-related">
-          <div className="csection__head">
-            <div>
-              <span className="kicker">— Pour continuer votre projet</span>
-              <h2>D’autres packs qui pourraient vous aider.</h2>
-            </div>
-            <Link href="/bricopacks" className="csection__link">
-              Tous les BricoPacks <ArrowRight />
-            </Link>
-          </div>
-          <div className="bpd-related__grid">
-            {pack.related.map((r) => (
-              <Link key={r.slug} href={`/bricopacks/${r.slug}`} className="bpd-related__card">
-                <span>{FAM_LABEL[r.family ?? ''] ?? r.family}</span>
-                <strong>{r.name}</strong>
-                <em>Découvrir le pack →</em>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* ---------- RÉSERVATION ---------- */}
       <section className="bpd-reserve" id="reserver">
         <div>
@@ -263,6 +239,30 @@ export default async function BricoPackDetail({
           <ReservePack packId={pack.id} price={pack.dailyPrice} />
         </div>
       </section>
+
+      {/* ---------- PACKS LIÉS ---------- */}
+      {pack.related.length > 0 && (
+        <section className="bpd-related">
+          <div className="csection__head">
+            <div>
+              <span className="kicker">— Pour continuer votre projet</span>
+              <h2>D’autres packs qui pourraient vous aider.</h2>
+            </div>
+            <Link href="/bricopacks" className="csection__link">
+              Tous les BricoPacks <ArrowRight />
+            </Link>
+          </div>
+          <div className="bpd-related__grid">
+            {pack.related.map((r) => (
+              <Link key={r.slug} href={`/bricopacks/${r.slug}`} className="bpd-related__card">
+                <span>{FAM_LABEL[r.family ?? ''] ?? r.family}</span>
+                <strong>{r.name}</strong>
+                <em>Découvrir le pack →</em>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

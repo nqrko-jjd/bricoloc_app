@@ -517,19 +517,20 @@ button { font-family: inherit; }
   background: var(--surface); color: var(--ink); border-radius: var(--r-md);
   padding: 22px; box-shadow: var(--shadow-lg); display: grid; gap: 14px;
 }
-.field { display: flex; flex-direction: column; gap: 5px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .field label {
   font-weight: 700; font-size: var(--fs-xs); color: var(--navy);
   text-transform: uppercase; letter-spacing: 0.08em;
 }
 .field input, .field select, .field textarea {
+  width: 100%; box-sizing: border-box;
   padding: 11px 12px; border: 1px solid var(--border); border-radius: var(--r-xs);
   font-family: inherit; font-size: 0.98rem; background: var(--surface); color: var(--ink);
 }
 .field input:focus, .field select:focus, .field textarea:focus {
   outline: 2px solid var(--ring); outline-offset: 1px; border-color: var(--ring);
 }
-.field-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 
 /* =========================================================================
    Carte produit
@@ -559,7 +560,7 @@ button { font-family: inherit; }
 /* =========================================================================
    Aides de disposition
    ========================================================================= */
-.two-col { display: grid; grid-template-columns: 1fr 360px; gap: 28px; align-items: start; }
+.two-col { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; }
 @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .field-2 { grid-template-columns: 1fr; } }
 
 .summary { position: sticky; top: 86px; }
