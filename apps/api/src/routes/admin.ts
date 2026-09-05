@@ -1816,13 +1816,14 @@ adminRouter.delete(
 adminRouter.get(
   '/parc',
   h(async (_req, res) => {
-    const [loans, chantiers, consumption] = await Promise.all([
+    const now = new Date();
+    const [loans, chantiers, consumption, allConsumption] = await Promise.all([
       prisma.assetLoan.findMany({
         where: { returnedAt: null },
         orderBy: { takenAt: 'desc' },
         include: {
-          chantier: { select: { name: true } },
-          unit: { select: { assetTag: true, product: { select: { name: true } } } },
+          chantier: { select: { id: true, name: true } },
+          unit: { select: { assetTag: true, product: { select: { name: true, dailyPrice: true } } } },
         },
       }),
       prisma.chantier.findMany({
@@ -1837,16 +1838,42 @@ adminRouter.get(
           chantier: { select: { name: true } },
         },
       }),
+      // Cumul complet (pas juste les 50 derniers) pour le coût interne imputé par chantier.
+      prisma.consumptionLog.findMany({
+        select: { chantierId: true, quantity: true, product: { select: { dailyPrice: true } } },
+      }),
     ]);
+
+    // Coût interne = usage du parc partagé par les équipes JJD, non facturé
+    // aujourd'hui — imputé ici au tarif de location Bricoloc, à titre indicatif
+    // pour arbitrer une éventuelle refacturation interne entre les deux entités.
+    const MS_PER_DAY = 86_400_000;
+    const loanCostByChantier = new Map<string, number>();
+    for (const l of loans) {
+      const daysOut = Math.max(1, Math.ceil((now.getTime() - l.takenAt.getTime()) / MS_PER_DAY));
+      const cost = daysOut * l.unit.product.dailyPrice;
+      loanCostByChantier.set(l.chantierId, (loanCostByChantier.get(l.chantierId) ?? 0) + cost);
+    }
+    const consoCostByChantier = new Map<string, number>();
+    for (const c of allConsumption) {
+      const cost = c.quantity * c.product.dailyPrice;
+      consoCostByChantier.set(c.chantierId, (consoCostByChantier.get(c.chantierId) ?? 0) + cost);
+    }
+
     res.json({
-      activeLoans: loans.map((l) => ({
-        id: l.id,
-        assetTag: l.unit.assetTag,
-        product: l.unit.product.name,
-        chantier: l.chantier.name,
-        takenAt: l.takenAt,
-        takenBy: l.takenBy,
-      })),
+      activeLoans: loans.map((l) => {
+        const daysOut = Math.max(1, Math.ceil((now.getTime() - l.takenAt.getTime()) / MS_PER_DAY));
+        return {
+          id: l.id,
+          assetTag: l.unit.assetTag,
+          product: l.unit.product.name,
+          chantier: l.chantier.name,
+          takenAt: l.takenAt,
+          takenBy: l.takenBy,
+          daysOut,
+          estCostHT: Math.round(daysOut * l.unit.product.dailyPrice * 100) / 100,
+        };
+      }),
       chantiers: chantiers.map((c) => ({
         id: c.id,
         externalRef: c.externalRef,
@@ -1854,6 +1881,8 @@ adminRouter.get(
         client: c.client,
         active: c.active,
         toolsOut: c._count.loans,
+        internalCostHT:
+          Math.round(((loanCostByChantier.get(c.id) ?? 0) + (consoCostByChantier.get(c.id) ?? 0)) * 100) / 100,
       })),
       consumption: consumption.map((c) => ({
         id: c.id,

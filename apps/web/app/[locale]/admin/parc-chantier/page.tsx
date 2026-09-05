@@ -1,13 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { formatDateTimeBE } from '@bricoloc/shared';
+import { formatDateTimeBE, formatEUR } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
+import { ScanField } from '@/components/admin/ScanField';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function ParcChantier() {
   const [data, setData] = useState<any>(null);
   const [msg, setMsg] = useState('');
   const [form, setForm] = useState({ code: '', chantierId: '', takenBy: '' });
+  const [chantierQ, setChantierQ] = useState('');
+  const [chantierPickOpen, setChantierPickOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const load = () => staffApi<any>('/api/admin/parc').then(setData);
   useEffect(() => {
@@ -53,25 +57,66 @@ export default function ParcChantier() {
 
       <div className="card card-pad stack">
         <h3>Sortie chantier (manuelle)</h3>
-        <div className="row" style={{ flexWrap: 'wrap', gap: 10 }}>
-          <input
-            placeholder="Code / n° d’exemplaire scanné"
-            value={form.code}
-            onChange={(e) => setForm({ ...form, code: e.target.value })}
-            style={{ flex: 1, minWidth: 180 }}
+        <div style={{ maxWidth: 420 }}>
+          <ScanField
+            placeholder="Scanner ou taper le code de l’exemplaire…"
+            autoFocus={false}
+            onScan={(code) => setForm((f) => ({ ...f, code }))}
           />
-          <select
-            value={form.chantierId}
-            onChange={(e) => setForm({ ...form, chantierId: e.target.value })}
-          >
-            <option value="">— Chantier —</option>
-            {activeChantiers.map((c: any) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-                {c.client ? ` (${c.client})` : ''}
-              </option>
-            ))}
-          </select>
+          {form.code && <p className="small muted" style={{ margin: '4px 0 0' }}>Code saisi : <strong>{form.code}</strong></p>}
+        </div>
+        <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'flex-start' }}>
+          <div style={{ position: 'relative', minWidth: 240 }}>
+            <input
+              placeholder="Rechercher un chantier…"
+              value={
+                chantierPickOpen
+                  ? chantierQ
+                  : (activeChantiers.find((c: any) => c.id === form.chantierId)?.name ?? '')
+              }
+              onFocus={() => {
+                setChantierPickOpen(true);
+                setChantierQ('');
+              }}
+              onBlur={() => setTimeout(() => setChantierPickOpen(false), 150)}
+              onChange={(e) => setChantierQ(e.target.value)}
+              style={{ width: '100%' }}
+            />
+            {chantierPickOpen && (
+              <div
+                className="card card-body"
+                style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20,
+                  maxHeight: 220, overflowY: 'auto', padding: 4, marginTop: 2,
+                }}
+              >
+                {activeChantiers
+                  .filter((c: any) =>
+                    !chantierQ ||
+                    c.name.toLowerCase().includes(chantierQ.toLowerCase()) ||
+                    (c.client ?? '').toLowerCase().includes(chantierQ.toLowerCase()),
+                  )
+                  .map((c: any) => (
+                    <button
+                      type="button"
+                      key={c.id}
+                      className="btn btn-ghost btn-sm"
+                      style={{ width: '100%', justifyContent: 'flex-start' }}
+                      onClick={() => {
+                        setForm({ ...form, chantierId: c.id });
+                        setChantierPickOpen(false);
+                      }}
+                    >
+                      {c.name}
+                      {c.client ? ` (${c.client})` : ''}
+                    </button>
+                  ))}
+                {activeChantiers.length === 0 && (
+                  <p className="small muted" style={{ padding: '4px 8px' }}>Aucun chantier synchronisé.</p>
+                )}
+              </div>
+            )}
+          </div>
           <input
             placeholder="Pris par (nom)"
             value={form.takenBy}
@@ -91,6 +136,10 @@ export default function ParcChantier() {
 
       <div className="card card-pad">
         <h3>Machines sur chantier ({data.activeLoans.length})</h3>
+        <p className="small muted" style={{ margin: '0 0 8px' }}>
+          Coût interne = tarif de location Bricoloc × jours dehors — imputation indicative pour
+          arbitrer une éventuelle refacturation interne JJD ↔ Bricoloc, pas une facture.
+        </p>
         <table className="table">
           <thead>
             <tr>
@@ -98,6 +147,7 @@ export default function ParcChantier() {
               <th>Machine</th>
               <th>Chantier</th>
               <th>Depuis</th>
+              <th className="num">Coût interne</th>
               <th>Par</th>
               <th />
             </tr>
@@ -109,6 +159,10 @@ export default function ParcChantier() {
                 <td>{l.product}</td>
                 <td>{l.chantier}</td>
                 <td className="small">{formatDateTimeBE(l.takenAt)}</td>
+                <td className="num small">
+                  {formatEUR(l.estCostHT)}
+                  <span className="muted"> ({l.daysOut} j)</span>
+                </td>
                 <td className="small">{l.takenBy ?? '—'}</td>
                 <td>
                   <button className="btn btn-ghost btn-sm" onClick={() => retour(l.id)}>
@@ -119,7 +173,7 @@ export default function ParcChantier() {
             ))}
             {data.activeLoans.length === 0 && (
               <tr>
-                <td colSpan={6} className="small muted">
+                <td colSpan={7} className="small muted">
                   Aucune machine sortie.
                 </td>
               </tr>
@@ -129,7 +183,22 @@ export default function ParcChantier() {
       </div>
 
       <div className="card card-pad">
-        <h3>Chantiers ({data.chantiers.length})</h3>
+        <div className="spread" style={{ alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>
+            Chantiers ({(showArchived ? data.chantiers : activeChantiers).length}
+            {!showArchived && data.chantiers.length > activeChantiers.length
+              ? ` / ${data.chantiers.length}`
+              : ''}
+            )
+          </h3>
+          {data.chantiers.length > activeChantiers.length && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowArchived((v) => !v)}>
+              {showArchived
+                ? 'Masquer les archivés'
+                : `Voir aussi les archivés (${data.chantiers.length - activeChantiers.length})`}
+            </button>
+          )}
+        </div>
         <table className="table">
           <thead>
             <tr>
@@ -137,16 +206,18 @@ export default function ParcChantier() {
               <th>Client</th>
               <th>Réf. JJD</th>
               <th>Machines dehors</th>
+              <th className="num">Coût interne cumulé</th>
               <th>Statut</th>
             </tr>
           </thead>
           <tbody>
-            {data.chantiers.map((c: any) => (
+            {(showArchived ? data.chantiers : activeChantiers).map((c: any) => (
               <tr key={c.id}>
                 <td>{c.name}</td>
                 <td className="small">{c.client ?? '—'}</td>
                 <td className="small">{c.externalRef ?? '—'}</td>
                 <td>{c.toolsOut}</td>
+                <td className="num small">{c.internalCostHT > 0 ? formatEUR(c.internalCostHT) : '—'}</td>
                 <td>
                   <span className={`badge${c.active ? ' badge-ok' : ''}`}>
                     {c.active ? 'Actif' : 'Archivé'}
