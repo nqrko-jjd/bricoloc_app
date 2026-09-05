@@ -2373,6 +2373,21 @@ button { font-family: inherit; }
 }
 .etq-chip.is-on { border-color: var(--navy); background: var(--surface-2); }
 
+/* Sélecteur d'étiquettes machines — vignettes au lieu d'un mur de texte */
+.etq-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px;
+}
+.etq-card {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border: 1.5px solid var(--border); border-radius: var(--r-xs); padding: 8px 6px 6px;
+  cursor: pointer; text-align: center; background: var(--surface);
+}
+.etq-card.is-on { border-color: var(--navy); background: var(--surface-2); }
+.etq-card input { position: absolute; top: 6px; left: 6px; margin: 0; }
+.etq-card img { width: 56px; height: 56px; object-fit: contain; background: #f4f4f8; border-radius: 6px; }
+.etq-card__name { font-size: 0.78rem; font-weight: 700; line-height: 1.25; }
+.etq-card__qty { font-size: 0.72rem; color: var(--muted-fg); }
+
 /* Prise de photos (comptoir) */
 .photocap__grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .photocap__thumb { position: relative; width: 84px; height: 84px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
