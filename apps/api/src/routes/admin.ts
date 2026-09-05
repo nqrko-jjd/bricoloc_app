@@ -329,8 +329,79 @@ adminRouter.delete(
   '/products/:slug',
   requireStaff('RESPONSABLE'),
   h(async (req, res) => {
-    await prisma.product.delete({ where: { slug: req.params.slug } });
+    try {
+      await prisma.product.delete({ where: { slug: req.params.slug } });
+    } catch {
+      throw badRequest(
+        'Impossible de supprimer : ce produit a un historique (réservations, consommation JJD). Dépubliez-le plutôt.',
+      );
+    }
     res.status(204).end();
+  }),
+);
+
+/** Fusionne un produit "doublon" dans un produit "cible" : stock, réservations,
+ * avis et liens sont réattribués à la cible, puis le doublon est supprimé. */
+adminRouter.post(
+  '/products/:slug/merge-into',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    const targetSlug = String(req.body?.targetSlug ?? '');
+    if (!targetSlug) throw badRequest('targetSlug requis');
+    if (targetSlug === req.params.slug) throw badRequest('Impossible de fusionner un produit avec lui-même');
+
+    const [dup, target] = await Promise.all([
+      prisma.product.findUnique({ where: { slug: req.params.slug } }),
+      prisma.product.findUnique({ where: { slug: targetSlug } }),
+    ]);
+    if (!dup) throw notFound('Produit doublon introuvable');
+    if (!target) throw notFound('Produit cible introuvable');
+    if (dup.kind !== target.kind) throw badRequest('Les deux produits doivent être du même type');
+
+    await prisma.$transaction(async (tx) => {
+      // Stock, historique et avis : réattribués tels quels à la cible.
+      await tx.productUnit.updateMany({ where: { productId: dup.id }, data: { productId: target.id } });
+      await tx.reservationItem.updateMany({ where: { productId: dup.id }, data: { productId: target.id } });
+      await tx.consumptionLog.updateMany({ where: { productId: dup.id }, data: { productId: target.id } });
+      await tx.review.updateMany({ where: { productId: dup.id }, data: { productId: target.id } });
+      // Paniers en cours : le doublon disparaît, on ne migre pas (données éphémères).
+      await tx.cartItem.deleteMany({ where: { productId: dup.id } });
+
+      // Liens (accessoires/consommables/EPI/complémentaires/pack) : recréés côté
+      // cible seulement s'ils n'existent pas déjà, pour respecter la contrainte
+      // d'unicité — puis la suppression du doublon plus bas nettoie le reste.
+      const [fromLinks, toLinks] = await Promise.all([
+        tx.productLink.findMany({ where: { fromId: dup.id } }),
+        tx.productLink.findMany({ where: { toId: dup.id } }),
+      ]);
+      for (const l of fromLinks) {
+        if (l.toId === target.id) continue;
+        const exists = await tx.productLink.findUnique({
+          where: { fromId_toId_type: { fromId: target.id, toId: l.toId, type: l.type } },
+        });
+        if (!exists) {
+          await tx.productLink.create({
+            data: { fromId: target.id, toId: l.toId, type: l.type, quantity: l.quantity },
+          });
+        }
+      }
+      for (const l of toLinks) {
+        if (l.fromId === target.id) continue;
+        const exists = await tx.productLink.findUnique({
+          where: { fromId_toId_type: { fromId: l.fromId, toId: target.id, type: l.type } },
+        });
+        if (!exists) {
+          await tx.productLink.create({
+            data: { fromId: l.fromId, toId: target.id, type: l.type, quantity: l.quantity },
+          });
+        }
+      }
+
+      await tx.product.delete({ where: { id: dup.id } });
+    });
+
+    const full = await prisma.product.findUnique({ where: { id: target.id }, include: productInclude });
+    res.json({ product: serializeProductDetail(full!, undefined, undefined, { internal: true }) });
   }),
 );
 

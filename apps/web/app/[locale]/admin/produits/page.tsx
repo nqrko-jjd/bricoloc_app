@@ -1,8 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { formatEUR } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { ImageDropzone } from '@/components/admin/ImageDropzone';
+import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 import type { ProductDetail, Category } from '@/lib/types';
 
 const EMPTY = {
@@ -43,6 +44,8 @@ export default function AdminProduits() {
   const [editing, setEditing] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [filter, setFilter] = useState('');
+  const [mergingSlug, setMergingSlug] = useState<string | null>(null);
+  const [mergeTarget, setMergeTarget] = useState('');
 
   async function load() {
     const [p, c] = await Promise.all([
@@ -135,9 +138,54 @@ export default function AdminProduits() {
     }
   }
 
-  const shown = products.filter(
-    (p) => !filter || p.name.toLowerCase().includes(filter.toLowerCase()),
-  );
+  async function remove(p: ProductDetail) {
+    if (!confirm(`Supprimer définitivement « ${p.name} » ?`)) return;
+    try {
+      await staffApi(`/api/admin/products/${p.slug}`, { method: 'DELETE' });
+      setMsg('Produit supprimé.');
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    }
+  }
+
+  async function merge(dup: ProductDetail, targetSlug: string) {
+    if (!targetSlug) return;
+    const target = products.find((p) => p.slug === targetSlug);
+    if (!confirm(`Fusionner « ${dup.name} » dans « ${target?.name ?? targetSlug} » ? Stock, réservations et avis seront réattribués, puis « ${dup.name} » sera supprimé.`)) return;
+    try {
+      await staffApi(`/api/admin/products/${dup.slug}/merge-into`, {
+        method: 'POST',
+        body: { targetSlug },
+      });
+      setMsg(`Fusionné dans « ${target?.name ?? targetSlug} ».`);
+      setMergingSlug(null);
+      setMergeTarget('');
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    }
+  }
+
+  const shown = products
+    .filter((p) => p.kind !== 'PACK')
+    .filter((p) => !filter || p.name.toLowerCase().includes(filter.toLowerCase()));
+
+  // Doublons possibles : même nom normalisé (casse/accents/espaces ignorés).
+  const normalize = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  const nameCounts = new Map<string, number>();
+  for (const p of products) {
+    if (p.kind === 'PACK') continue;
+    const key = normalize(p.name);
+    nameCounts.set(key, (nameCounts.get(key) ?? 0) + 1);
+  }
+  const isDuplicate = (p: ProductDetail) => (nameCounts.get(normalize(p.name)) ?? 0) > 1;
 
   return (
     <div className="stack">
@@ -180,11 +228,13 @@ export default function AdminProduits() {
             <label>Type</label>
             <select value={form.kind} onChange={(e) => set('kind', e.target.value)}>
               <option value="MACHINE">Machine</option>
-              <option value="PACK">Pack</option>
               <option value="ACCESSORY">Accessoire</option>
               <option value="CONSUMABLE">Consommable</option>
               <option value="PPE">Protection</option>
             </select>
+            <p className="small muted" style={{ margin: '4px 0 0' }}>
+              Les BricoPacks se gèrent depuis l&apos;onglet « BricoPacks ».
+            </p>
           </div>
           <div className="field">
             <label>Catégorie</label>
@@ -419,6 +469,7 @@ export default function AdminProduits() {
           <table className="table">
             <thead>
               <tr>
+                <th></th>
                 <th>Nom</th>
                 <th>Type</th>
                 <th>Catégorie</th>
@@ -430,21 +481,83 @@ export default function AdminProduits() {
             </thead>
             <tbody>
               {shown.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.name}</td>
-                  <td>
-                    <span className="badge">{p.kind}</span>
-                  </td>
-                  <td>{p.category?.name ?? '—'}</td>
-                  <td>{formatEUR(p.dailyPrice)}</td>
-                  <td>{formatEUR(p.deposit)}</td>
-                  <td>{p.totalStock}</td>
-                  <td>
-                    <button className="btn btn-ghost btn-sm" onClick={() => edit(p)}>
-                      Modifier
-                    </button>
-                  </td>
-                </tr>
+                <Fragment key={p.id}>
+                  <tr>
+                    <td>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.image || PLACEHOLDER_IMG}
+                        alt=""
+                        style={{ width: 36, height: 36, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+                      />
+                    </td>
+                    <td>
+                      {p.name}
+                      {isDuplicate(p) && (
+                        <span
+                          className="badge badge-warn"
+                          style={{ marginLeft: 8 }}
+                          title="Un autre produit porte un nom quasi identique"
+                        >
+                          ⚠ doublon possible
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <span className="badge">{p.kind}</span>
+                    </td>
+                    <td>{p.category?.name ?? '—'}</td>
+                    <td>{formatEUR(p.dailyPrice)}</td>
+                    <td>{formatEUR(p.deposit)}</td>
+                    <td>{p.totalStock}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => edit(p)}>
+                        Modifier
+                      </button>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => {
+                          setMergingSlug(mergingSlug === p.slug ? null : p.slug);
+                          setMergeTarget('');
+                        }}
+                      >
+                        Fusionner
+                      </button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => remove(p)}>
+                        Supprimer
+                      </button>
+                    </td>
+                  </tr>
+                  {mergingSlug === p.slug && (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
+                          <span className="small">Fusionner « {p.name} » dans :</span>
+                          <select value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)}>
+                            <option value="">— Choisir le produit à garder —</option>
+                            {products
+                              .filter((o) => o.kind === p.kind && o.slug !== p.slug)
+                              .map((o) => (
+                                <option key={o.slug} value={o.slug}>
+                                  {o.name}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            disabled={!mergeTarget}
+                            onClick={() => merge(p, mergeTarget)}
+                          >
+                            Confirmer la fusion
+                          </button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setMergingSlug(null)}>
+                            Annuler
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -496,6 +609,12 @@ function LinkPicker({
                 padding: '6px 10px',
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={s.image || PLACEHOLDER_IMG}
+                alt=""
+                style={{ width: 28, height: 28, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6, flexShrink: 0 }}
+              />
               <span style={{ flex: 1 }}>{s.name}</span>
               <span className="small muted">{formatEUR(s.dailyPrice)}</span>
               <button
@@ -542,12 +661,18 @@ function LinkPicker({
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
-                  style={{ width: '100%', justifyContent: 'flex-start' }}
+                  style={{ width: '100%', justifyContent: 'flex-start', gap: 8 }}
                   onClick={() => {
                     onChange([...value, o.id]);
                     setQ('');
                   }}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={o.image || PLACEHOLDER_IMG}
+                    alt=""
+                    style={{ width: 24, height: 24, objectFit: 'contain', background: '#f4f4f8', borderRadius: 5, flexShrink: 0 }}
+                  />
                   + {o.name}
                 </button>
               </li>
