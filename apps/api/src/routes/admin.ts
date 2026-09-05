@@ -1451,6 +1451,16 @@ adminRouter.put(
   }),
 );
 
+/** Supprime une clé de contenu (les 3 langues) — nettoyage des clés orphelines. */
+adminRouter.delete(
+  '/content/:key',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    await prisma.content.deleteMany({ where: { key: req.params.key! } });
+    res.status(204).end();
+  }),
+);
+
 /** Force la re-traduction NL/EN d'un contenu depuis sa version FR. */
 adminRouter.post(
   '/content/:key/retranslate',
