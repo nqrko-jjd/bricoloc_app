@@ -73,7 +73,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     : (popularRes.products ?? []).filter((p) => p.image).slice(0, 3);
   const showBrand = config?.homeShowBrand === true;
   const showBadges = config?.homeShowBadges !== false;
-  const packs = (packsRes.products ?? []).slice(0, 5);
+  const packs = (packsRes.products ?? []).slice(0, 1);
   const toolCount = Math.max(10, Math.floor((popularRes.total ?? 80) / 10) * 10);
   const guides = (guidesRes.guides ?? []).slice(0, 3);
   // BricoPacks a déjà sa propre mise en avant plus bas — pas la peine de la

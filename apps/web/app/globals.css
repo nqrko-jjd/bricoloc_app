@@ -1911,6 +1911,7 @@ button { font-family: inherit; }
 .cdiff__card {
   border-radius: 28px; padding: clamp(28px, 4vw, 46px);
   display: flex; flex-direction: column; gap: 14px; align-items: flex-start;
+  min-width: 0;
 }
 .cdiff__card--delivery { background: var(--lavender); }
 .cdiff__card--pack { background: var(--red-tint); }
@@ -1923,8 +1924,8 @@ button { font-family: inherit; }
 /* Slider une ligne (au lieu d'un flex-wrap qui gonflait la carte pack par
    rapport à la carte livraison, à côté). */
 .cdiff__packs {
-  display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 4px;
-  overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px;
+  display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 4px; width: 100%;
+  overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px; min-width: 0;
 }
 .cdiff__pack { scroll-snap-align: start; flex: 0 0 auto; }
 .cdiff__pack {
