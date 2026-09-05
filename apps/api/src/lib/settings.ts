@@ -7,13 +7,27 @@ let cache: AppSettings | null = null;
 let cacheAt = 0;
 const TTL = 5_000;
 
-/** Fusionne les DEFAULT_SETTINGS avec les overrides stockes en base. */
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v);
+}
+
+/** Fusionne les DEFAULT_SETTINGS avec les overrides stockes en base.
+ * Merge sur un niveau pour les valeurs objet (ex. `delivery`) : un override
+ * partiel (ex. sauvegarde d'un seul champ) ne doit jamais faire disparaitre
+ * les autres champs par defaut — sinon la page qui lit `settings.delivery.mode`
+ * plante ou affiche des valeurs manquantes des qu'un champ n'a jamais ete
+ * explicitement enregistre. */
 export async function getSettings(force = false): Promise<AppSettings> {
   if (!force && cache && Date.now() - cacheAt < TTL) return cache;
   const rows = await prisma.setting.findMany();
   const overrides: Record<string, unknown> = {};
   for (const r of rows) overrides[r.key] = r.value as unknown;
-  cache = { ...DEFAULT_SETTINGS, ...overrides } as AppSettings;
+  const merged: Record<string, unknown> = { ...DEFAULT_SETTINGS };
+  for (const [key, value] of Object.entries(overrides)) {
+    const base = (DEFAULT_SETTINGS as Record<string, unknown>)[key];
+    merged[key] = isPlainObject(base) && isPlainObject(value) ? { ...base, ...value } : value;
+  }
+  cache = merged as AppSettings;
   cacheAt = Date.now();
   return cache;
 }
