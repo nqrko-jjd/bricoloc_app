@@ -361,6 +361,15 @@
       "delivery": "Livraison & retrait",
       "click-collect": "Retrait 2 h",
       "pro": "Comptes pro"
+    },
+    "highlights": {
+      "kicker": "— Deux façons de récupérer votre matériel",
+      "ccTitle": "Click & Collect en 2h",
+      "ccText": "Réservez en ligne, retirez au dépôt de Ruisbroek dès que c’est prêt — souvent le jour même.",
+      "ccCta": "Comment ça marche",
+      "deliveryTitle": "Livraison à domicile ou chantier",
+      "deliveryText": "On vous livre partout en Belgique, à l’heure choisie, et on reprend le matériel en fin de location.",
+      "deliveryCta": "Voir les zones & tarifs"
     }
   },
   "suggest": {

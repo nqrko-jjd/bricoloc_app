@@ -361,6 +361,15 @@
       "delivery": "Delivery & pickup",
       "click-collect": "2 h pickup",
       "pro": "Pro accounts"
+    },
+    "highlights": {
+      "kicker": "— Two ways to get your gear",
+      "ccTitle": "Click & Collect in 2h",
+      "ccText": "Book online, pick up at our Ruisbroek depot as soon as it's ready — often the same day.",
+      "ccCta": "How it works",
+      "deliveryTitle": "Delivery to your home or site",
+      "deliveryText": "We deliver anywhere in Belgium, at the time you choose, and collect the gear when the rental ends.",
+      "deliveryCta": "See zones & rates"
     }
   },
   "suggest": {

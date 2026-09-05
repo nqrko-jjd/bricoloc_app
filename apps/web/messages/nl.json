@@ -361,6 +361,15 @@
       "delivery": "Levering & ophaling",
       "click-collect": "Ophalen in 2 u",
       "pro": "Pro-accounts"
+    },
+    "highlights": {
+      "kicker": "— Twee manieren om je materiaal op te halen",
+      "ccTitle": "Click & Collect in 2 u",
+      "ccText": "Reserveer online, haal af in ons depot in Ruisbroek zodra het klaar is — vaak dezelfde dag nog.",
+      "ccCta": "Hoe het werkt",
+      "deliveryTitle": "Levering aan huis of op de werf",
+      "deliveryText": "We leveren overal in België, op het gekozen tijdstip, en halen het materiaal op na de huurperiode.",
+      "deliveryCta": "Zones & tarieven bekijken"
     }
   },
   "suggest": {
