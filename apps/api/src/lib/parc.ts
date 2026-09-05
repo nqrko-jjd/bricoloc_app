@@ -135,6 +135,8 @@ export async function returnLoan(input: {
   returnedBy?: string | null;
   note?: string | null;
   toState?: 'AVAILABLE' | 'MAINTENANCE' | 'DAMAGED';
+  /** Emplacement (étagère/zone) où l'outil est physiquement rangé au retour. */
+  storageLocation?: string | null;
 }) {
   const unit = await resolveUnit(input.code);
   if (!unit) throw notFound(`Exemplaire inconnu (${input.code})`);
@@ -144,6 +146,7 @@ export async function returnLoan(input: {
   });
   if (!loan) throw badRequest('Aucune sortie chantier en cours pour cet exemplaire.');
   const next = input.toState ?? 'AVAILABLE';
+  const storageLocation = input.storageLocation?.trim() || undefined;
   await prisma.$transaction([
     prisma.assetLoan.update({
       where: { id: loan.id },
@@ -153,9 +156,12 @@ export async function returnLoan(input: {
         noteIn: input.note?.trim() || null,
       },
     }),
-    prisma.productUnit.update({ where: { id: unit.id }, data: { state: next } }),
+    prisma.productUnit.update({
+      where: { id: unit.id },
+      data: { state: next, ...(storageLocation ? { storageLocation } : {}) },
+    }),
   ]);
-  return { loanId: loan.id, unitId: unit.id, state: next };
+  return { loanId: loan.id, unitId: unit.id, state: next, storageLocation: storageLocation ?? null };
 }
 
 /** Consommation d'un consommable par un chantier (décompte du stock commun). */

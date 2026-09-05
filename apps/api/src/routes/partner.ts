@@ -124,8 +124,14 @@ partnerRouter.get(
         name: true,
         kind: true,
         brand: true,
+        model: true,
         images: true,
         category: { select: { name: true } },
+        shortDescription: true,
+        description: true,
+        specs: true,
+        manualUrl: true,
+        documents: true,
         units: {
           select: { id: true, assetTag: true, state: true, storageLocation: true },
         },
@@ -145,8 +151,14 @@ partnerRouter.get(
         name: p.name,
         kind: p.kind,
         brand: p.brand ?? null,
+        model: p.model ?? null,
         image: firstImage(p.images),
         category: p.category?.name ?? null,
+        shortDescription: p.shortDescription ?? null,
+        description: p.description ?? null,
+        specs: (p.specs as Record<string, string>) ?? {},
+        manualUrl: p.manualUrl ?? null,
+        documents: (p.documents as { label: string; url: string }[]) ?? [],
         total: p.units.length,
         available: p.units.filter((u) => u.state === 'AVAILABLE').length,
         onSite: p.units.filter((u) => u.state === 'ON_SITE').length,
@@ -172,7 +184,7 @@ partnerRouter.get(
     const rows = await prisma.product.findMany({
       where: { isConsumable: true, published: true },
       orderBy: { name: 'asc' },
-      select: { id: true, slug: true, name: true, stockQty: true },
+      select: { id: true, slug: true, name: true, stockQty: true, shortDescription: true },
     });
     res.json({ consumables: rows });
   }),
@@ -231,9 +243,9 @@ partnerRouter.post(
 partnerRouter.post(
   '/returns',
   h(async (req, res) => {
-    const { code, returnedBy, note, toState } = req.body ?? {};
+    const { code, returnedBy, note, toState, storageLocation } = req.body ?? {};
     if (!code) throw badRequest('code requis');
-    const r = await returnLoan({ code, returnedBy, note, toState });
+    const r = await returnLoan({ code, returnedBy, note, toState, storageLocation });
     res.json(r);
   }),
 );
