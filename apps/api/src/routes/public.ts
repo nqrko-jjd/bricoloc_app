@@ -50,6 +50,44 @@ publicRouter.get(
           ),
         };
       })(),
+      homeShowBrand: Boolean(s.homeShowBrand),
+      homeShowBadges: s.homeShowBadges === undefined ? true : Boolean(s.homeShowBadges),
+    });
+  }),
+);
+
+/** Produits mis en avant « Ce que louent nos clients » (accueil) — vide si pas de curation manuelle. */
+publicRouter.get(
+  '/home-featured',
+  h(async (req, res) => {
+    const locale = (String(req.query.locale ?? 'fr') as Locale) ?? 'fr';
+    const s = await getSettings();
+    const ids = Array.isArray(s.homeFeaturedProductIds) ? (s.homeFeaturedProductIds as string[]) : [];
+    if (ids.length === 0) return res.json({ products: [] });
+
+    const rows = await prisma.product.findMany({
+      where: { id: { in: ids }, published: true },
+      include: productInclude,
+    });
+    const byId = new Map(rows.map((p) => [p.id, p]));
+    // Conserve l'ordre choisi en admin ; ignore les ids supprimés/dépubliés depuis.
+    const ordered = ids.map((id) => byId.get(id)).filter((p): p is (typeof rows)[number] => !!p);
+
+    // « Dans un BricoPack » = la machine compose un pack existant (liens PACK_ITEM).
+    const inPackIds = new Set(
+      (
+        await prisma.productLink.findMany({
+          where: { toId: { in: ordered.map((p) => p.id) }, type: 'PACK_ITEM' },
+          select: { toId: true },
+        })
+      ).map((l) => l.toId),
+    );
+
+    res.json({
+      products: ordered.map((p) => ({
+        ...serializeProductSummary(p, locale),
+        inPack: inPackIds.has(p.id),
+      })),
     });
   }),
 );

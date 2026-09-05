@@ -190,6 +190,21 @@ export const PackageIcon = (p: SVGProps<SVGSVGElement>) => (
   </Svg>
 );
 
+export const User = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+  </Svg>
+);
+
+export const ShoppingCart = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none" />
+    <path d="M2.5 3h2l2.2 11.6a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L20.5 7H6" />
+  </Svg>
+);
+
 /** Table de correspondance slug de catégorie → icône. */
 export const CATEGORY_ICON: Record<string, (p: SVGProps<SVGSVGElement>) => React.JSX.Element> = {
   'forer-casser': Drill,

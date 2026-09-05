@@ -24,6 +24,9 @@ export default function AdminParametres() {
     tiers: [],
   });
   const [msg, setMsg] = useState('');
+  const [products, setProducts] = useState<{ id: string; name: string; dailyPrice: number; images?: string[] }[]>([]);
+  const [featuredIds, setFeaturedIds] = useState<string[]>([]);
+  const [featuredQuery, setFeaturedQuery] = useState('');
 
   const load = () =>
     staffApi<{ settings: any }>('/api/admin/settings').then((r) => {
@@ -36,11 +39,28 @@ export default function AdminParametres() {
         enabled: cp.enabled !== false,
         tiers: Array.isArray(cp.tiers) ? cp.tiers : [],
       });
+      setFeaturedIds(Array.isArray(r.settings.homeFeaturedProductIds) ? r.settings.homeFeaturedProductIds : []);
     });
   useEffect(() => {
     load();
+    staffApi<{ products: { id: string; name: string; dailyPrice: number; images?: string[] }[] }>(
+      '/api/admin/products?kind=MACHINE',
+    ).then((r) => setProducts(r.products));
   }, []);
   if (!s) return <p>Chargement…</p>;
+
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const featuredOptions = products.filter(
+    (p) => !featuredIds.includes(p.id) && p.name.toLowerCase().includes(featuredQuery.toLowerCase()),
+  );
+  function moveFeatured(i: number, dir: -1 | 1) {
+    const next = [...featuredIds];
+    const j = i + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[i], next[j]] = [next[j]!, next[i]!];
+    setFeaturedIds(next);
+    save('homeFeaturedProductIds', next);
+  }
 
   async function save(key: string, value: any) {
     await staffApi('/api/admin/settings', { method: 'PUT', body: { key, value } });
@@ -174,6 +194,102 @@ export default function AdminParametres() {
         >
           + Ajouter un palier
         </button>
+      </div>
+
+      <div className="card card-pad stack">
+        <h3>Page d’accueil — « Ce que louent nos clients »</h3>
+        <label className="row" style={{ gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={!!s.homeShowBrand}
+            onChange={(e) => save('homeShowBrand', e.target.checked)}
+          />
+          <span className="small">Afficher la marque/fournisseur sur les cartes produit</span>
+        </label>
+        <label className="row" style={{ gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={s.homeShowBadges !== false}
+            onChange={(e) => save('homeShowBadges', e.target.checked)}
+          />
+          <span className="small">
+            Afficher les badges (Nouveauté, Dans un BricoPack…) sur les cartes produit
+          </span>
+        </label>
+
+        <div className="field" style={{ marginTop: 6 }}>
+          <label>Produits mis en avant (dans cet ordre)</label>
+          <p className="small muted" style={{ margin: '0 0 8px' }}>
+            Vide = tri automatique par défaut. Choisis ici pour garder la main sur ce qui apparaît
+            en premier sur l’accueil.
+          </p>
+          {featuredIds.length > 0 && (
+            <ul className="stack" style={{ gap: 6, margin: '0 0 10px', padding: 0, listStyle: 'none' }}>
+              {featuredIds.map((id, i) => {
+                const p = byId.get(id);
+                return (
+                  <li
+                    key={id}
+                    className="row"
+                    style={{ alignItems: 'center', gap: 8, background: 'var(--surface-2)', borderRadius: 8, padding: '6px 10px' }}
+                  >
+                    <span className="small muted">{i + 1}.</span>
+                    <span style={{ flex: 1 }}>{p?.name ?? '(produit supprimé)'}</span>
+                    <button type="button" className="btn btn-ghost btn-sm" disabled={i === 0} onClick={() => moveFeatured(i, -1)}>
+                      ↑
+                    </button>
+                    <button type="button" className="btn btn-ghost btn-sm" disabled={i === featuredIds.length - 1} onClick={() => moveFeatured(i, 1)}>
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => {
+                        const next = featuredIds.filter((x) => x !== id);
+                        setFeaturedIds(next);
+                        save('homeFeaturedProductIds', next);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <input
+            value={featuredQuery}
+            onChange={(e) => setFeaturedQuery(e.target.value)}
+            placeholder="Rechercher une machine à mettre en avant…"
+          />
+          {featuredQuery && (
+            <ul
+              className="stack"
+              style={{ gap: 2, margin: '4px 0 0', padding: 0, listStyle: 'none', maxHeight: 200, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}
+            >
+              {featuredOptions.slice(0, 20).map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ width: '100%', justifyContent: 'flex-start' }}
+                    onClick={() => {
+                      const next = [...featuredIds, p.id];
+                      setFeaturedIds(next);
+                      save('homeFeaturedProductIds', next);
+                      setFeaturedQuery('');
+                    }}
+                  >
+                    + {p.name}
+                  </button>
+                </li>
+              ))}
+              {featuredOptions.length === 0 && (
+                <li className="small muted" style={{ padding: '6px 10px' }}>Aucun résultat.</li>
+              )}
+            </ul>
+          )}
+        </div>
       </div>
 
       <div className="card card-pad">

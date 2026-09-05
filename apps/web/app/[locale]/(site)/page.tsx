@@ -3,7 +3,7 @@ import { formatEUR } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { loadContent } from '@/lib/content';
-import type { Category, GuideSummary, ProductSummary } from '@/lib/types';
+import type { Category, GuideSummary, ProductSummary, PublicConfig } from '@/lib/types';
 import { SearchAutocomplete } from '@/components/SearchAutocomplete';
 import { DegressivePricing } from '@/components/DegressivePricing';
 import {
@@ -28,7 +28,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const t = await getTranslations('home');
   const tg = await getTranslations('guides');
 
-  const [{ categories }, popularRes, packsRes, guidesRes, content] = await Promise.all([
+  const [{ categories }, popularRes, featuredRes, packsRes, guidesRes, content, config] = await Promise.all([
     api<{ categories: Category[] }>(`/api/catalog/categories?locale=${locale}`, {
       next: { revalidate: 120 },
     }),
@@ -36,6 +36,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       `/api/catalog/products?pageSize=8&sort=name&locale=${locale}`,
       { next: { revalidate: 60 } },
     ),
+    // Sélection manuelle (admin → Accueil) ; vide = on garde le tri par défaut ci-dessus.
+    api<{ products: ProductSummary[] }>(`/api/public/home-featured?locale=${locale}`, {
+      next: { revalidate: 60 },
+    }).catch(() => ({ products: [] as ProductSummary[] })),
     api<{ products: ProductSummary[] }>(
       `/api/catalog/products?kind=PACK&pageSize=6&locale=${locale}`,
       { next: { revalidate: 120 } },
@@ -44,13 +48,22 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       next: { revalidate: 120 },
     }).catch(() => ({ guides: [] as GuideSummary[] })),
     loadContent('home.', locale),
+    api<PublicConfig>('/api/public/config', { next: { revalidate: 300 } }).catch(
+      () => null as PublicConfig | null,
+    ),
   ]);
 
-  const popular = (popularRes.products ?? []).filter((p) => p.image).slice(0, 3);
+  const popular = featuredRes.products.length
+    ? featuredRes.products.slice(0, 3)
+    : (popularRes.products ?? []).filter((p) => p.image).slice(0, 3);
+  const showBrand = config?.homeShowBrand === true;
+  const showBadges = config?.homeShowBadges !== false;
   const packs = (packsRes.products ?? []).slice(0, 5);
   const toolCount = Math.max(10, Math.floor((popularRes.total ?? 80) / 10) * 10);
   const guides = (guidesRes.guides ?? []).slice(0, 3);
-  const cats = categories.slice(0, 4);
+  // BricoPacks a déjà sa propre mise en avant plus bas — pas la peine de la
+  // dupliquer ici parmi les catégories de machines.
+  const cats = categories.filter((c) => c.slug !== 'bricopack');
 
   const catLabel = (slug: string) => {
     try {
@@ -64,7 +77,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <>
       {/* ─────────────── HERO ─────────────── */}
       <section className="chero">
-        <img className="chero__img" src="/img/home/hero.webp" alt="" />
+        <div className="chero__imgwrap">
+          <img className="chero__img" src="/img/home/hero.webp" alt="" />
+        </div>
         <div className="chero__text">
           <span className="kicker">— {t('heroEyebrow')}</span>
           <h1>
@@ -157,8 +172,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   </span>
                   <IHeart />
                 </div>
+                {showBadges && (p.isNew || p.inPack) && (
+                  <div className="ctool__flags">
+                    {p.isNew && <span className="ctool__flag ctool__flag--new">{t('badgeNew')}</span>}
+                    {p.inPack && <span className="ctool__flag">{t('badgeInPack')}</span>}
+                  </div>
+                )}
                 <div className="ctool__art">
-                  {p.brand && <span className="ctool__badge">{p.brand}</span>}
+                  {showBrand && p.brand && <span className="ctool__badge">{p.brand}</span>}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.image ?? ''} alt={p.name} loading="lazy" />
                 </div>

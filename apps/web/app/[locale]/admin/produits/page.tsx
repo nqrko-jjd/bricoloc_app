@@ -21,6 +21,7 @@ const EMPTY = {
   deposit: '200',
   stockQty: '',
   published: true,
+  isNew: false,
   images: [] as string[],
   // Complétez votre location (fiche produit + borne) : liens vers d'autres produits.
   recommendedAccessoryIds: [] as string[],
@@ -74,7 +75,8 @@ export default function AdminProduits() {
       tiers: p.tiers.length ? JSON.stringify(p.tiers) : '',
       deposit: String(p.deposit),
       stockQty: p.stockQty != null ? String(p.stockQty) : '',
-      published: p.isDemo ? true : true,
+      published: p.published ?? true,
+      isNew: p.isNew ?? false,
       images: p.images,
       recommendedAccessoryIds: p.recommendedAccessories.map((x) => x.id),
       consumableIds: p.consumables.map((x) => x.id),
@@ -110,6 +112,7 @@ export default function AdminProduits() {
         tiers: form.tiers ? JSON.parse(form.tiers) : [],
         deposit: Number(form.deposit),
         published: form.published,
+        isNew: form.isNew,
         images: form.images,
         recommendedAccessoryIds: form.recommendedAccessoryIds,
         consumableIds: form.consumableIds,
@@ -390,6 +393,16 @@ export default function AdminProduits() {
           />
           <span className="small">Publié (visible sur le site, l&apos;appli et la borne)</span>
         </label>
+        {form.kind === 'MACHINE' && (
+          <label className="row" style={{ gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={form.isNew}
+              onChange={(e) => set('isNew', e.target.checked)}
+            />
+            <span className="small">Badge « Nouveauté » (accueil, catalogue)</span>
+          </label>
+        )}
         <button className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
           {editing ? 'Enregistrer' : 'Créer le produit'}
         </button>

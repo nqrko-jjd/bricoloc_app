@@ -157,6 +157,7 @@ export const upsertProductSchema = z.object({
   deposit: z.number().min(0).default(0),
   isDemo: z.boolean().default(true),
   published: z.boolean().default(true),
+  isNew: z.boolean().default(false),
   // Stock des articles non suivis à l'exemplaire (consommables, petits accessoires).
   stockQty: z.number().int().min(0).nullable().optional(),
   // Provenance interne (non affichée au client) : revendeur, réf. et prix d'achat.

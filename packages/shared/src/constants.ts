@@ -124,6 +124,16 @@ export const DEFAULT_SETTINGS = {
     ] as { minMachines: number; pct: number }[],
   },
   /**
+   * Mise en avant « Ce que louent nos clients » (accueil). Vide = tri
+   * algorithmique par défaut (fallback catalogue). Non vide = ces produits,
+   * dans cet ordre. Éditable en admin.
+   */
+  homeFeaturedProductIds: [] as string[],
+  /** Afficher la marque/fournisseur sur les cartes produit (accueil, catalogue). */
+  homeShowBrand: false,
+  /** Afficher les badges (Nouveauté, Dans un BricoPack…) sur les cartes produit. */
+  homeShowBadges: true,
+  /**
    * Emplacements de rangement au dépôt (racks / étagères, ex. « R-01-A »).
    * Sert à imprimer les étiquettes QR de zone et à l'autocomplétion. La liste
    * effective fusionne ces valeurs avec les emplacements déjà utilisés.

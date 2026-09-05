@@ -2,10 +2,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { Logo } from './Logo';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Link } from '@/i18n/navigation';
 import { useCart, useSession } from '@/lib/providers';
+import { User, ShoppingCart } from './icons';
 
 export function Header() {
   const { cart } = useCart();
@@ -29,7 +29,8 @@ export function Header() {
       <Link href="/catalogue">{t('rentTool')}</Link>
       <Link href="/bricopacks">{t('bricopacks')}</Link>
       <Link href="/conseils">{t('adviceDiy')}</Link>
-      <Link href="/application">{t('app')}</Link>
+      <Link href="/faq">{t('faq')}</Link>
+      <Link href="/contact">{t('contact')}</Link>
     </>
   );
 
@@ -43,10 +44,12 @@ export function Header() {
         <span>{tt('delivery')}</span>
         <b>{tt('hours')}</b>
       </div>
-      <div className="demo-ribbon">{tc('demoRibbon')}</div>
 
       <nav className="cnav">
-        <Logo />
+        <Link href="/" className="cnav__logo" aria-label="BRICOLOC">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/img/logo-bricoloc.webp" alt="BRICOLOC" />
+        </Link>
 
         <div className="cnav__links">{links}</div>
 
@@ -55,11 +58,16 @@ export function Header() {
             {t('proSpace')}
           </Link>
           <LanguageSwitcher />
-          <Link href={user ? '/compte' : '/connexion'} className="cnav__account">
-            {user ? user.firstName : t('login')}
+          <Link
+            href={user ? '/compte' : '/connexion'}
+            className="cnav__account"
+            aria-label={user ? user.firstName : t('login')}
+            title={user ? user.firstName : t('login')}
+          >
+            <User />
           </Link>
-          <Link href="/panier" className="cnav__bag">
-            {t('cart')}
+          <Link href="/panier" className="cnav__bag" aria-label={t('cart')} title={t('cart')}>
+            <ShoppingCart />
             {cartCount ? <span>{cartCount}</span> : null}
           </Link>
         </div>

@@ -25,6 +25,9 @@ export interface ProductSummary {
   deposit: number;
   isConsumable: boolean;
   isDemo: boolean;
+  isNew?: boolean;
+  /** Présent seulement sur la sélection « Ce que louent nos clients » (accueil). */
+  inPack?: boolean;
   availabilityMode?: string;
   deliveryPolicy?: string;
   totalStock: number;
@@ -47,6 +50,7 @@ export interface ProductDetail extends ProductSummary {
   weightKg?: number | null;
   bulky?: boolean;
   // Internes (back-office uniquement)
+  published?: boolean;
   stockQty?: number | null;
   partSupplier?: string | null;
   supplierUrl?: string | null;
@@ -263,4 +267,6 @@ export interface PublicConfig {
   deliveryBaseFee: number;
   deliveryFreeThreshold: number;
   demo: boolean;
+  homeShowBrand?: boolean;
+  homeShowBadges?: boolean;
 }

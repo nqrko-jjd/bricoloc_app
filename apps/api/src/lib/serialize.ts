@@ -62,6 +62,7 @@ export function serializeProductSummary(p: ProductWithRels, locale: Locale = SOU
     deposit: p.deposit,
     isConsumable: p.isConsumable,
     isDemo: p.isDemo,
+    isNew: p.isNew,
     availabilityMode: p.availabilityMode,
     deliveryPolicy: p.deliveryPolicy,
     totalStock: unitStock(p),
@@ -139,6 +140,7 @@ export function serializeProductDetail(
     // Champs internes (back-office) : provenance, réf. et prix d'achat.
     ...(internal
       ? {
+          published: p.published,
           stockQty: p.stockQty,
           partSupplier: p.partSupplier,
           supplierUrl: p.supplierUrl,

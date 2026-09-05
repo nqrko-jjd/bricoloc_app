@@ -276,6 +276,7 @@ adminRouter.post(
       isConsumable: data.kind === 'CONSUMABLE',
       isDemo: data.isDemo,
       published: data.published,
+      isNew: data.isNew,
       stockQty: data.stockQty ?? null,
       purchasePrice: data.purchasePrice ?? null,
       // Champs revendeur : gérés ici pour les consommables/accessoires ;

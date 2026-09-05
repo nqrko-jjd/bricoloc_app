@@ -277,6 +277,8 @@ model Product {
 
   isDemo    Boolean  @default(true)
   published Boolean  @default(true)
+  /// Badge « Nouveauté » affiché au client (accueil, catalogue) — bascule manuelle.
+  isNew     Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
