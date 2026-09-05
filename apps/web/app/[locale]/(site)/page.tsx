@@ -7,6 +7,7 @@ import type { Category, GuideSummary, ProductSummary, PublicConfig } from '@/lib
 import { SearchAutocomplete } from '@/components/SearchAutocomplete';
 import { DegressivePricing } from '@/components/DegressivePricing';
 import { PhoneDemo } from '@/components/PhoneDemo';
+import { PopularSlider } from '@/components/PopularSlider';
 import {
   CATEGORY_ICON,
   ArrowUpRight,
@@ -22,6 +23,19 @@ import {
 } from '@/components/icons';
 
 export const dynamic = 'force-dynamic';
+
+/** Même logique que la borne (« Par projet ») : on filtre le catalogue sur
+ * la bonne catégorie plutôt que de laisser deviner le rayon. */
+const PROJECT_CHIPS = [
+  { key: 'renover', icon: '🏠', category: 'peintures-finitions' },
+  { key: 'sol', icon: '🪵', category: 'travail-du-bois' },
+  { key: 'peindre', icon: '🎨', category: 'peintures-finitions' },
+  { key: 'demolir', icon: '🧱', category: 'forer-casser' },
+  { key: 'beton', icon: '🪨', category: 'beton-pierre' },
+  { key: 'jardin', icon: '🌿', category: 'exterieur' },
+  { key: 'nettoyer', icon: '💧', category: 'nettoyage' },
+  { key: 'hauteur', icon: '🪜', category: 'echelles-echafaudages' },
+] as const;
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -117,6 +131,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </div>
 
+      {/* ─────────────── PAR PROJET (façon borne) ─────────────── */}
+      <section className="csection" style={{ paddingBottom: 0 }}>
+        <span className="kicker">— {t('byProjectEyebrow')}</span>
+        <h2 style={{ margin: '10px 0 18px' }}>{t('byProjectTitle')}</h2>
+        <div className="cprojects reveal">
+          {PROJECT_CHIPS.map((p) => (
+            <Link key={p.key} href={`/catalogue?category=${p.category}`} className="cprojects__chip">
+              <span aria-hidden>{p.icon}</span>
+              {t(`project_${p.key}` as never)}
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* ─────────────── CATÉGORIES ─────────────── */}
       <section className="csection">
         <div className="csection__head">
@@ -164,41 +192,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('seeAll')} <IArrowUpRight />
             </Link>
           </div>
-          <div className="ctools reveal">
-            {popular.map((p, i) => (
-              <Link key={p.id} href={`/produits/${p.slug}`} className="ctool">
-                <div className="ctool__top">
-                  <span className="ctool__tag">
-                    {i === 0 ? t('popularTag') : t('availableTag')}
-                  </span>
-                  <IHeart />
-                </div>
-                {showBadges && (p.isNew || p.inPack) && (
-                  <div className="ctool__flags">
-                    {p.isNew && <span className="ctool__flag ctool__flag--new">{t('badgeNew')}</span>}
-                    {p.inPack && <span className="ctool__flag">{t('badgeInPack')}</span>}
-                  </div>
-                )}
-                <div className="ctool__art">
-                  {showBrand && p.brand && <span className="ctool__badge">{p.brand}</span>}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.image ?? ''} alt={p.name} loading="lazy" />
-                </div>
-                <span className="ctool__cat">{p.category?.name ?? ''}</span>
-                <span className="ctool__name">{p.name}</span>
-                <div className="ctool__foot">
-                  <p>
-                    {t('from')}
-                    <br />
-                    <b>{formatEUR(p.dailyPrice)}</b> {t('perDay')}
-                  </p>
-                  <span className="ctool__go" aria-hidden>
-                    <IArrowUpRight />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <PopularSlider products={popular} showBrand={showBrand} showBadges={showBadges} />
         </section>
       )}
 

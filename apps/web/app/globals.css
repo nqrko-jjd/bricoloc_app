@@ -1745,6 +1745,17 @@ button { font-family: inherit; }
 .csection__link:hover { color: var(--primary); text-decoration: none; }
 .csection__link svg { width: 18px; }
 
+/* ---- Par projet (chips une ligne, façon borne) ---- */
+.cprojects { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 4px; }
+.cprojects__chip {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+  background: var(--surface-2); color: var(--ink); text-decoration: none;
+  border-radius: var(--r-pill); padding: 12px 18px; font-weight: 800; font-size: 0.85rem;
+  white-space: nowrap; transition: background 0.2s, color 0.2s;
+}
+.cprojects__chip span { font-size: 1.05rem; }
+.cprojects__chip:hover { background: var(--primary); color: #fff; text-decoration: none; }
+
 /* ---- Categories (slider une ligne, toutes les catégories) ---- */
 .ccats {
   display: flex; gap: 14px; overflow-x: auto; padding: 4px 4px 14px;
@@ -1768,8 +1779,28 @@ button { font-family: inherit; }
 
 /* ---- Le + loue : 3 cartes produit ---- */
 .ctools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-@media (max-width: 900px) { .ctools { grid-template-columns: 1fr 1fr; } .ctools > *:nth-child(3) { display: none; } }
-@media (max-width: 560px) { .ctools { grid-template-columns: 1fr; } .ctools > *:nth-child(3) { display: flex; } }
+/* Tablette : 2 colonnes, la 3e carte prend toute la largeur en dessous
+   plutôt que d'être masquée (on garde les 3 produits visibles). */
+@media (max-width: 900px) {
+  .ctools { grid-template-columns: 1fr 1fr; }
+  .ctools > *:nth-child(3) { grid-column: 1 / -1; }
+}
+/* Mobile : trop long à défiler en colonne → slider une carte à la fois,
+   avec une ligne de puces discrète en dessous pour indiquer qu'on peut glisser. */
+@media (max-width: 640px) {
+  .ctools {
+    display: flex; grid-template-columns: unset; flex-wrap: nowrap;
+    gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+    padding-bottom: 4px; margin: 0 -6vw; padding-inline: 6vw;
+  }
+  .ctools > * { scroll-snap-align: center; flex: 0 0 84%; }
+}
+.ctools__dots { display: none; }
+@media (max-width: 640px) {
+  .ctools__dots { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
+  .ctools__dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+  .ctools__dots span.is-active { background: var(--primary); width: 18px; border-radius: 3px; }
+}
 .ctool {
   display: flex; flex-direction: column; min-height: 460px; padding: 22px;
   background: var(--lavender); border-radius: 22px; text-decoration: none; color: var(--ink);
