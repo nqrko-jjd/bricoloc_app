@@ -1675,6 +1675,7 @@ adminRouter.post(
         readMinutes: Number(b.readMinutes ?? 5),
         tone: ['red', 'navy', 'light'].includes(b.tone) ? b.tone : 'navy',
         relatedSlugs: Array.isArray(b.relatedSlugs) ? b.relatedSlugs : [],
+        relatedCategorySlug: b.relatedCategorySlug ? String(b.relatedCategorySlug) : null,
         featured: Boolean(b.featured),
         published: b.published === undefined ? true : Boolean(b.published),
       },
@@ -1686,6 +1687,7 @@ adminRouter.post(
         readMinutes: Number(b.readMinutes ?? 5),
         tone: ['red', 'navy', 'light'].includes(b.tone) ? b.tone : 'navy',
         relatedSlugs: Array.isArray(b.relatedSlugs) ? b.relatedSlugs : [],
+        relatedCategorySlug: b.relatedCategorySlug ? String(b.relatedCategorySlug) : null,
         featured: Boolean(b.featured),
         published: b.published === undefined ? true : Boolean(b.published),
         // le texte FR a changé : on efface les traductions pour re-générer

@@ -16,6 +16,7 @@ interface GuideSeed {
   readMinutes: number;
   tone: 'red' | 'navy' | 'light';
   relatedSlugs?: string[];
+  relatedCategorySlug?: string;
   featured?: boolean;
   body: string;
 }
@@ -30,7 +31,8 @@ const GUIDES: GuideSeed[] = [
     readMinutes: 6,
     tone: 'red',
     featured: true,
-    relatedSlugs: ['ponceuse-girafe', 'ponceuse-excentrique', 'aspirateur-chantier'],
+    relatedSlugs: ['ponceuse-girafe', 'ponceuse-excentrique-sans-fil-125mm', 'aspirateur-eau-et-poussieres-1000w-20-l'],
+    relatedCategorySlug: 'peintures-finitions',
     body: `Poncer un mur avant peinture, ce n'est pas « tout attaquer au gros grain ». Le but est d'égaliser les raccords d'enduit, de dépolir l'ancienne peinture et d'enlever les défauts, sans creuser le support. Le choix de la machine dépend surtout de la surface et de la hauteur.
 
 ## La ponceuse girafe : grandes surfaces et plafonds
@@ -60,7 +62,8 @@ Gardez la machine à plat, avancez lentement et par bandes qui se recouvrent de 
       'Préparer le support, gérer les joints de dilatation et réussir les découpes : la méthode pour une pose stable qui ne « claque » pas.',
     readMinutes: 8,
     tone: 'navy',
-    relatedSlugs: ['scie-sur-table', 'scie-plongeante', 'aspirateur-chantier'],
+    relatedSlugs: ['scie-sur-table-73-cm', 'scie-circulaire', 'aspirateur-eau-et-poussieres-1000w-20-l'],
+    relatedCategorySlug: 'travail-du-bois',
     body: `Un parquet flottant se pose vite… quand la préparation est faite. La plupart des défauts — lames qui bougent, bruit sec au pas, joints qui s'ouvrent — viennent du support ou du joint de dilatation, pas de la pose elle-même.
 
 ## Le support : plan, sec, propre
@@ -92,7 +95,8 @@ Retirez les cales, posez les plinthes (fixées au mur, jamais au parquet) et les
       'Pression, distance et choix de buse : ce qui abîme les joints, le bois et les façades — et comment nettoyer efficacement sans casser.',
     readMinutes: 4,
     tone: 'light',
-    relatedSlugs: ['nettoyeur-haute-pression-200', 'nettoyeur-haute-pression'],
+    relatedSlugs: ['nettoyeur-haute-pression-eau-froide', 'nettoyeur-haute-pression-eau-chaude'],
+    relatedCategorySlug: 'exterieur',
     body: `Le nettoyeur haute pression est redoutable d'efficacité… et de dégâts quand on l'utilise mal. Trois erreurs reviennent tout le temps.
 
 ## Erreur 1 : trop près, trop fort
@@ -119,7 +123,8 @@ Ne dirigez jamais le jet vers les menuiseries, les joints de fenêtre, les compt
       'Coupe droite, coupe en L, arrondi : quel outil pour quel cas, et comment préparer chaque coupe pour un chant net.',
     readMinutes: 7,
     tone: 'navy',
-    relatedSlugs: ['coupe-carrelage-electrique', 'meuleuse', 'carrelette'],
+    relatedSlugs: ['coupe-carrelage-electrique-portable', 'meuleuse-a-beton-125-mm', 'coupe-carrelage-75-cm'],
+    relatedCategorySlug: 'beton-pierre',
     body: `Un carrelage éclaté au bord, c'est un joint irrégulier et une arête coupante. La coupe nette tient à l'outil choisi et à la vitesse d'exécution.
 
 ## La carrelette manuelle : les coupes droites
@@ -146,7 +151,8 @@ Mesurez, tracez, et gardez toujours 2 à 3 mm de jeu au mur (le joint et la plin
       'Brique, béton, plâtre ou carrelage : identifier le support, choisir le foret et le mode de perçage avant d’attaquer.',
     readMinutes: 5,
     tone: 'red',
-    relatedSlugs: ['perforateur-sds-plus', 'perceuse-visseuse', 'perforateur'],
+    relatedSlugs: ['marteau-perforateur', 'perceuse-visseuse-sans-fil', 'perceuse-dangle-sans-fil'],
+    relatedCategorySlug: 'forer-casser',
     body: `Un trou raté, c'est une cheville qui tourne dans le vide ou un carrelage fendu. Avant de percer, une seule question : dans quoi ?
 
 ## Identifier le support
@@ -173,7 +179,7 @@ Avant de percer près d'un interrupteur, d'une prise ou dans une cuisine/salle d
       'Notre sélection essentielle pour démolir, préparer, poncer, peindre et terminer proprement — sans matériel superflu.',
     readMinutes: 3,
     tone: 'light',
-    relatedSlugs: ['perforateur-sds-plus', 'ponceuse-girafe', 'aspirateur-chantier', 'station-de-peinture-airless'],
+    relatedSlugs: ['marteau-perforateur', 'aspirateur-eau-et-poussieres-1000w-20-l', 'pulverisateur-peinture-airless-34-l-min', 'ponceuse-excentrique-150mm'],
     body: `Rénover une chambre ou un salon ne demande pas un atelier complet. Sept machines couvrent l'essentiel du chantier, de la dépose à la peinture.
 
 ## 1. Le perforateur SDS+
@@ -215,6 +221,7 @@ async function main() {
         readMinutes: g.readMinutes,
         tone: g.tone,
         relatedSlugs: g.relatedSlugs ?? [],
+        relatedCategorySlug: g.relatedCategorySlug ?? null,
         featured: g.featured ?? false,
         published: true,
       },
@@ -227,6 +234,7 @@ async function main() {
         readMinutes: g.readMinutes,
         tone: g.tone,
         relatedSlugs: g.relatedSlugs ?? [],
+        relatedCategorySlug: g.relatedCategorySlug ?? null,
         featured: g.featured ?? false,
         published: true,
       },

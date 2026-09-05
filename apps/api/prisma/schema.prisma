@@ -56,6 +56,9 @@ model Guide {
   tone        String   @default("navy") // red | navy | light — couleur du bloc de couverture
   /// slugs de produits Bricoloc à mettre en avant dans l'article
   relatedSlugs Json?
+  /// repli automatique : si renseigné, complète (ou remplace) relatedSlugs avec les
+  /// meilleurs produits de cette catégorie (slug de Category)
+  relatedCategorySlug String?
   i18n        Json? // { title, excerpt, body } NL/EN
   seo         Json?
   published   Boolean  @default(true)

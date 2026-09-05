@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { staffApi } from '@/lib/staff';
+import { api } from '@/lib/api';
+import { formatEUR } from '@bricoloc/shared';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -15,27 +17,111 @@ const EMPTY = {
   body: '',
   readMinutes: 5,
   tone: 'navy',
-  relatedSlugs: '',
+  relatedSlugs: [] as string[],
+  relatedCategorySlug: '',
   featured: false,
   published: true,
 };
+
+function RelatedProductsPicker({
+  value,
+  onChange,
+  products,
+}: {
+  value: string[];
+  onChange: (slugs: string[]) => void;
+  products: { slug: string; name: string; dailyPrice: number; kind: string }[];
+}) {
+  const [q, setQ] = useState('');
+  const machines = products.filter((p) => p.kind === 'MACHINE');
+  const selected = value
+    .map((slug) => machines.find((p) => p.slug === slug))
+    .filter((p): p is (typeof machines)[number] => !!p);
+  const options = machines.filter(
+    (p) => !value.includes(p.slug) && p.name.toLowerCase().includes(q.toLowerCase()),
+  );
+
+  return (
+    <div className="field">
+      <label>Machines mises en avant (choix manuel)</label>
+      {selected.length > 0 && (
+        <ul className="stack" style={{ gap: 6, margin: '0 0 8px', padding: 0, listStyle: 'none' }}>
+          {selected.map((s) => (
+            <li
+              key={s.slug}
+              className="row"
+              style={{ alignItems: 'center', gap: 8, background: 'var(--surface-2)', borderRadius: 8, padding: '6px 10px' }}
+            >
+              <span style={{ flex: 1 }}>{s.name}</span>
+              <span className="small muted">{formatEUR(s.dailyPrice)}</span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => onChange(value.filter((slug) => slug !== s.slug))}
+                aria-label={`Retirer ${s.name}`}
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher une machine…" />
+      {q && (
+        <ul
+          className="stack"
+          style={{ gap: 2, margin: '4px 0 0', padding: 0, listStyle: 'none', maxHeight: 180, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}
+        >
+          {options.length === 0 ? (
+            <li className="small muted" style={{ padding: '6px 10px' }}>Aucun résultat.</li>
+          ) : (
+            options.slice(0, 20).map((o) => (
+              <li key={o.slug}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ width: '100%', justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    onChange([...value, o.slug]);
+                    setQ('');
+                  }}
+                >
+                  + {o.name}
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function AdminConseils() {
   const [guides, setGuides] = useState<any[]>([]);
   const [draft, setDraft] = useState<any>(EMPTY);
   const [editing, setEditing] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
+  const [products, setProducts] = useState<{ slug: string; name: string; dailyPrice: number; kind: string }[]>([]);
+  const [catalogCategories, setCatalogCategories] = useState<{ slug: string; name: string }[]>([]);
 
   const load = () => staffApi<{ guides: any[] }>('/api/admin/guides').then((r) => setGuides(r.guides));
   useEffect(() => {
     load();
+    staffApi<{ products: { slug: string; name: string; dailyPrice: number; kind: string }[] }>(
+      '/api/admin/products',
+    ).then((r) => setProducts(r.products));
+    api<{ categories: { slug: string; name: string }[] }>('/api/catalog/categories?locale=fr').then((r) =>
+      setCatalogCategories(r.categories.filter((c) => c.slug !== 'bricopack')),
+    );
   }, []);
 
   function edit(g: any) {
     setEditing(g.slug);
     setDraft({
       ...g,
-      relatedSlugs: Array.isArray(g.relatedSlugs) ? g.relatedSlugs.join(', ') : '',
+      relatedSlugs: Array.isArray(g.relatedSlugs) ? g.relatedSlugs : [],
+      relatedCategorySlug: g.relatedCategorySlug ?? '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -46,9 +132,8 @@ export default function AdminConseils() {
       body: {
         ...draft,
         readMinutes: Number(draft.readMinutes) || 5,
-        relatedSlugs: String(draft.relatedSlugs)
-          .split(/[,\s]+/)
-          .filter(Boolean),
+        relatedSlugs: Array.isArray(draft.relatedSlugs) ? draft.relatedSlugs : [],
+        relatedCategorySlug: draft.relatedCategorySlug || null,
         retranslate,
       },
     });
@@ -119,9 +204,25 @@ export default function AdminConseils() {
           <label>Contenu — « ## » = sous-titre, « - » = liste</label>
           <textarea rows={12} {...F('body')} />
         </div>
+        <RelatedProductsPicker
+          value={draft.relatedSlugs}
+          onChange={(slugs) => setDraft({ ...draft, relatedSlugs: slugs })}
+          products={products}
+        />
         <div className="field">
-          <label>Produits liés (slugs, séparés par des virgules)</label>
-          <input {...F('relatedSlugs')} placeholder="ponceuse-girafe, aspirateur-chantier" />
+          <label>Catégorie de repli (complète automatiquement jusqu'à 4 machines)</label>
+          <p className="small muted" style={{ margin: '0 0 6px' }}>
+            Si le choix manuel ci-dessus est vide ou incomplet, les meilleures machines de cette
+            catégorie viennent compléter la liste — l'article n'affiche jamais une section vide.
+          </p>
+          <select {...F('relatedCategorySlug')}>
+            <option value="">— Aucune —</option>
+            {catalogCategories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="row" style={{ gap: 18 }}>
           <label className="row" style={{ gap: 6 }}>

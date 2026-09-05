@@ -446,12 +446,42 @@ publicRouter.get(
     if (!g) return res.status(404).json({ error: { message: 'Guide introuvable' } });
 
     const relSlugs = (g.relatedSlugs as string[] | null) ?? [];
-    const related = relSlugs.length
+    let related = relSlugs.length
       ? await prisma.product.findMany({
           where: { slug: { in: relSlugs }, published: true },
           include: productInclude,
         })
       : [];
+
+    // Repli par catégorie : complète jusqu'à 4 produits avec les mieux notés
+    // de la catégorie choisie (si l'article en a une).
+    if (related.length < 4 && g.relatedCategorySlug) {
+      const existingIds = related.map((p) => p.id);
+      const fromCategory = await prisma.product.findMany({
+        where: {
+          published: true,
+          kind: 'MACHINE',
+          category: { slug: g.relatedCategorySlug },
+          id: { notIn: existingIds },
+        },
+        include: productInclude,
+        orderBy: [{ reviews: { _count: 'desc' } }, { name: 'asc' }],
+        take: 4 - related.length,
+      });
+      related = [...related, ...fromCategory];
+    }
+
+    // Filet de sécurité : un article ne doit jamais finir sans aucune
+    // suggestion, même si les slugs saisis à la main sont périmés.
+    if (related.length === 0) {
+      const fallback = await prisma.product.findMany({
+        where: { published: true, kind: 'MACHINE' },
+        include: productInclude,
+        orderBy: [{ reviews: { _count: 'desc' } }, { name: 'asc' }],
+        take: 4,
+      });
+      related = fallback;
+    }
 
     const seo = (g.seo as { title?: I18nText; description?: I18nText } | null) ?? {};
     res.json({
