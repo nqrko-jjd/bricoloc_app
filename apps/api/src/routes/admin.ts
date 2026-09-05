@@ -564,7 +564,13 @@ adminRouter.delete(
   '/units/:id',
   requireStaff('RESPONSABLE'),
   h(async (req, res) => {
-    await prisma.productUnit.delete({ where: { id: req.params.id } });
+    try {
+      await prisma.productUnit.delete({ where: { id: req.params.id } });
+    } catch {
+      throw badRequest(
+        'Impossible de supprimer : cet exemplaire a un historique de réservation. Passez-le plutôt en « RETIRED ».',
+      );
+    }
     res.status(204).end();
   }),
 );
@@ -711,21 +717,28 @@ adminRouter.patch(
   '/units/:id',
   requireStaff('RESPONSABLE', 'TECHNICIEN', 'COMPTOIR'),
   h(async (req, res) => {
-    const { state, notes, serialNumber, sku, barcode, immobilisedUntil, storageLocation } = req.body ?? {};
-    const unit = await prisma.productUnit.update({
-      where: { id: req.params.id! },
-      data: {
-        state: state ?? undefined,
-        notes: notes === undefined ? undefined : notes,
-        serialNumber: serialNumber === undefined ? undefined : serialNumber,
-        sku: sku === undefined ? undefined : sku,
-        barcode: barcode === undefined ? undefined : (barcode || null),
-        storageLocation:
-          storageLocation === undefined ? undefined : (storageLocation || '').trim() || null,
-        immobilisedUntil:
-          immobilisedUntil === undefined ? undefined : immobilisedUntil ? new Date(immobilisedUntil) : null,
-      },
-    });
+    const { state, notes, serialNumber, sku, barcode, immobilisedUntil, storageLocation, assetTag } =
+      req.body ?? {};
+    let unit;
+    try {
+      unit = await prisma.productUnit.update({
+        where: { id: req.params.id! },
+        data: {
+          state: state ?? undefined,
+          notes: notes === undefined ? undefined : notes,
+          serialNumber: serialNumber === undefined ? undefined : serialNumber,
+          sku: sku === undefined ? undefined : sku,
+          barcode: barcode === undefined ? undefined : (barcode || null),
+          storageLocation:
+            storageLocation === undefined ? undefined : (storageLocation || '').trim() || null,
+          immobilisedUntil:
+            immobilisedUntil === undefined ? undefined : immobilisedUntil ? new Date(immobilisedUntil) : null,
+          assetTag: assetTag === undefined ? undefined : String(assetTag).trim(),
+        },
+      });
+    } catch {
+      throw badRequest('Cet identifiant (ID) est déjà utilisé par un autre exemplaire.');
+    }
     res.json({ unit });
   }),
 );

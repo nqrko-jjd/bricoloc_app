@@ -2,6 +2,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { formatDateBE } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
+import { ScanField } from '@/components/admin/ScanField';
 
 interface StockRow {
   id: string;
@@ -187,6 +188,7 @@ function MachineRow({
 }) {
   const [open, setOpen] = useState(false);
   const [maintFor, setMaintFor] = useState<string | null>(null);
+  const [scanFor, setScanFor] = useState<string | null>(null);
   const [addN, setAddN] = useState('2');
   const [addLoc, setAddLoc] = useState('');
   const mine = units.filter((u) => u.product.id === r.id);
@@ -214,6 +216,41 @@ function MachineRow({
     setMsg(`Emplacement « ${storageLocation || '—'} » appliqué à tous les exemplaires de « ${r.name} ».`);
     await onReload();
   }
+  async function renameTag(unitId: string, assetTag: string) {
+    try {
+      await staffApi(`/api/admin/units/${unitId}`, { method: 'PATCH', body: { assetTag } });
+      setMsg(`Identifiant → ${assetTag}`);
+      await onReload();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+      await onReload();
+    }
+  }
+  async function removeUnit(unitId: string, assetTag: string) {
+    if (!confirm(`Supprimer l'exemplaire « ${assetTag} » ?`)) return;
+    try {
+      await staffApi(`/api/admin/units/${unitId}`, { method: 'DELETE' });
+      setMsg(`Exemplaire « ${assetTag} » supprimé.`);
+      await onReload();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    }
+  }
+  async function removeMachine() {
+    if (!confirm(`Supprimer définitivement « ${r.name} » et tous ses exemplaires ?`)) return;
+    try {
+      await staffApi(`/api/admin/products/${r.slug}`, { method: 'DELETE' });
+      setMsg(`« ${r.name} » supprimé.`);
+      await onReload();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    }
+  }
+  /** Zone scannée = « BRZ-<CODE> » (étiquette d'emplacement) → on ne garde que le code. */
+  function scanLocation(unitId: string, raw: string) {
+    const m = raw.trim().toUpperCase().match(/^BRZ-(.+)$/);
+    setLocation(unitId, m ? m[1] : raw.trim());
+  }
 
   return (
     <>
@@ -238,10 +275,21 @@ function MachineRow({
             ? 'tout dispo'
             : ''}
         </td>
+        <td>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              removeMachine();
+            }}
+          >
+            Supprimer
+          </button>
+        </td>
       </tr>
       {open && (
         <tr className="stock-detail">
-          <td colSpan={4}>
+          <td colSpan={5}>
             {r.total === 0 && (
               <p className="small muted">Aucun exemplaire. Ajoutez-en ci-dessous.</p>
             )}
@@ -252,18 +300,49 @@ function MachineRow({
                     <Fragment key={u.id}>
                       <tr>
                         <td>
-                          <strong>{u.assetTag}</strong>
+                          <input
+                            key={u.assetTag}
+                            defaultValue={u.assetTag}
+                            style={{ width: 110, fontWeight: 700 }}
+                            onBlur={(e) => {
+                              if (e.target.value.trim() && e.target.value !== u.assetTag)
+                                renameTag(u.id, e.target.value.trim());
+                            }}
+                          />
                           {u.serialNumber ? <span className="small muted"> · SN {u.serialNumber}</span> : null}
                         </td>
                         <td>
-                          <input
-                            defaultValue={u.storageLocation ?? ''}
-                            placeholder="R-01-A"
-                            style={{ width: 90 }}
-                            onBlur={(e) => {
-                              if (e.target.value !== (u.storageLocation ?? '')) setLocation(u.id, e.target.value);
-                            }}
-                          />
+                          <div className="row" style={{ gap: 4, alignItems: 'center' }}>
+                            <input
+                              key={u.storageLocation ?? ''}
+                              defaultValue={u.storageLocation ?? ''}
+                              placeholder="R-01-A"
+                              style={{ width: 80 }}
+                              onBlur={(e) => {
+                                if (e.target.value !== (u.storageLocation ?? '')) setLocation(u.id, e.target.value);
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm"
+                              title="Scanner l'étiquette d'emplacement"
+                              onClick={() => setScanFor(scanFor === u.id ? null : u.id)}
+                            >
+                              📷
+                            </button>
+                          </div>
+                          {scanFor === u.id && (
+                            <div style={{ marginTop: 6 }}>
+                              <ScanField
+                                placeholder="Scanner l'étiquette du rack…"
+                                autoFocus
+                                onScan={(code) => {
+                                  scanLocation(u.id, code);
+                                  setScanFor(null);
+                                }}
+                              />
+                            </div>
+                          )}
                         </td>
                         <td>
                           <select
@@ -289,12 +368,18 @@ function MachineRow({
                               ? `entretien prévu ${formatDateBE(u.nextMaintenanceAt)}`
                               : '—'}
                         </td>
-                        <td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
                           <button
                             className="btn btn-ghost btn-sm"
                             onClick={() => setMaintFor(maintFor === u.id ? null : u.id)}
                           >
                             {maintFor === u.id ? 'Fermer' : 'Entretien / réparation'}
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => removeUnit(u.id, u.assetTag)}
+                          >
+                            Supprimer
                           </button>
                         </td>
                       </tr>
@@ -356,7 +441,7 @@ function MachineRow({
 }
 
 export default function AdminExemplaires() {
-  const [tab, setTab] = useState<'machines' | 'consumables'>('machines');
+  const [tab, setTab] = useState<'machines' | 'accessories' | 'consumables'>('machines');
   const [stock, setStock] = useState<{ machines: StockRow[]; consumables: ConsumableRow[] }>({
     machines: [],
     consumables: [],
@@ -377,9 +462,9 @@ export default function AdminExemplaires() {
     load();
   }, []);
 
-  const machines = stock.machines.filter(
-    (m) => !filter || m.name.toLowerCase().includes(filter.toLowerCase()),
-  );
+  const machines = stock.machines
+    .filter((m) => (tab === 'accessories' ? m.kind !== 'MACHINE' : m.kind === 'MACHINE'))
+    .filter((m) => !filter || m.name.toLowerCase().includes(filter.toLowerCase()));
   const byCat = new Map<string, StockRow[]>();
   for (const m of machines) {
     const k = m.category ?? 'Sans catégorie';
@@ -399,7 +484,13 @@ export default function AdminExemplaires() {
           className={`chip${tab === 'machines' ? ' active' : ''}`}
           onClick={() => setTab('machines')}
         >
-          Machines &amp; accessoires
+          Machines
+        </button>
+        <button
+          className={`chip${tab === 'accessories' ? ' active' : ''}`}
+          onClick={() => setTab('accessories')}
+        >
+          Accessoires &amp; EPI
         </button>
         <button
           className={`chip${tab === 'consumables' ? ' active' : ''}`}
@@ -409,7 +500,7 @@ export default function AdminExemplaires() {
         </button>
       </div>
 
-      {tab === 'machines' && (
+      {(tab === 'machines' || tab === 'accessories') && (
         <>
           <div className="stock-legend small">
             <span>
@@ -422,7 +513,7 @@ export default function AdminExemplaires() {
             <span className="stockbar__key is-hs">HS / retiré</span>
           </div>
           <input
-            placeholder="Filtrer une machine…"
+            placeholder={tab === 'machines' ? 'Filtrer une machine…' : 'Filtrer un accessoire…'}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             style={{ maxWidth: 320 }}
@@ -433,10 +524,11 @@ export default function AdminExemplaires() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Machine</th>
+                    <th>{tab === 'machines' ? 'Machine' : 'Accessoire'}</th>
                     <th className="num">Dispo</th>
                     <th>Répartition</th>
-                    <th>Détail</th>
+                    <th>Emplacement</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
