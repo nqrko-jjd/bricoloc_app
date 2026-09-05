@@ -3210,36 +3210,25 @@ button { font-family: inherit; }
    thème du site. Couleurs alignées sur apps/mobile/lib/theme.ts.
    ========================================================================= */
 .appdemo-page {
-  min-height: 100dvh; display: flex; align-items: center; justify-content: center;
-  padding: clamp(16px, 4vh, 48px) 16px;
-  background: radial-gradient(circle at 30% 20%, #1a1770 0%, #08065d 45%, #050444 100%);
+  min-height: 100dvh; background: #f2f2f7; display: flex; justify-content: center;
 }
 .appdemo-exit {
-  position: fixed; top: 18px; left: 18px; z-index: 50;
+  position: fixed; top: 14px; left: 14px; z-index: 50;
   display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 999px; padding: 8px 16px; font-size: 0.85rem; font-weight: 700;
+  background: rgba(20,18,63,0.55); color: #fff; border: none;
+  border-radius: 999px; padding: 7px 14px; font-size: 0.8rem; font-weight: 700;
   text-decoration: none; backdrop-filter: blur(6px);
 }
-.appdemo-exit:hover { background: rgba(255,255,255,0.2); text-decoration: none; }
+.appdemo-exit:hover { background: rgba(20,18,63,0.75); text-decoration: none; }
 
-.appdemo-phone {
-  position: relative; width: 375px; height: 812px; max-height: 92dvh; aspect-ratio: 375/812;
-  background: #08065d; border-radius: 54px; padding: 14px;
-  box-shadow: 0 40px 90px rgba(0,0,0,0.45), 0 0 0 2px rgba(255,255,255,0.06) inset;
-  flex-shrink: 0;
-}
-.appdemo-notch {
-  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-  width: 120px; height: 26px; background: #08065d; border-radius: 0 0 18px 18px; z-index: 30;
-}
+/* Plein écran, comme la borne : pas de cadre décoratif, c'est l'appli. */
 .appdemo-screen {
-  position: relative; width: 100%; height: 100%; background: #fff; border-radius: 40px;
-  overflow: hidden; display: flex; flex-direction: column;
-  font-family: var(--font-sans); color: #14123F;
+  position: relative; width: 100%; max-width: 480px; min-height: 100dvh; height: 100dvh;
+  background: #fff; overflow: hidden; display: flex; flex-direction: column;
+  font-family: var(--font-sans); color: #14123F; box-shadow: 0 0 0 1px #E2E2EE;
 }
 .appdemo-scroll {
-  flex: 1; overflow-y: auto; padding-bottom: 100px; -webkit-overflow-scrolling: touch;
+  flex: 1; overflow-y: auto; padding-bottom: 100px; padding-top: 8px; -webkit-overflow-scrolling: touch;
 }
 .appdemo-scroll::-webkit-scrollbar { width: 0; }
 
@@ -3363,7 +3352,3 @@ button { font-family: inherit; }
 .appdemo-empty .appdemo-cta { display: inline-block; width: auto; padding: 12px 22px; }
 .appdemo-demo-note { background: #EEEEF7; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #5B5F7A; margin-top: 18px; }
 
-@media (max-width: 420px) {
-  .appdemo-phone { width: 100%; max-width: 375px; height: 92dvh; padding: 10px; border-radius: 36px; }
-  .appdemo-screen { border-radius: 26px; }
-}

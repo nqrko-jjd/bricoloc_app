@@ -53,72 +53,69 @@ export function AppDemo() {
       <a href="/" className="appdemo-exit">
         ← Quitter la démo
       </a>
-      <div className="appdemo-phone">
-        <div className="appdemo-notch" aria-hidden />
-        <div className="appdemo-screen">
-          <div className="appdemo-scroll">
-            {view.tab === 'home' && (
-              <HomeScreen
-                onOpenCatalogue={(category) => setView({ tab: 'catalogue', category })}
-                onOpenProduct={(slug) => setView({ tab: 'product', slug, from: 'home' })}
-              />
-            )}
-            {view.tab === 'catalogue' && (
-              <CatalogueScreen
-                initialCategory={view.category}
-                onOpenProduct={(slug) => setView({ tab: 'product', slug, from: 'catalogue' })}
-              />
-            )}
-            {view.tab === 'product' && (
-              <ProductScreen
-                slug={view.slug}
-                onBack={() => setView({ tab: view.from })}
-                onOpenProduct={(slug) => setView({ tab: 'product', slug, from: view.from })}
-                onAdd={() => showToast('Ajouté au panier')}
-                onReserve={() => showToast('Réservation — démo uniquement')}
-              />
-            )}
-            {view.tab === 'reservations' && <ReservationsScreen />}
-            {view.tab === 'profil' && <ProfilScreen />}
-          </div>
-
-          {toast && <div className="appdemo-toast">{toast}</div>}
-
-          <nav className="appdemo-tabbar">
-            <button
-              type="button"
-              className={`appdemo-tab${activeTab === 'home' ? ' is-active' : ''}`}
-              onClick={() => setView({ tab: 'home' })}
-            >
-              <Home />
-              Accueil
-            </button>
-            <button
-              type="button"
-              className={`appdemo-tab${activeTab === 'catalogue' ? ' is-active' : ''}`}
-              onClick={() => setView({ tab: 'catalogue' })}
-            >
-              <Grid />
-              Catalogue
-            </button>
-            <button
-              type="button"
-              className={`appdemo-tab${activeTab === 'reservations' ? ' is-active' : ''}`}
-              onClick={() => setView({ tab: 'reservations' })}
-            >
-              <CalendarClock />
-              Réservations
-            </button>
-            <button
-              type="button"
-              className={`appdemo-tab${activeTab === 'profil' ? ' is-active' : ''}`}
-              onClick={() => setView({ tab: 'profil' })}
-            >
-              <User />
-              Profil
-            </button>
-          </nav>
+      <div className="appdemo-screen">
+        <div className="appdemo-scroll">
+          {view.tab === 'home' && (
+            <HomeScreen
+              onOpenCatalogue={(category) => setView({ tab: 'catalogue', category })}
+              onOpenProduct={(slug) => setView({ tab: 'product', slug, from: 'home' })}
+            />
+          )}
+          {view.tab === 'catalogue' && (
+            <CatalogueScreen
+              initialCategory={view.category}
+              onOpenProduct={(slug) => setView({ tab: 'product', slug, from: 'catalogue' })}
+            />
+          )}
+          {view.tab === 'product' && (
+            <ProductScreen
+              slug={view.slug}
+              onBack={() => setView({ tab: view.from })}
+              onOpenProduct={(slug) => setView({ tab: 'product', slug, from: view.from })}
+              onAdd={() => showToast('Ajouté au panier')}
+              onReserve={() => showToast('Réservation — démo uniquement')}
+            />
+          )}
+          {view.tab === 'reservations' && <ReservationsScreen />}
+          {view.tab === 'profil' && <ProfilScreen />}
         </div>
+
+        {toast && <div className="appdemo-toast">{toast}</div>}
+
+        <nav className="appdemo-tabbar">
+          <button
+            type="button"
+            className={`appdemo-tab${activeTab === 'home' ? ' is-active' : ''}`}
+            onClick={() => setView({ tab: 'home' })}
+          >
+            <Home />
+            Accueil
+          </button>
+          <button
+            type="button"
+            className={`appdemo-tab${activeTab === 'catalogue' ? ' is-active' : ''}`}
+            onClick={() => setView({ tab: 'catalogue' })}
+          >
+            <Grid />
+            Catalogue
+          </button>
+          <button
+            type="button"
+            className={`appdemo-tab${activeTab === 'reservations' ? ' is-active' : ''}`}
+            onClick={() => setView({ tab: 'reservations' })}
+          >
+            <CalendarClock />
+            Réservations
+          </button>
+          <button
+            type="button"
+            className={`appdemo-tab${activeTab === 'profil' ? ' is-active' : ''}`}
+            onClick={() => setView({ tab: 'profil' })}
+          >
+            <User />
+            Profil
+          </button>
+        </nav>
       </div>
     </div>
   );
