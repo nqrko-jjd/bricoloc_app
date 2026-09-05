@@ -205,6 +205,28 @@ export const ShoppingCart = (p: SVGProps<SVGSVGElement>) => (
   </Svg>
 );
 
+export const Home = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="m3 11 9-8 9 8" />
+    <path d="M5 10v10h14V10" />
+  </Svg>
+);
+
+export const Grid = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+  </Svg>
+);
+
+export const ChevronLeft = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="m15 18-6-6 6-6" />
+  </Svg>
+);
+
 /** Table de correspondance slug de catégorie → icône. */
 export const CATEGORY_ICON: Record<string, (p: SVGProps<SVGSVGElement>) => React.JSX.Element> = {
   'forer-casser': Drill,

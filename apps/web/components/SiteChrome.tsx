@@ -26,6 +26,7 @@ export function SiteChrome({
     pathname.startsWith('/borne/') ||
     pathname === '/commande' ||
     pathname.startsWith('/commande/');
+  const isAppDemo = pathname === '/appli-demo' || pathname.startsWith('/appli-demo/');
 
   if (kioskCookie && inKioskArea) {
     return (
@@ -34,6 +35,12 @@ export function SiteChrome({
         <Reveal />
       </KioskShell>
     );
+  }
+
+  // Démo appli : ni en-tête ni pied de page (même logique que la borne),
+  // la page gère elle-même tout son habillage plein écran.
+  if (isAppDemo) {
+    return <main>{children}</main>;
   }
 
   return (
