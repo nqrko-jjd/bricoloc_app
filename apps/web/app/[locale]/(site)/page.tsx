@@ -24,34 +24,22 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-/** Même logique que la borne (« Par projet ») : on filtre le catalogue sur
- * la bonne catégorie plutôt que de laisser deviner le rayon. */
-const PROJECT_CHIPS = [
-  { key: 'renover', icon: '🏠', category: 'peintures-finitions' },
-  { key: 'sol', icon: '🪵', category: 'travail-du-bois' },
-  { key: 'peindre', icon: '🎨', category: 'peintures-finitions' },
-  { key: 'demolir', icon: '🧱', category: 'forer-casser' },
-  { key: 'beton', icon: '🪨', category: 'beton-pierre' },
-  { key: 'jardin', icon: '🌿', category: 'exterieur' },
-  { key: 'nettoyer', icon: '💧', category: 'nettoyage' },
-  { key: 'hauteur', icon: '🪜', category: 'echelles-echafaudages' },
-] as const;
-
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('home');
   const tg = await getTranslations('guides');
 
-  const [{ categories }, popularRes, featuredRes, packsRes, guidesRes, content, config] = await Promise.all([
+  const [{ categories }, machineCountRes, featuredRes, packsRes, guidesRes, content, config] = await Promise.all([
     api<{ categories: Category[] }>(`/api/catalog/categories?locale=${locale}`, {
       next: { revalidate: 120 },
     }),
     api<{ products: ProductSummary[]; total: number }>(
-      `/api/catalog/products?pageSize=8&sort=name&locale=${locale}`,
+      `/api/catalog/products?kind=MACHINE&pageSize=1&locale=${locale}`,
       { next: { revalidate: 60 } },
     ),
-    // Sélection manuelle (admin → Accueil) ; vide = on garde le tri par défaut ci-dessus.
+    // « Ce que louent nos clients » : sélection admin (→ Accueil) ou, à défaut,
+    // repli automatique sur les machines les plus louées (jamais d'accessoires).
     api<{ products: ProductSummary[] }>(`/api/public/home-featured?locale=${locale}`, {
       next: { revalidate: 60 },
     }).catch(() => ({ products: [] as ProductSummary[] })),
@@ -68,13 +56,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     ),
   ]);
 
-  const popular = featuredRes.products.length
-    ? featuredRes.products.slice(0, 3)
-    : (popularRes.products ?? []).filter((p) => p.image).slice(0, 3);
+  const popular = featuredRes.products.slice(0, 3);
   const showBrand = config?.homeShowBrand === true;
   const showBadges = config?.homeShowBadges !== false;
   const packs = (packsRes.products ?? []).slice(0, 1);
-  const toolCount = Math.max(10, Math.floor((popularRes.total ?? 80) / 10) * 10);
+  const toolCount = Math.max(10, Math.floor((machineCountRes.total ?? 80) / 10) * 10);
   const guides = (guidesRes.guides ?? []).slice(0, 3);
   // BricoPacks a déjà sa propre mise en avant plus bas — pas la peine de la
   // dupliquer ici parmi les catégories de machines.
@@ -130,20 +116,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <IHeart /> {t('trustRating')}
         </div>
       </div>
-
-      {/* ─────────────── PAR PROJET (façon borne) ─────────────── */}
-      <section className="csection" style={{ paddingBottom: 0 }}>
-        <span className="kicker">— {t('byProjectEyebrow')}</span>
-        <h2 style={{ margin: '10px 0 18px' }}>{t('byProjectTitle')}</h2>
-        <div className="cprojects reveal">
-          {PROJECT_CHIPS.map((p) => (
-            <Link key={p.key} href={`/catalogue?category=${p.category}`} className="cprojects__chip">
-              <span aria-hidden>{p.icon}</span>
-              {t(`project_${p.key}` as never)}
-            </Link>
-          ))}
-        </div>
-      </section>
 
       {/* ─────────────── CATÉGORIES ─────────────── */}
       <section className="csection">

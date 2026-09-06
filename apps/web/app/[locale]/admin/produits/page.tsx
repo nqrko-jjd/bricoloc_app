@@ -46,14 +46,38 @@ export default function AdminProduits() {
   const [filter, setFilter] = useState('');
   const [mergingSlug, setMergingSlug] = useState<string | null>(null);
   const [mergeTarget, setMergeTarget] = useState('');
+  const [featuredIds, setFeaturedIds] = useState<string[]>([]);
 
   async function load() {
-    const [p, c] = await Promise.all([
+    const [p, c, st] = await Promise.all([
       staffApi<{ products: ProductDetail[] }>('/api/admin/products'),
       staffApi<{ categories: Category[] }>('/api/admin/categories'),
+      staffApi<{ settings: { homeFeaturedProductIds?: string[] } }>('/api/admin/settings'),
     ]);
     setProducts(p.products);
     setCategories(c.categories);
+    setFeaturedIds(Array.isArray(st.settings.homeFeaturedProductIds) ? st.settings.homeFeaturedProductIds : []);
+  }
+
+  async function toggleFeatured(p: ProductDetail) {
+    const next = featuredIds.includes(p.id)
+      ? featuredIds.filter((x) => x !== p.id)
+      : [...featuredIds, p.id];
+    setFeaturedIds(next);
+    try {
+      await staffApi('/api/admin/settings', {
+        method: 'PUT',
+        body: { key: 'homeFeaturedProductIds', value: next },
+      });
+      setMsg(
+        next.includes(p.id)
+          ? `« ${p.name} » ajouté à « Ce que louent nos clients » (accueil).`
+          : `« ${p.name} » retiré de l'accueil.`,
+      );
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+      await load();
+    }
   }
   useEffect(() => {
     load();
@@ -459,6 +483,12 @@ export default function AdminProduits() {
       </form>
 
       <div className="card card-body">
+        <p className="small muted" style={{ margin: '0 0 10px' }}>
+          Colonne <strong>★ Accueil</strong> : cliquez l’étoile pour mettre une machine en avant dans
+          « Ce que louent nos clients » sur la page d’accueil ({featuredIds.length} sélectionnée
+          {featuredIds.length > 1 ? 's' : ''}, les 3 premières s’affichent). Rien de coché = repli
+          automatique sur les machines les plus louées.
+        </p>
         <input
           placeholder="Filtrer…"
           value={filter}
@@ -471,6 +501,7 @@ export default function AdminProduits() {
               <tr>
                 <th></th>
                 <th>Nom</th>
+                <th title="Mise en avant sur l'accueil (« Ce que louent nos clients »)">★ Accueil</th>
                 <th>Type</th>
                 <th>Catégorie</th>
                 <th>Prix/j</th>
@@ -503,6 +534,32 @@ export default function AdminProduits() {
                         </span>
                       )}
                     </td>
+                    <td style={{ textAlign: 'center' }}>
+                      {p.kind === 'MACHINE' ? (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          disabled={!(p.published ?? true) && !featuredIds.includes(p.id)}
+                          title={
+                            !(p.published ?? true)
+                              ? 'Publiez d’abord ce produit pour le mettre en avant'
+                              : featuredIds.includes(p.id)
+                                ? 'Retirer de l’accueil'
+                                : 'Mettre en avant sur l’accueil'
+                          }
+                          onClick={() => toggleFeatured(p)}
+                          style={{
+                            fontSize: '1.1rem',
+                            color: featuredIds.includes(p.id) ? 'var(--primary)' : 'var(--border)',
+                            padding: '2px 6px',
+                          }}
+                        >
+                          {featuredIds.includes(p.id) ? '★' : '☆'}
+                        </button>
+                      ) : (
+                        <span className="small muted">—</span>
+                      )}
+                    </td>
                     <td>
                       <span className="badge">{p.kind}</span>
                     </td>
@@ -530,7 +587,7 @@ export default function AdminProduits() {
                   </tr>
                   {mergingSlug === p.slug && (
                     <tr>
-                      <td colSpan={8}>
+                      <td colSpan={9}>
                         <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
                           <span className="small">Fusionner « {p.name} » dans :</span>
                           <select value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)}>

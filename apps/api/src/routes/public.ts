@@ -82,15 +82,39 @@ publicRouter.get(
     const locale = (String(req.query.locale ?? 'fr') as Locale) ?? 'fr';
     const s = await getSettings();
     const ids = Array.isArray(s.homeFeaturedProductIds) ? (s.homeFeaturedProductIds as string[]) : [];
-    if (ids.length === 0) return res.json({ products: [] });
 
-    const rows = await prisma.product.findMany({
-      where: { id: { in: ids }, published: true },
-      include: productInclude,
-    });
-    const byId = new Map(rows.map((p) => [p.id, p]));
-    // Conserve l'ordre choisi en admin ; ignore les ids supprimés/dépubliés depuis.
-    const ordered = ids.map((id) => byId.get(id)).filter((p): p is (typeof rows)[number] => !!p);
+    let ordered: Array<
+      Awaited<ReturnType<typeof prisma.product.findMany<{ include: typeof productInclude }>>>[number]
+    > = [];
+
+    // 1) Sélection manuelle admin (dans l'ordre, en ignorant les dépubliés/supprimés).
+    if (ids.length > 0) {
+      const rows = await prisma.product.findMany({
+        where: { id: { in: ids }, published: true },
+        include: productInclude,
+      });
+      const byId = new Map(rows.map((p) => [p.id, p]));
+      ordered = ids.map((id) => byId.get(id)).filter((p): p is (typeof rows)[number] => !!p);
+    }
+
+    // 2) Repli automatique si aucune sélection (ou si elle ne donne rien) :
+    // les machines réellement les plus louées — jamais d'accessoires/consommables.
+    if (ordered.length === 0) {
+      const grouped = await prisma.reservationItem.groupBy({
+        by: ['productId'],
+        _count: { productId: true },
+        orderBy: { _count: { productId: 'desc' } },
+        take: 20,
+      });
+      const rows = await prisma.product.findMany({
+        where: { published: true, kind: 'MACHINE' },
+        include: productInclude,
+      });
+      const rank = new Map(grouped.map((g, i) => [g.productId, i]));
+      ordered = [...rows]
+        .sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999))
+        .slice(0, 6);
+    }
 
     // « Dans un BricoPack » = la machine compose un pack existant (liens PACK_ITEM).
     const inPackIds = new Set(

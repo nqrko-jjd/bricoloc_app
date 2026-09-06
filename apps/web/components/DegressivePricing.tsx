@@ -1,73 +1,57 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 /**
- * Curseur « prix dégressif » (style concept .cslider).
+ * Sélecteur « prix dégressif » (style concept .cslider).
  * Modèle Bricoloc : Semaine = 4 × tarif jour · Mois = 12 × tarif jour.
+ * 3 positions nettes (jour / semaine / mois) : un vrai curseur continu de
+ * 1 à 30 jours donnait une courbe en dents de scie (un jour de plus après
+ * une semaine faisait *remonter* le prix moyen) — déroutant.
  */
-const WEEK = 4;
-const MONTH = 12;
-
-function billedEquivalents(days: number): number {
-  const months = Math.floor(days / 30);
-  let rest = days % 30;
-  const weeks = Math.floor(rest / 7);
-  rest = rest % 7;
-  return months * MONTH + weeks * WEEK + rest;
-}
-
-const MIN_DAYS = 1;
-const MAX_DAYS = 30;
-const STOPS = [1, 3, 7, 14, 30];
-
-/** Position réelle (0–100%) d'une valeur sur le curseur — pour que les
- * repères 3j/7j/14j… tombent à l'endroit où le curseur linéaire vaut
- * vraiment cette durée (avant, les repères étaient espacés également
- * alors que le curseur est linéaire de 1 à 30 : viser « 3 j. » du doigt
- * plaçait en réalité le curseur sur ~8 jours). */
-const posOf = (d: number) => ((d - MIN_DAYS) / (MAX_DAYS - MIN_DAYS)) * 100;
+const STEPS = [
+  { key: 'day', days: 1, billed: 1 },
+  { key: 'week', days: 7, billed: 4 },
+  { key: 'month', days: 30, billed: 12 },
+] as const;
 
 export function DegressivePricing() {
   const t = useTranslations('home');
-  const [days, setDays] = useState(7);
-
-  const discount = useMemo(
-    () => Math.max(0, Math.round((1 - billedEquivalents(days) / days) * 100)),
-    [days],
-  );
+  const [i, setI] = useState(1);
+  const step = STEPS[i]!;
+  const discount = Math.round((1 - step.billed / step.days) * 100);
 
   return (
     <div className="cslider">
       <div className="cslider__head">
         <span>{t('degressiveDuration')}</span>
-        <b>{t('degressiveDays', { n: days })}</b>
+        <b>{t(`degressiveStep_${step.key}` as never)}</b>
       </div>
       <input
         type="range"
-        min={MIN_DAYS}
-        max={MAX_DAYS}
-        value={days}
-        onChange={(e) => setDays(Number(e.target.value))}
+        min={0}
+        max={STEPS.length - 1}
+        step={1}
+        value={i}
+        onChange={(e) => setI(Number(e.target.value))}
         aria-label={t('degressiveDuration')}
       />
-      <div className="cslider__ticks">
-        {STOPS.map((d) => (
+      <div className="cslider__ticks cslider__ticks--even">
+        {STEPS.map((s, idx) => (
           <button
-            key={d}
+            key={s.key}
             type="button"
-            style={{ left: `${posOf(d)}%` }}
-            className={days === d ? 'is-active' : undefined}
-            onClick={() => setDays(d)}
+            className={i === idx ? 'is-active' : undefined}
+            onClick={() => setI(idx)}
           >
-            {d} j.
+            {t(`degressiveStep_${s.key}` as never)}
           </button>
         ))}
       </div>
       <div className="cslider__foot">
         <span>{t('degressiveDiscount')}</span>
-        <strong>−{discount}%</strong>
+        <strong>{discount > 0 ? `−${discount}%` : t('degressiveFull')}</strong>
       </div>
     </div>
   );

@@ -1768,17 +1768,6 @@ button { font-family: inherit; }
 .csection__link:hover { color: var(--primary); text-decoration: none; }
 .csection__link svg { width: 18px; }
 
-/* ---- Par projet (chips une ligne, façon borne) ---- */
-.cprojects { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 4px; }
-.cprojects__chip {
-  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
-  background: var(--surface-2); color: var(--ink); text-decoration: none;
-  border-radius: var(--r-pill); padding: 12px 18px; font-weight: 800; font-size: 0.85rem;
-  white-space: nowrap; transition: background 0.2s, color 0.2s;
-}
-.cprojects__chip span { font-size: 1.05rem; }
-.cprojects__chip:hover { background: var(--primary); color: #fff; text-decoration: none; }
-
 /* ---- Categories (slider une ligne, toutes les catégories) ---- */
 .ccats {
   display: flex; gap: 14px; overflow-x: auto; padding: 4px 4px 14px;
@@ -1890,6 +1879,9 @@ button { font-family: inherit; }
 .cslider__ticks button:first-child { transform: translateX(0); }
 .cslider__ticks button:last-child { transform: translateX(-100%); }
 .cslider__ticks button.is-active { color: var(--primary); }
+/* Variante 3 positions (jour / semaine / mois) : repères simplement répartis. */
+.cslider__ticks--even { display: flex; justify-content: space-between; height: auto; }
+.cslider__ticks--even button { position: static; transform: none !important; padding: 4px 0; }
 .cslider__foot { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 20px; }
 .cslider__foot span { font-weight: 900; }
 .cslider__foot strong { color: var(--primary); font-size: 2.6rem; font-weight: 900; letter-spacing: -0.04em; }
