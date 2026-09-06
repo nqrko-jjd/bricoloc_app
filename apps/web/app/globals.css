@@ -531,6 +531,7 @@ button { font-family: inherit; }
   outline: 2px solid var(--ring); outline-offset: 1px; border-color: var(--ring);
 }
 .field-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.field-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 
 /* =========================================================================
    Carte produit
@@ -561,7 +562,7 @@ button { font-family: inherit; }
    Aides de disposition
    ========================================================================= */
 .two-col { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; }
-@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .field-2 { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .field-2, .field-3 { grid-template-columns: 1fr; } }
 
 .summary { position: sticky; top: 86px; }
 .summary .line { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.94rem; }

@@ -1,6 +1,6 @@
 'use client';
 import { Fragment, useEffect, useState } from 'react';
-import { formatEUR } from '@bricoloc/shared';
+import { formatEUR, suggestDegressivePricing } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { ImageDropzone } from '@/components/admin/ImageDropzone';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
@@ -84,6 +84,10 @@ export default function AdminProduits() {
   }, []);
 
   const set = (k: string, v: unknown) => setForm((s) => ({ ...s, [k]: v }));
+
+  const dailyNum = Number(form.dailyPrice);
+  const autoPricing =
+    form.kind === 'MACHINE' && dailyNum > 0 ? suggestDegressivePricing(dailyNum) : null;
 
   function edit(p: ProductDetail) {
     setEditing(p.slug);
@@ -323,7 +327,7 @@ export default function AdminProduits() {
             )}
           </div>
         </div>
-        <div className="field-2">
+        <div className="field-3">
           <div className="field">
             <label>Prix week-end</label>
             <input
@@ -340,15 +344,55 @@ export default function AdminProduits() {
               step="0.01"
               value={form.weekPrice}
               onChange={(e) => set('weekPrice', e.target.value)}
+              placeholder={autoPricing ? String(autoPricing.weekPrice) : ''}
+            />
+          </div>
+          <div className="field">
+            <label>Prix mois (30 j)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={form.monthPrice}
+              onChange={(e) => set('monthPrice', e.target.value)}
+              placeholder={autoPricing ? String(autoPricing.monthPrice) : ''}
             />
           </div>
         </div>
+        {form.kind === 'MACHINE' && (
+          <p className="small muted" style={{ marginTop: -6 }}>
+            Machine : laisse semaine / mois / dégressif <b>vides</b> → calculés
+            automatiquement depuis le prix jour (semaine −50 %, mois −60 %, palier dès
+            le 3<sup>e</sup> jour).
+            {autoPricing && (
+              <>
+                {' '}Pour {formatEUR(Number(form.dailyPrice))}/j : semaine{' '}
+                {formatEUR(autoPricing.weekPrice)} · mois {formatEUR(autoPricing.monthPrice)}.{' '}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      weekPrice: String(autoPricing.weekPrice),
+                      monthPrice: String(autoPricing.monthPrice),
+                      tiers: JSON.stringify(autoPricing.tiers),
+                    }))
+                  }
+                >
+                  Remplir maintenant
+                </button>
+              </>
+            )}
+          </p>
+        )}
         <div className="field">
           <label>Tarifs dégressifs (JSON : [{'{'}"minDays":1,"perDay":30{'}'}, …])</label>
           <input
             value={form.tiers}
             onChange={(e) => set('tiers', e.target.value)}
-            placeholder='[{"minDays":1,"perDay":30},{"minDays":4,"perDay":24}]'
+            placeholder={
+              autoPricing ? JSON.stringify(autoPricing.tiers) : '[{"minDays":1,"perDay":30},{"minDays":4,"perDay":24}]'
+            }
           />
         </div>
         <div className="field">

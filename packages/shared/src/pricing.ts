@@ -7,6 +7,32 @@ export interface PriceTier {
   perDay: number;
 }
 
+/**
+ * Grille degressive « Option A » (validee sept. 2026) a partir du seul tarif jour.
+ * Chaque jour au-dela de 2 est facture a −65 % ; forfait semaine ×3,5 ; mois ×12.
+ * Le moteur (`computeRentalPrice`) prend toujours le moins cher → courbe continue :
+ *   3 j −22 % · 4 j −32 % · 5 j −39 % · 7 j −50 % · mois −60 %.
+ *
+ * Sert de valeur par defaut quand l'admin ne renseigne que le prix jour d'une
+ * machine (routes admin) et pour le script de mise a jour en masse.
+ */
+export function suggestDegressivePricing(dailyPrice: number): {
+  weekPrice: number;
+  monthPrice: number;
+  tiers: PriceTier[];
+} {
+  const x = Math.max(0, dailyPrice);
+  const perDay3 = x >= 4 ? Math.round(x * 0.35 * 2) / 2 : round2(x * 0.35);
+  return {
+    weekPrice: Math.round(x * 3.5),
+    monthPrice: Math.round(x * 12),
+    tiers: [
+      { minDays: 1, perDay: round2(x) },
+      { minDays: 3, perDay: perDay3 },
+    ],
+  };
+}
+
 export interface ProductPricing {
   dailyPrice: number;
   weekendPrice?: number | null;

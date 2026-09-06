@@ -6,6 +6,7 @@ import {
   computeLateFee,
   computeRentalPrice,
   isWeekendRule,
+  suggestDegressivePricing,
   type PricingSettings,
 } from '../src/pricing.js';
 
@@ -115,4 +116,34 @@ test('computeLateFee: 26h de retard = 2 jours x 1.5', () => {
   const f = computeLateFee(40, 26, 1.5);
   assert.equal(f.daysLate, 2);
   assert.equal(f.feeHT, 120);
+});
+
+test('suggestDegressivePricing: grille Option A + courbe cohérente', () => {
+  const g = suggestDegressivePricing(20);
+  assert.equal(g.weekPrice, 70); // ×3,5
+  assert.equal(g.monthPrice, 240); // ×12
+  assert.deepEqual(g.tiers, [
+    { minDays: 1, perDay: 20 },
+    { minDays: 3, perDay: 7 }, // 0,35 × 20
+  ]);
+
+  // La courbe passée au moteur : 7 j facturés = forfait semaine (−50 %).
+  const seven = computeRentalPrice({
+    pricing: { dailyPrice: 20, ...g, deposit: 0 },
+    period: { start: '2026-03-02T08:00:00Z', end: '2026-03-09T08:00:00Z' },
+    quantity: 1,
+    customerType: 'PARTICULIER',
+    settings,
+  });
+  assert.equal(seven.grossUnitPrice, 70);
+
+  // 4 j ≈ −30 % (palier dès 3 j).
+  const four = computeRentalPrice({
+    pricing: { dailyPrice: 20, ...g, deposit: 0 },
+    period: { start: '2026-03-02T08:00:00Z', end: '2026-03-06T08:00:00Z' },
+    quantity: 1,
+    customerType: 'PARTICULIER',
+    settings,
+  });
+  assert.equal(four.grossUnitPrice, 54); // 20+20+7+7
 });

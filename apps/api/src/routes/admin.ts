@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { createReadStream, existsSync } from 'node:fs';
 import {
   SOURCE_LOCALE,
+  suggestDegressivePricing,
   createStaffSchema,
   moderateReviewSchema,
   upsertCategorySchema,
@@ -254,6 +255,15 @@ adminRouter.post(
       ? await prisma.category.findUnique({ where: { slug: data.categorySlug } })
       : null;
 
+    // Machine : si l'admin n'a saisi que le prix jour, on complète la grille
+    // dégressive « Option A » (semaine ×3,5, mois ×12, palier dès 3 j). Chaque
+    // champ renseigné manuellement est respecté ; laisser vide = auto.
+    const hasTiers = Array.isArray(data.tiers) && data.tiers.length > 0;
+    const auto =
+      data.kind === 'MACHINE' && (data.weekPrice == null || data.monthPrice == null || !hasTiers)
+        ? suggestDegressivePricing(data.dailyPrice)
+        : null;
+
     const base = {
       name: data.name,
       kind: data.kind,
@@ -268,9 +278,9 @@ adminRouter.post(
       documents: data.documents as never,
       dailyPrice: data.dailyPrice,
       weekendPrice: data.weekendPrice ?? null,
-      weekPrice: data.weekPrice ?? null,
-      monthPrice: data.monthPrice ?? null,
-      tiers: data.tiers as never,
+      weekPrice: data.weekPrice ?? auto?.weekPrice ?? null,
+      monthPrice: data.monthPrice ?? auto?.monthPrice ?? null,
+      tiers: (hasTiers ? data.tiers : auto?.tiers ?? data.tiers) as never,
       proDiscountPct: data.proDiscountPct ?? null,
       deposit: data.deposit,
       isConsumable: data.kind === 'CONSUMABLE',
