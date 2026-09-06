@@ -46,8 +46,10 @@ async function main() {
       { minDays: 1, perDay: r2(x) },
       { minDays: 3, perDay: perDay3(x) },
     ];
-    const weekPrice = Math.round(x * 3.5);
-    const monthPrice = Math.round(x * 12);
+    // Ne jamais AUGMENTER un forfait : si David avait déjà mis mieux que
+    // ×3,5 / ×12, on le garde.
+    const weekPrice = Math.min(p.weekPrice ?? Infinity, Math.round(x * 3.5));
+    const monthPrice = Math.min(p.monthPrice ?? Infinity, Math.round(x * 12));
 
     console.log(
       `  ${p.slug.padEnd(44)} ${String(x).padStart(5)}€/j` +
