@@ -49,13 +49,32 @@ export default function CommandePage() {
     city: '',
     isConstructionSite: false,
   });
-  const [slot, setSlot] = useState('Matin (8h-12h)');
+  const [slot, setSlot] = useState('');
   const [pickupPoints, setPickupPoints] = useState<
     { id: string; name: string; line1: string; postalCode: string; city: string; isMain: boolean; transferHours: number }[]
   >([]);
   const [pickupPointId, setPickupPointId] = useState('');
   const [payProvider, setPayProvider] = useState<'mock' | 'mollie'>('mock');
+  const [pickupCfg, setPickupCfg] = useState<{
+    days: number[];
+    fromHour: number;
+    toHour: number;
+    slotHours: number;
+    note: string;
+  } | null>(null);
   const pickupPoint = pickupPoints.find((p) => p.id === pickupPointId) ?? pickupPoints[0];
+
+  // Créneaux d'enlèvement possibles pour la date de début de location.
+  const pickupSlots = useMemo(() => {
+    if (!pickupCfg) return [];
+    const day = start ? new Date(start).getDay() : new Date().getDay();
+    if (!pickupCfg.days.includes(day)) return [];
+    const out: string[] = [];
+    for (let h = pickupCfg.fromHour; h + pickupCfg.slotHours <= pickupCfg.toHour; h += pickupCfg.slotHours) {
+      out.push(`${h}h – ${h + pickupCfg.slotHours}h`);
+    }
+    return out;
+  }, [pickupCfg, start]);
   const [delivQuote, setDelivQuote] = useState<{
     served: boolean;
     distanceKm: number;
@@ -83,14 +102,17 @@ export default function CommandePage() {
   } | null>(null);
 
   useEffect(() => {
-    api<{ pickupPoints?: typeof pickupPoints; paymentProvider?: 'mock' | 'mollie' }>(
-      '/api/public/config',
-    )
+    api<{
+      pickupPoints?: typeof pickupPoints;
+      paymentProvider?: 'mock' | 'mollie';
+      pickup?: typeof pickupCfg;
+    }>('/api/public/config')
       .then((c) => {
         const pts = c.pickupPoints ?? [];
         setPickupPoints(pts);
         setPickupPointId(pts.find((p) => p.isMain)?.id ?? pts[0]?.id ?? '');
         setPayProvider(c.paymentProvider === 'mollie' ? 'mollie' : 'mock');
+        if (c.pickup) setPickupCfg(c.pickup);
       })
       .catch(() => undefined);
   }, []);
@@ -235,6 +257,11 @@ export default function CommandePage() {
     setError('');
     try {
       if (mode === 'DELIVERY') {
+        if (!slot) {
+          setError('Choisissez un créneau de livraison.');
+          setBusy(false);
+          return;
+        }
         const q = await api<{ served: boolean; distanceKm: number }>(
           '/api/public/delivery/quote',
           {
@@ -250,10 +277,24 @@ export default function CommandePage() {
           return;
         }
       }
+      if (mode === 'PICKUP' && !kiosk && pickupCfg) {
+        if (pickupSlots.length === 0) {
+          setError(
+            'Le dépôt est fermé le jour de début choisi. Revenez à l’étape 1 pour choisir une autre date.',
+          );
+          setBusy(false);
+          return;
+        }
+        if (!pickupSlots.includes(slot)) {
+          setError('Choisissez un créneau d’enlèvement.');
+          setBusy(false);
+          return;
+        }
+      }
       await setFulfilment(
         mode === 'DELIVERY'
           ? { mode, address: { ...addr, country: 'BE' }, slot }
-          : { mode },
+          : { mode, slot: pickupSlots.includes(slot) ? slot : undefined },
       );
       // Borne : coordonnées invité simples, ni compte ni pièce d'identité.
       if (kiosk) setPhase('account');
@@ -470,7 +511,7 @@ export default function CommandePage() {
                           <span className="small" style={{ display: 'block', color: 'var(--primary)' }}>
                             {p.transferHours > 0
                               ? `Prêt sous ${p.transferHours} h (acheminé depuis le dépôt)`
-                              : 'Prêt en 2 h selon disponibilité'}
+                              : 'Prêt en 2 h après réservation, au créneau choisi'}
                           </span>
                         </span>
                       </label>
@@ -478,6 +519,35 @@ export default function CommandePage() {
                   </div>
                 </div>
               )}
+
+              {mode === 'PICKUP' && (
+                <div className="stack" style={{ gap: 8 }}>
+                  <div className="field">
+                    <label>Créneau d’enlèvement — le {new Date(start).toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' })}</label>
+                    {pickupSlots.length > 0 ? (
+                      <select value={slot} onChange={(e) => setSlot(e.target.value)}>
+                        <option value="">— Choisir un créneau —</option>
+                        {pickupSlots.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="small alert alert-warn" style={{ margin: 0 }}>
+                        Le dépôt est fermé ce jour-là. Revenez à l’étape 1 pour choisir une autre
+                        date de début.
+                      </p>
+                    )}
+                  </div>
+                  {pickupCfg?.note && (
+                    <p className="small muted" style={{ margin: 0 }}>
+                      ℹ️ {pickupCfg.note}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {mode === 'DELIVERY' && (
                 <div className="stack">
                   <div className="field">
@@ -543,6 +613,7 @@ export default function CommandePage() {
                   <div className="field">
                     <label>Créneau souhaité</label>
                     <select value={slot} onChange={(e) => setSlot(e.target.value)}>
+                      <option value="">— Choisir un créneau —</option>
                       <option>Matin (8h-12h)</option>
                       <option>Après-midi (13h-17h)</option>
                     </select>
@@ -693,8 +764,9 @@ export default function CommandePage() {
                 {formatDateTimeBE(fromLocalInput(end))}
               </p>
               <p>
-                <strong>{mode === 'PICKUP' ? 'Retrait au comptoir' : 'Livraison'}</strong>
+                <strong>{mode === 'PICKUP' ? 'Enlèvement au dépôt' : 'Livraison'}</strong>
                 {mode === 'DELIVERY' && ` — ${addr.line1}, ${addr.postalCode} ${addr.city} (${slot})`}
+                {mode === 'PICKUP' && slot && ` — créneau ${slot}`}
               </p>
               <p>
                 <strong>Contact :</strong>{' '}

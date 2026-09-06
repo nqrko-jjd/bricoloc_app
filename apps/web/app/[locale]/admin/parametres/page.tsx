@@ -315,6 +315,75 @@ export default function AdminParametres() {
         </button>
       </div>
 
+      <div className="card card-pad stack">
+        <h3>Enlèvement au dépôt — créneaux</h3>
+        <p className="small muted">
+          Bricoloc n’a pas de guichet permanent : le client choisit un créneau d’enlèvement au
+          checkout, dans ces jours et heures d’ouverture.
+        </p>
+        {(() => {
+          const p = (s.pickup ?? {}) as { days?: number[]; fromHour?: number; toHour?: number; slotHours?: number; note?: string };
+          const days = Array.isArray(p.days) && p.days.length ? p.days : [1, 2, 3, 4, 5, 6];
+          const DAY_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+          const patch = (next: Record<string, unknown>) =>
+            save('pickup', { days, fromHour: p.fromHour ?? 8, toHour: p.toHour ?? 17, slotHours: p.slotHours ?? 2, note: p.note ?? '', ...next });
+          return (
+            <>
+              <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                {DAY_LABELS.map((lbl, d) => (
+                  <label key={d} className="row" style={{ gap: 4 }}>
+                    <input
+                      type="checkbox"
+                      checked={days.includes(d)}
+                      onChange={(e) =>
+                        patch({ days: e.target.checked ? [...days, d].sort() : days.filter((x) => x !== d) })
+                      }
+                    />
+                    <span className="small">{lbl}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="field-2">
+                <label className="field small">
+                  Ouverture (h)
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    defaultValue={p.fromHour ?? 8}
+                    onBlur={(e) => patch({ fromHour: Number(e.target.value) })}
+                  />
+                </label>
+                <label className="field small">
+                  Fermeture (h)
+                  <input
+                    type="number"
+                    min={1}
+                    max={24}
+                    defaultValue={p.toHour ?? 17}
+                    onBlur={(e) => patch({ toHour: Number(e.target.value) })}
+                  />
+                </label>
+              </div>
+              <label className="field small">
+                Durée d’un créneau (h)
+                <input
+                  type="number"
+                  min={1}
+                  max={8}
+                  defaultValue={p.slotHours ?? 2}
+                  onBlur={(e) => patch({ slotHours: Number(e.target.value) })}
+                />
+              </label>
+              <label className="field small">
+                Message affiché au client (checkout)
+                <input defaultValue={p.note ?? ''} onBlur={(e) => patch({ note: e.target.value })} />
+              </label>
+            </>
+          );
+        })()}
+      </div>
+
       <div className="card card-pad">
         <h3>Points d’enlèvement (Click &amp; Collect)</h3>
         <p className="small muted">

@@ -46,6 +46,18 @@ export const DEFAULT_SETTINGS = {
   lateFeeMultiplier: 1.5,
   /** Delai (heures) de preparation minimal avant un retrait. */
   minLeadTimeHours: 2,
+  /** Enlevement au depot : Bricoloc n'a PAS de guichet permanent, quelqu'un
+   * se deplace pour chaque enlevement. Le client choisit un creneau. */
+  pickup: {
+    /** Jours ouvres : 1 = lundi … 6 = samedi, 0 = dimanche. */
+    days: [1, 2, 3, 4, 5, 6],
+    /** Plage horaire des creneaux d'enlevement. */
+    fromHour: 8,
+    toHour: 17,
+    /** Duree d'un creneau (heures). */
+    slotHours: 2,
+    note: 'Réservation obligatoire : on prépare et on vous accueille au dépôt au créneau choisi — souvent dans les 2 h le jour même.',
+  },
   /** Frais de livraison (repli si le calcul geo echoue). */
   deliveryBaseFee: 25,
   deliveryPerKm: 1.2,

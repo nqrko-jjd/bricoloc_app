@@ -247,7 +247,7 @@
     "statTools": "{n}+ outils",
     "statToolsSub": "machines et outils disponibles près de chez vous",
     "searchPlaceholder": "De quel outil avez-vous besoin ?",
-    "trustDispo": "Disponible sous 2h",
+    "trustDispo": "Prêt en 2h, sur réservation",
     "trustDelivery": "Livraison à domicile",
     "trustChecked": "Matériel vérifié",
     "trustRating": "4,9/5 par nos clients",
@@ -358,7 +358,7 @@
     "highlights": {
       "kicker": "— Deux façons de récupérer votre matériel",
       "ccTitle": "Click & Collect en 2h",
-      "ccText": "Réservez en ligne, retirez au dépôt de Ruisbroek dès que c’est prêt — souvent le jour même.",
+      "ccText": "Réservez en ligne, on prépare, vous récupérez au dépôt de Ruisbroek au créneau choisi — souvent dans les 2h le jour même. Pas de guichet permanent : la réservation est obligatoire.",
       "ccCta": "Comment ça marche",
       "deliveryTitle": "Livraison à domicile ou chantier",
       "deliveryText": "On vous livre partout en Belgique, à l’heure choisie, et on reprend le matériel en fin de location.",

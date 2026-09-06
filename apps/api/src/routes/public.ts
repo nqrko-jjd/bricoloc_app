@@ -21,6 +21,17 @@ publicRouter.get(
       currency: s.currency,
       minLeadTimeHours: s.minLeadTimeHours,
       sameDayCutoffHour: s.sameDayCutoffHour,
+      pickup: (() => {
+        const p = (s.pickup ?? {}) as Record<string, unknown>;
+        const days = Array.isArray(p.days) ? (p.days as unknown[]).map(Number).filter((n) => n >= 0 && n <= 6) : [];
+        return {
+          days: days.length ? days : [1, 2, 3, 4, 5, 6],
+          fromHour: Number(p.fromHour ?? 8),
+          toHour: Number(p.toHour ?? 17),
+          slotHours: Number(p.slotHours ?? 2),
+          note: typeof p.note === 'string' ? p.note : '',
+        };
+      })(),
       deliveryBaseFee: s.deliveryBaseFee,
       deliveryFreeThreshold: s.deliveryFreeThreshold,
       pickupPoints: (Array.isArray(s.pickupPoints) ? s.pickupPoints : [])

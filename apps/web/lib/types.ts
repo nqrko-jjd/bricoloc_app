@@ -269,4 +269,11 @@ export interface PublicConfig {
   demo: boolean;
   homeShowBrand?: boolean;
   homeShowBadges?: boolean;
+  pickup?: {
+    days: number[];
+    fromHour: number;
+    toHour: number;
+    slotHours: number;
+    note: string;
+  };
 }

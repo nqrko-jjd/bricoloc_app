@@ -145,7 +145,7 @@
     "statTools": "{n}+ tools",
     "statToolsSub": "machines en gereedschap beschikbaar bij u in de buurt",
     "searchPlaceholder": "Welk gereedschap heb je nodig?",
-    "trustDispo": "Beschikbaar binnen 2u",
+    "trustDispo": "Klaar in 2u, op reservering",
     "trustDelivery": "Levering aan huis",
     "trustChecked": "Gecontroleerd materiaal",
     "trustRating": "4,9/5 door onze klanten",
@@ -358,7 +358,7 @@
     "highlights": {
       "kicker": "— Twee manieren om je materiaal op te halen",
       "ccTitle": "Click & Collect in 2 u",
-      "ccText": "Reserveer online, haal af in ons depot in Ruisbroek zodra het klaar is — vaak dezelfde dag nog.",
+      "ccText": "Reserveer online, wij bereiden voor, u haalt af in ons depot in Ruisbroek op het gekozen tijdslot — vaak binnen 2u dezelfde dag. Geen vaste balie: reserveren is verplicht.",
       "ccCta": "Hoe het werkt",
       "deliveryTitle": "Levering aan huis of op de werf",
       "deliveryText": "We leveren overal in België, op het gekozen tijdstip, en halen het materiaal op na de huurperiode.",
