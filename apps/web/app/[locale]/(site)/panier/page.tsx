@@ -7,6 +7,7 @@ import { CartSummary } from '@/components/CartSummary';
 import { Steps } from '@/components/Steps';
 import { AvailabilityBadge } from '@/components/AvailabilityBadge';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
+import { productHref } from '@/lib/productHref';
 
 export default function PanierPage() {
   const { cart, loading, setQty, removeItem, addItem, applyPromo, clearPromo } = useCart();
@@ -64,7 +65,7 @@ export default function PanierPage() {
                 style={{ width: 100, borderRadius: 8 }}
               />
               <div style={{ flex: 1, minWidth: 180 }}>
-                <Link href={`/produits/${it.slug}`} style={{ fontWeight: 700 }}>
+                <Link href={productHref(it)} style={{ fontWeight: 700 }}>
                   {it.name}
                 </Link>
                 <div className="small muted">
@@ -99,7 +100,7 @@ export default function PanierPage() {
               <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))' }}>
                 {g.products.map((p) => (
                   <div key={p.id} className="card card-body" style={{ boxShadow: 'none' }}>
-                    <Link href={`/produits/${p.slug}`} className="small" style={{ fontWeight: 700 }}>
+                    <Link href={productHref(p)} className="small" style={{ fontWeight: 700 }}>
                       {p.name}
                     </Link>
                     <div className="small muted">

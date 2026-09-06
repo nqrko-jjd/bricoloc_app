@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { redirect } from '@/i18n/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { formatEUR } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
@@ -57,6 +58,8 @@ export default async function ProductPage({
   const data = await load(slug, locale);
   if (!data) notFound();
   const { product, similar } = data;
+  // Un BricoPack : sa fiche de présentation est /bricopacks/<slug>.
+  if (product.kind === 'PACK') redirect({ href: `/bricopacks/${slug}`, locale });
   const t = await getTranslations('product');
   const isLoiselet = product.supplier === 'LOISELET';
 

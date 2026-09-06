@@ -35,6 +35,13 @@ function CatalogueInner() {
   const periodStart = cart?.period?.start ?? '';
   const periodEnd = cart?.period?.end ?? '';
 
+  // Les BricoPacks ont leur propre page de présentation : on ne les parcourt
+  // jamais via le catalogue générique (sinon le clic menait à la fiche produit
+  // classique au lieu de la fiche pack).
+  useEffect(() => {
+    if (kind === 'PACK') router.replace('/bricopacks');
+  }, [kind, router]);
+
   useEffect(() => {
     api<{ categories: Category[] }>(`/api/catalog/categories?locale=${locale}`).then((r) =>
       setCategories(r.categories),

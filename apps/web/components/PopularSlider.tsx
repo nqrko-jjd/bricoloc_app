@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { formatEUR } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
 import { Heart as IHeart, ArrowUpRight as IArrowUpRight } from './icons';
+import { productHref } from '@/lib/productHref';
 import type { ProductSummary } from '@/lib/types';
 
 /**
@@ -46,7 +47,7 @@ export function PopularSlider({
     <>
       <div className="ctools reveal" ref={trackRef}>
         {products.map((p, i) => (
-          <Link key={p.id} href={`/produits/${p.slug}`} className="ctool">
+          <Link key={p.id} href={productHref(p)} className="ctool">
             <div className="ctool__top">
               <span className="ctool__tag">{i === 0 ? t('popularTag') : t('availableTag')}</span>
               <IHeart />

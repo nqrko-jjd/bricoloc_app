@@ -6,14 +6,16 @@ import type { ProductSummary } from '@/lib/types';
 import { AvailabilityBadge } from './AvailabilityBadge';
 import { AddToCartButton } from './AddToCartButton';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
+import { productHref } from '@/lib/productHref';
 import { Heart } from './icons';
 
 export function ProductCard({ p }: { p: ProductSummary }) {
   const t = useTranslations('catalogue');
+  const href = productHref(p);
 
   return (
     <article className="pcard">
-      <Link href={`/produits/${p.slug}`} className="pcard__media">
+      <Link href={href} className="pcard__media">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={p.image || PLACEHOLDER_IMG}
@@ -32,7 +34,7 @@ export function ProductCard({ p }: { p: ProductSummary }) {
       <div className="pcard__body">
         {p.category ? <span className="pcard__cat">{p.category.name}</span> : null}
         <h3 className="pcard__name">
-          <Link href={`/produits/${p.slug}`}>{p.name}</Link>
+          <Link href={href}>{p.name}</Link>
         </h3>
         <div className="pcard__price">
           {formatEUR(p.dailyPrice)}

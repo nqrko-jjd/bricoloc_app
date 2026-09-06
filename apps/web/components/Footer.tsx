@@ -32,7 +32,7 @@ export function Footer() {
           <nav className="site-footer__col">
             <h4>{tf('rent')}</h4>
             <Link href="/catalogue">{t('rentTool')}</Link>
-            <Link href="/catalogue?kind=PACK">{t('bricopacks')}</Link>
+            <Link href="/bricopacks">{t('bricopacks')}</Link>
             <Link href="/fonctionnement">{t('howItWorks')}</Link>
             <Link href="/pro">{tf('servicesPros')}</Link>
           </nav>

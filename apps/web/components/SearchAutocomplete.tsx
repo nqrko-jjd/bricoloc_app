@@ -4,11 +4,13 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
+import { productHref } from '@/lib/productHref';
 import { Search, ArrowUpRight } from './icons';
 
 interface SuggestProduct {
   slug: string;
   name: string;
+  kind?: string;
   image: string | null;
   dailyPrice: number;
   category: { name: string } | null;
@@ -83,7 +85,7 @@ export function SearchAutocomplete({
   const flat: { type: 'product' | 'category' | 'all'; href: string; label: string }[] = [];
   if (data) {
     for (const p of data.products)
-      flat.push({ type: 'product', href: `/produits/${p.slug}`, label: p.name });
+      flat.push({ type: 'product', href: productHref(p), label: p.name });
     for (const c of data.categories)
       flat.push({ type: 'category', href: `/catalogue?category=${c.slug}`, label: c.name });
     if (q.trim().length >= MIN_CHARS)
@@ -166,7 +168,7 @@ export function SearchAutocomplete({
               aria-selected={active === i}
               className={`search-ac__item${active === i ? ' is-active' : ''}`}
               onMouseEnter={() => setActive(i)}
-              onClick={() => goTo(`/produits/${p.slug}`)}
+              onClick={() => goTo(productHref(p))}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.image || FALLBACK} alt="" loading="lazy" />

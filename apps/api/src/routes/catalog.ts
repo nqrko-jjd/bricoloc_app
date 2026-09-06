@@ -140,7 +140,11 @@ catalogRouter.get(
       });
       let rows = grouped.length
         ? await prisma.product.findMany({
-            where: { id: { in: grouped.map((g) => g.productId) }, published: true, kind: { not: 'CONSUMABLE' } },
+            where: {
+              id: { in: grouped.map((g) => g.productId) },
+              published: true,
+              kind: { notIn: ['CONSUMABLE', 'PACK'] },
+            },
             include: productInclude,
           })
         : [];
@@ -169,13 +173,17 @@ catalogRouter.get(
 
     const [byName, byDesc, cats] = await Promise.all([
       prisma.product.findMany({
-        where: { published: true, OR: [{ name: { contains: q } }, { brand: { contains: q } }] },
+        where: {
+          published: true,
+          kind: { not: 'PACK' },
+          OR: [{ name: { contains: q } }, { brand: { contains: q } }],
+        },
         include: productInclude,
         orderBy: { name: 'asc' },
         take: 7,
       }),
       prisma.product.findMany({
-        where: { published: true, shortDescription: { contains: q } },
+        where: { published: true, kind: { not: 'PACK' }, shortDescription: { contains: q } },
         include: productInclude,
         orderBy: { name: 'asc' },
         take: 7,
