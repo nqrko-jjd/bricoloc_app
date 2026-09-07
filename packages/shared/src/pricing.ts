@@ -133,6 +133,22 @@ export function isWeekendRule(period: RentalPeriod, settings: PricingSettings): 
   return startOk && endOk && spanDays <= 3.5;
 }
 
+/**
+ * Version « légère » de {@link isWeekendRule} pour le front (agenda / fiche) :
+ * ne demande que les 2 réglages utiles, exposés par `/config`.
+ */
+export function periodQualifiesWeekend(
+  period: RentalPeriod,
+  opts: { enabled?: boolean; returnGraceHour?: number } = {},
+): boolean {
+  return isWeekendRule(period, {
+    weekendRuleEnabled: opts.enabled ?? true,
+    weekendReturnGraceHour: opts.returnGraceHour ?? 10,
+    sameDayCutoffHour: 18,
+    proDiscountPctDefault: 0,
+  });
+}
+
 function sumTiers(tiers: PriceTier[], days: number): number {
   const sorted = [...tiers].sort((a, b) => a.minDays - b.minDays);
   let total = 0;
@@ -233,6 +249,8 @@ export interface DeliveryConfig {
   perKmHT: number;
   maxKm: number;
   freeThresholdHT: number;
+  /** Supplement pour une livraison le samedi. Jamais annule par la franchise. */
+  saturdaySurchargeHT?: number;
 }
 
 export interface DeliveryQuote {
@@ -241,21 +259,29 @@ export interface DeliveryQuote {
   feeHT: number;
   free: boolean;
   reason?: 'OUT_OF_RANGE' | 'FREE_THRESHOLD' | 'OK';
+  /** Part « supplement samedi » incluse dans feeHT (0 sinon). */
+  saturdaySurchargeHT: number;
 }
 
 /**
  * Frais de livraison a partir de la distance routiere depot -> client.
  * `rentalHT` sert a appliquer la franchise (livraison offerte au-dela d'un montant).
+ * `deliveryDate` : si c'est un samedi et qu'un supplement est configure, il est
+ * ajoute a feeHT — meme quand la livraison serait offerte (franchise).
  */
 export function computeDeliveryFee(
   distanceKm: number,
   cfg: DeliveryConfig,
   rentalHT = 0,
+  deliveryDate?: Date | string,
 ): DeliveryQuote {
   const km = Math.max(0, round2(distanceKm));
   if (cfg.maxKm > 0 && km > cfg.maxKm) {
-    return { served: false, distanceKm: km, feeHT: 0, free: false, reason: 'OUT_OF_RANGE' };
+    return { served: false, distanceKm: km, feeHT: 0, free: false, reason: 'OUT_OF_RANGE', saturdaySurchargeHT: 0 };
   }
+
+  const isSaturday = deliveryDate != null && toDate(deliveryDate).getDay() === 6;
+  const surcharge = isSaturday ? Math.max(0, round2(cfg.saturdaySurchargeHT ?? 0)) : 0;
 
   let feeHT: number;
   if (cfg.mode === 'PER_KM') {
@@ -264,15 +290,15 @@ export function computeDeliveryFee(
     const sorted = [...cfg.brackets].sort((a, b) => a.maxKm - b.maxKm);
     const hit = sorted.find((b) => km <= b.maxKm);
     if (!hit) {
-      return { served: false, distanceKm: km, feeHT: 0, free: false, reason: 'OUT_OF_RANGE' };
+      return { served: false, distanceKm: km, feeHT: 0, free: false, reason: 'OUT_OF_RANGE', saturdaySurchargeHT: 0 };
     }
     feeHT = round2(hit.feeHT);
   }
 
   if (cfg.freeThresholdHT > 0 && rentalHT >= cfg.freeThresholdHT) {
-    return { served: true, distanceKm: km, feeHT: 0, free: true, reason: 'FREE_THRESHOLD' };
+    return { served: true, distanceKm: km, feeHT: surcharge, free: surcharge === 0, reason: 'FREE_THRESHOLD', saturdaySurchargeHT: surcharge };
   }
-  return { served: true, distanceKm: km, feeHT, free: false, reason: 'OK' };
+  return { served: true, distanceKm: km, feeHT: round2(feeHT + surcharge), free: false, reason: 'OK', saturdaySurchargeHT: surcharge };
 }
 
 /** Distance a vol d'oiseau (km) entre deux points WGS84. */

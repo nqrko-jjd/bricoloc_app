@@ -88,12 +88,28 @@ export async function computeDeliveryFee(
   address: QuoteInput['deliveryAddress'],
   rentalHT: number,
   settings: AppSettings,
-): Promise<{ feeHT: number; reason: string; served: boolean; distanceKm?: number }> {
+  deliveryDate?: Date | null,
+): Promise<{
+  feeHT: number;
+  reason: string;
+  served: boolean;
+  distanceKm?: number;
+  saturdaySurchargeHT?: number;
+}> {
   const base = Number(settings.deliveryBaseFee ?? 25);
+  const isSaturday = deliveryDate != null && new Date(deliveryDate).getDay() === 6;
+  const satSurcharge = isSaturday
+    ? Math.max(0, Number((settings.delivery as Record<string, unknown>)?.saturdaySurchargeHT ?? 0))
+    : 0;
   if (!address || (!address.postalCode && !address.line1)) {
-    return { feeHT: base, reason: 'Adresse incomplète — tarif provisoire', served: true };
+    return {
+      feeHT: round2(base + satSurcharge),
+      reason: 'Adresse incomplète — tarif provisoire',
+      served: true,
+      saturdaySurchargeHT: satSurcharge,
+    };
   }
-  const q = await quoteDelivery(address, rentalHT);
+  const q = await quoteDelivery(address, rentalHT, deliveryDate ?? undefined);
   if (!q.geocoded) {
     return { feeHT: base, reason: 'Adresse non localisée — tarif provisoire', served: true };
   }
@@ -105,19 +121,22 @@ export async function computeDeliveryFee(
       reason: `Hors zone de livraison (${q.distanceKm} km du dépôt). Contactez-nous pour un devis.`,
     };
   }
+  const satTxt = q.saturdaySurchargeHT ? ` + ${q.saturdaySurchargeHT} € samedi` : '';
   if (q.free) {
     return {
-      feeHT: 0,
+      feeHT: round2(q.feeHT), // 0, sauf supplément samedi
       served: true,
       distanceKm: q.distanceKm,
-      reason: `Livraison offerte (${q.distanceKm} km, franchise atteinte)`,
+      reason: `Livraison offerte (${q.distanceKm} km, franchise atteinte)${satTxt}`,
+      saturdaySurchargeHT: q.saturdaySurchargeHT,
     };
   }
   return {
     feeHT: round2(q.feeHT),
     served: true,
     distanceKm: q.distanceKm,
-    reason: `Livraison ${q.distanceKm} km depuis le dépôt`,
+    reason: `Livraison ${q.distanceKm} km depuis le dépôt${satTxt}`,
+    saturdaySurchargeHT: q.saturdaySurchargeHT,
   };
 }
 
@@ -236,6 +255,7 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
 
   // « Pack composé » : machines libres choisies par le client (hors BricoPack
   // curaté, hors Loiselet). Les machines incluses dans un pack ne comptent pas.
+  // Les lignes facturées au tarif WEEK-END sont déjà une promo → pas de cumul.
   const eligible = built
     .filter(
       (b) =>
@@ -243,7 +263,8 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
         !b.input.product.isConsumable &&
         b.input.product.supplier !== 'LOISELET',
     )
-    .flatMap((b) => b.out);
+    .flatMap((b) => b.out)
+    .filter((l) => l.appliedRule !== 'WEEKEND');
   const composedPack = computeComposedPackDiscount(
     eligible.reduce((a, l) => a + l.quantity, 0),
     round2(eligible.reduce((a, l) => a + l.lineHT, 0)),
@@ -253,7 +274,7 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
   let deliveryFeeHT = 0;
   let deliveryReason: string | undefined;
   if (input.fulfilmentMode === 'DELIVERY') {
-    const d = await computeDeliveryFee(input.deliveryAddress, rentalHT, settings);
+    const d = await computeDeliveryFee(input.deliveryAddress, rentalHT, settings, input.periodStart);
     deliveryFeeHT = d.feeHT;
     deliveryReason = d.reason;
   }
@@ -346,6 +367,7 @@ export async function recomputeReservation(
 
   let rentalHT = 0;
   let depositsTotal = 0;
+  const weekendItemIds = new Set<string>();
 
   for (const item of r.items) {
     const start = item.periodStart ?? r.periodStart;
@@ -393,6 +415,7 @@ export async function recomputeReservation(
       item.product.kind === 'PACK'
         ? round2(packDeposit.get(item.productId) ?? 0)
         : item.product.deposit;
+    if (p.appliedRule === 'WEEKEND') weekendItemIds.add(item.id);
     await prisma.reservationItem.update({
       where: { id: item.id },
       data: {
@@ -412,7 +435,12 @@ export async function recomputeReservation(
 
   let deliveryFeeHT = 0;
   if (r.fulfilmentMode === 'DELIVERY') {
-    const d = await computeDeliveryFee(r.address as QuoteInput['deliveryAddress'], rentalHT, settings);
+    const d = await computeDeliveryFee(
+      r.address as QuoteInput['deliveryAddress'],
+      rentalHT,
+      settings,
+      r.periodStart,
+    );
     deliveryFeeHT = d.feeHT;
   }
 
@@ -423,12 +451,14 @@ export async function recomputeReservation(
   const extraFeesHT = round2(opts.extraFeesHT ?? Number(prev.extraFeesHT ?? 0));
 
   // Recalcule le « pack composé » sur les lignes actuelles.
+  // Lignes au tarif week-end exclues (déjà une promo → pas de cumul).
   const eligible = r.items.filter(
     (it) =>
       it.product.kind === 'MACHINE' &&
       !it.packRef &&
       !it.product.isConsumable &&
-      it.product.supplier !== 'LOISELET',
+      it.product.supplier !== 'LOISELET' &&
+      !weekendItemIds.has(it.id),
   );
   const composed = computeComposedPackDiscount(
     eligible.reduce((a, it) => a + it.quantity, 0),

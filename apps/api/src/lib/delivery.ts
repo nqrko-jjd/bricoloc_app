@@ -20,6 +20,7 @@ function toConfig(s: Record<string, unknown>): DeliveryConfig {
     perKmHT: Number(d.perKmHT ?? 1.2),
     maxKm: Number(d.maxKm ?? 50),
     freeThresholdHT: Number(d.freeThresholdHT ?? 350),
+    saturdaySurchargeHT: Number(d.saturdaySurchargeHT ?? 0),
   };
 }
 
@@ -30,6 +31,7 @@ function toConfig(s: Record<string, unknown>): DeliveryConfig {
 export async function quoteDelivery(
   address: AddressInput,
   rentalHT = 0,
+  deliveryDate?: Date | string,
 ): Promise<DeliveryQuoteResult> {
   const s = await getSettings();
   const cfg = toConfig(s);
@@ -42,11 +44,12 @@ export async function quoteDelivery(
       feeHT: 0,
       free: false,
       reason: 'OUT_OF_RANGE',
+      saturdaySurchargeHT: 0,
       geocoded: false,
     };
   }
   const depot = await depotPoint();
   const km = await roadDistanceKm(depot, point);
-  const quote = computeDeliveryFee(km, cfg, rentalHT);
+  const quote = computeDeliveryFee(km, cfg, rentalHT, deliveryDate);
   return { ...quote, geocoded: true, address: point.displayName };
 }

@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { useCart } from '@/lib/providers';
 import { fromLocalInput, toLocalInput, defaultPeriod } from '@/lib/dates';
+import { WeekendOfferNote } from '@/components/WeekendOfferNote';
 
 export function HomeDatePicker() {
   const { setPeriod, setFulfilment } = useCart();
@@ -41,6 +42,7 @@ export function HomeDatePicker() {
           <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
         </div>
       </div>
+      <WeekendOfferNote start={start} end={end} />
       <div className="field">
         <label>{t('modeLabel')}</label>
         <select value={mode} onChange={(e) => setMode(e.target.value as 'PICKUP' | 'DELIVERY')}>

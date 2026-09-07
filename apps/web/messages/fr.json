@@ -152,7 +152,8 @@
     "modeDelivery": "Livraison à domicile / chantier",
     "submit": "Voir les machines disponibles",
     "skip": "Je préfère d'abord choisir mes outils",
-    "note": "Vos dates restent mémorisées sur le site, l'appli mobile et la borne."
+    "note": "Vos dates restent mémorisées sur le site, l'appli mobile et la borne.",
+    "weekendOffer": "Offre week-end : retrait vendredi ou samedi, retour lundi matin — une seule journée facturée."
   },
   "home": {
     "heroEyebrow": "C'est BRICOLOC",

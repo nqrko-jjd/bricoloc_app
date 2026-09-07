@@ -6,6 +6,7 @@ import type { Availability, ProductDetail } from '@/lib/types';
 import { useCart } from '@/lib/providers';
 import { usePriceDisplay } from '@/lib/usePriceDisplay';
 import { AvailabilityBadge } from './AvailabilityBadge';
+import { WeekendOfferNote } from './WeekendOfferNote';
 
 function daysBetween(startIso: string, endIso: string): number {
   const ms = new Date(endIso).getTime() - new Date(startIso).getTime();
@@ -101,6 +102,9 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
           {product.weekPrice ? formatEUR(display(product.weekPrice)) : '—'} · Caution{' '}
           {formatEUR(product.deposit)}
         </p>
+      )}
+      {!product.isConsumable && (
+        <WeekendOfferNote start={cart?.period?.start} end={cart?.period?.end} />
       )}
 
       {sortedTiers.length > 0 && (

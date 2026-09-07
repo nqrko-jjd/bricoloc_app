@@ -199,7 +199,8 @@
     "modeDelivery": "Home delivery / delivery to site",
     "submit": "View available machines",
     "skip": "I prefer to choose my tools first",
-    "note": "Your dates are saved on the website, the mobile app and the kiosk."
+    "note": "Your dates are saved on the website, the mobile app and the kiosk.",
+    "weekendOffer": "Weekend deal: pick up Friday or Saturday, return Monday morning — only one day charged."
   },
   "product": {
     "breadcrumbCatalogue": "Catalogue",

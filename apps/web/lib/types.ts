@@ -264,8 +264,10 @@ export interface PublicConfig {
   currency: string;
   minLeadTimeHours: number;
   sameDayCutoffHour: number;
+  weekend?: { enabled: boolean; returnGraceHour: number };
   deliveryBaseFee: number;
   deliveryFreeThreshold: number;
+  deliverySaturdaySurchargeHT?: number;
   demo: boolean;
   homeShowBrand?: boolean;
   homeShowBadges?: boolean;

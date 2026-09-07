@@ -592,6 +592,14 @@ button { font-family: inherit; }
 .alert-err { background: var(--err-bg); color: var(--err); border-color: color-mix(in srgb, var(--err) 30%, transparent); }
 .alert-info { background: var(--info-bg); color: var(--navy); border-color: color-mix(in srgb, var(--navy) 24%, transparent); }
 
+/* Rappel « offre week-end » près de l'agenda */
+.weekend-note {
+  margin: 8px 0 0; padding: 8px 12px; border-radius: var(--r-xs);
+  font-size: 0.85rem; font-weight: 600; line-height: 1.35;
+  background: var(--ok-bg); color: var(--ok);
+  border: 1px solid color-mix(in srgb, var(--ok) 26%, transparent);
+}
+
 .demo-ribbon {
   background: var(--yellow-tint);
   color: #7a5b00; font-size: 0.76rem; font-weight: 700; text-align: center; padding: 5px;

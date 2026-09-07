@@ -9,6 +9,7 @@ import { CartSummary } from '@/components/CartSummary';
 import { IdDocument } from '@/components/IdDocument';
 import { Steps } from '@/components/Steps';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
+import { WeekendOfferNote } from '@/components/WeekendOfferNote';
 import { fromLocalInput, toLocalInput, defaultPeriod } from '@/lib/dates';
 
 type Phase = 'dates' | 'fulfil' | 'account' | 'identity' | 'review' | 'pay' | 'done';
@@ -81,6 +82,7 @@ export default function CommandePage() {
     feeHT: number;
     free: boolean;
     geocoded: boolean;
+    saturdaySurchargeHT?: number;
   } | null>(null);
   const [quoting, setQuoting] = useState(false);
 
@@ -134,6 +136,7 @@ export default function CommandePage() {
             city: addr.city,
             country: 'BE',
             rentalHT: cart?.quote?.totals?.rentalHT ?? 0,
+            date: fromLocalInput(start),
           },
         });
         setDelivQuote(q as typeof delivQuote);
@@ -144,7 +147,7 @@ export default function CommandePage() {
       }
     }, 500);
     return () => clearTimeout(id);
-  }, [mode, addr.line1, addr.postalCode, addr.city, cart?.quote?.totals?.rentalHT]);
+  }, [mode, addr.line1, addr.postalCode, addr.city, cart?.quote?.totals?.rentalHT, start]);
 
   // Étape identité : passe directement à la vérif si la pièce est déjà fournie.
   // (doit rester AVANT les `return` conditionnels ci-dessous — règle des Hooks :
@@ -466,6 +469,7 @@ export default function CommandePage() {
                   />
                 </div>
               </div>
+              <WeekendOfferNote start={start} end={end} />
               <button className="btn btn-primary" onClick={saveDates} disabled={busy}>
                 Continuer
               </button>
@@ -590,12 +594,19 @@ export default function CommandePage() {
                     >
                       {!delivQuote.served ? (
                         <>Hors zone de livraison ({delivQuote.distanceKm} km du dépôt). Contactez-nous pour un devis.</>
-                      ) : delivQuote.free ? (
+                      ) : delivQuote.free && !delivQuote.saturdaySurchargeHT ? (
                         <>Livraison offerte 🎉 ({delivQuote.distanceKm} km — franchise atteinte)</>
                       ) : (
                         <>
                           Livraison : <strong>{formatEUR(delivQuote.feeHT)}</strong> HTVA —{' '}
                           {delivQuote.distanceKm} km depuis le dépôt
+                          {delivQuote.saturdaySurchargeHT ? (
+                            <>
+                              {' '}
+                              (dont {formatEUR(delivQuote.saturdaySurchargeHT)} supplément livraison
+                              samedi{delivQuote.free ? ', franchise sinon atteinte' : ''})
+                            </>
+                          ) : null}
                         </>
                       )}
                     </div>

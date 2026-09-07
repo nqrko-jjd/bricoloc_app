@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   computeBilledDays,
   computeCartTotals,
+  computeDeliveryFee,
   computeLateFee,
   computeRentalPrice,
   isWeekendRule,
@@ -146,4 +147,27 @@ test('suggestDegressivePricing: grille Option A + courbe cohérente', () => {
     settings,
   });
   assert.equal(four.grossUnitPrice, 54); // 20+20+7+7
+});
+
+test('computeDeliveryFee: supplément samedi ajouté, même si franchise atteinte', () => {
+  const cfg = {
+    mode: 'BRACKETS' as const,
+    brackets: [{ maxKm: 20, feeHT: 30 }],
+    baseFeeHT: 20,
+    perKmHT: 1.2,
+    maxKm: 50,
+    freeThresholdHT: 300,
+    saturdaySurchargeHT: 25,
+  };
+  const sat = new Date('2026-03-07T09:00:00'); // samedi
+  const tue = new Date('2026-03-10T09:00:00'); // mardi
+
+  assert.equal(computeDeliveryFee(10, cfg, 0, tue).feeHT, 30);
+  assert.equal(computeDeliveryFee(10, cfg, 0, sat).feeHT, 55); // 30 + 25
+  assert.equal(computeDeliveryFee(10, cfg, 0, sat).saturdaySurchargeHT, 25);
+
+  // Franchise atteinte : livraison "offerte" mais le supplément samedi reste.
+  const free = computeDeliveryFee(10, cfg, 400, sat);
+  assert.equal(free.feeHT, 25);
+  assert.equal(free.free, false);
 });

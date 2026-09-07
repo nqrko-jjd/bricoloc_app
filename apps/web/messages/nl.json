@@ -199,7 +199,8 @@
     "modeDelivery": "Levering aan huis / op de bouwplaats",
     "submit": "Bekijk de beschikbare machines",
     "skip": "Ik kies liever eerst mijn gereedschap",
-    "note": "Uw data blijven opgeslagen op de website, in de mobiele app en op de terminal."
+    "note": "Uw data blijven opgeslagen op de website, in de mobiele app en op de terminal.",
+    "weekendOffer": "Weekendaanbod: afhalen vrijdag of zaterdag, terug maandagochtend — slechts één dag aangerekend."
   },
   "product": {
     "breadcrumbCatalogue": "Catalogus",

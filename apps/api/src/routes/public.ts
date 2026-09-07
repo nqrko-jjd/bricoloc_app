@@ -21,6 +21,10 @@ publicRouter.get(
       currency: s.currency,
       minLeadTimeHours: s.minLeadTimeHours,
       sameDayCutoffHour: s.sameDayCutoffHour,
+      weekend: {
+        enabled: Boolean(s.weekendRuleEnabled ?? true),
+        returnGraceHour: Number(s.weekendReturnGraceHour ?? 10),
+      },
       pickup: (() => {
         const p = (s.pickup ?? {}) as Record<string, unknown>;
         const days = Array.isArray(p.days) ? (p.days as unknown[]).map(Number).filter((n) => n >= 0 && n <= 6) : [];
@@ -34,6 +38,9 @@ publicRouter.get(
       })(),
       deliveryBaseFee: s.deliveryBaseFee,
       deliveryFreeThreshold: s.deliveryFreeThreshold,
+      deliverySaturdaySurchargeHT: Number(
+        (s.delivery as Record<string, unknown>)?.saturdaySurchargeHT ?? 0,
+      ),
       pickupPoints: (Array.isArray(s.pickupPoints) ? s.pickupPoints : [])
         .filter((p: { active?: boolean }) => p.active !== false)
         .map((p: Record<string, unknown>) => ({
@@ -196,10 +203,11 @@ publicRouter.get(
 publicRouter.post(
   '/delivery/quote',
   h(async (req, res) => {
-    const { line1, line2, postalCode, city, country, rentalHT } = req.body ?? {};
+    const { line1, line2, postalCode, city, country, rentalHT, date } = req.body ?? {};
     const quote = await quoteDelivery(
       { line1, line2, postalCode, city, country },
       Number(rentalHT) || 0,
+      typeof date === 'string' && date ? date : undefined,
     );
     res.json(quote);
   }),

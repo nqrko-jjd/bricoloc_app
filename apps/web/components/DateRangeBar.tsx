@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { formatDateTimeBE } from '@bricoloc/shared';
 import { useCart } from '@/lib/providers';
 import { fromLocalInput, toLocalInput, defaultPeriod, durationLabel } from '@/lib/dates';
+import { WeekendOfferNote } from '@/components/WeekendOfferNote';
 
 /** Bandeau global rappelant la periode choisie, modifiable a tout moment. */
 export function DateRangeBar() {
@@ -84,6 +85,9 @@ export function DateRangeBar() {
             <button className="btn btn-sm" onClick={save} disabled={busy}>
               {busy ? '…' : t('apply')}
             </button>
+            <div style={{ flexBasis: '100%' }}>
+              <WeekendOfferNote start={start} end={end} />
+            </div>
             {p && (
               <button
                 className="btn btn-sm btn-ghost"

@@ -85,6 +85,9 @@ export const DEFAULT_SETTINGS = {
     freeThresholdHT: 350,
     /** Facteur applique a la distance a vol d'oiseau si le routage echoue. */
     detourFactor: 1.3,
+    /** Supplement pour une livraison le samedi (0 = pas de livraison le samedi
+     * factureee a part / pas de supplement). Jamais annule par la franchise. */
+    saturdaySurchargeHT: 25,
   },
   /**
    * Points d'enlèvement (Click & Collect). Le stock reste au point principal

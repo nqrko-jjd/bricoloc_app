@@ -14,6 +14,7 @@ interface Delivery {
   perKmHT: number;
   maxKm: number;
   freeThresholdHT: number;
+  saturdaySurchargeHT?: number;
 }
 
 export default function AdminZones() {
@@ -116,6 +117,12 @@ export default function AdminZones() {
         <label className="field small">Livraison offerte au-delà de (€ HT de location, 0 = jamais)
           <input type="number" defaultValue={d.freeThresholdHT}
             onBlur={(e) => saveDelivery({ ...d, freeThresholdHT: Number(e.target.value) })} />
+        </label>
+
+        <label className="field small">Supplément livraison le samedi (€ HT, 0 = aucun)
+          <input type="number" defaultValue={d.saturdaySurchargeHT ?? 0}
+            onBlur={(e) => saveDelivery({ ...d, saturdaySurchargeHT: Number(e.target.value) })} />
+          <span className="small muted">S'ajoute même si la livraison est offerte (franchise). Ne concerne pas l'enlèvement au dépôt.</span>
         </label>
       </div>
 
