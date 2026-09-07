@@ -51,12 +51,14 @@ export const DEFAULT_SETTINGS = {
   pickup: {
     /** Jours ouvres : 1 = lundi … 6 = samedi, 0 = dimanche. */
     days: [1, 2, 3, 4, 5, 6],
-    /** Plage horaire des creneaux d'enlevement. */
+    /** Plage horaire pendant laquelle le client peut choisir une heure d'arrivee. */
     fromHour: 8,
     toHour: 17,
-    /** Duree d'un creneau (heures). */
-    slotHours: 2,
-    note: 'Réservation obligatoire : on prépare et on vous accueille au dépôt au créneau choisi — souvent dans les 2 h le jour même.',
+    /** Intervalle entre deux heures d'arrivee proposees (minutes). Le client
+     * choisit une heure precise (8h00, 8h30…) et dispose d'environ 30 min sur
+     * place pour l'enlevement (ouverture, remise, explications). */
+    slotMinutes: 30,
+    note: 'Réservation obligatoire : pas de guichet permanent. Choisissez votre heure d\'arrivée, on vous accueille au dépôt (comptez ~30 min sur place).',
   },
   /** Frais de livraison (repli si le calcul geo echoue). */
   deliveryBaseFee: 25,

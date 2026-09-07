@@ -275,7 +275,7 @@ export interface PublicConfig {
     days: number[];
     fromHour: number;
     toHour: number;
-    slotHours: number;
+    slotMinutes: number;
     note: string;
   };
 }

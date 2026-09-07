@@ -60,19 +60,23 @@ export default function CommandePage() {
     days: number[];
     fromHour: number;
     toHour: number;
-    slotHours: number;
+    slotMinutes: number;
     note: string;
   } | null>(null);
   const pickupPoint = pickupPoints.find((p) => p.id === pickupPointId) ?? pickupPoints[0];
 
-  // Créneaux d'enlèvement possibles pour la date de début de location.
+  // Heures d'arrivée proposées pour la date de début de location : le client
+  // choisit une heure précise (8h00, 8h30…), pas une fenêtre.
   const pickupSlots = useMemo(() => {
     if (!pickupCfg) return [];
     const day = start ? new Date(start).getDay() : new Date().getDay();
     if (!pickupCfg.days.includes(day)) return [];
+    const step = Math.max(15, pickupCfg.slotMinutes || 30);
     const out: string[] = [];
-    for (let h = pickupCfg.fromHour; h + pickupCfg.slotHours <= pickupCfg.toHour; h += pickupCfg.slotHours) {
-      out.push(`${h}h – ${h + pickupCfg.slotHours}h`);
+    for (let m = pickupCfg.fromHour * 60; m + step <= pickupCfg.toHour * 60; m += step) {
+      const h = Math.floor(m / 60);
+      const mm = m % 60;
+      out.push(`${h}h${mm === 0 ? '00' : String(mm).padStart(2, '0')}`);
     }
     return out;
   }, [pickupCfg, start]);
@@ -289,7 +293,7 @@ export default function CommandePage() {
           return;
         }
         if (!pickupSlots.includes(slot)) {
-          setError('Choisissez un créneau d’enlèvement.');
+          setError('Choisissez votre heure d’arrivée au dépôt.');
           setBusy(false);
           return;
         }
@@ -515,7 +519,7 @@ export default function CommandePage() {
                           <span className="small" style={{ display: 'block', color: 'var(--primary)' }}>
                             {p.transferHours > 0
                               ? `Prêt sous ${p.transferHours} h (acheminé depuis le dépôt)`
-                              : 'Prêt en 2 h après réservation, au créneau choisi'}
+                              : 'Prêt en 2 h après réservation, à l’heure d’arrivée choisie'}
                           </span>
                         </span>
                       </label>
@@ -527,13 +531,13 @@ export default function CommandePage() {
               {mode === 'PICKUP' && (
                 <div className="stack" style={{ gap: 8 }}>
                   <div className="field">
-                    <label>Créneau d’enlèvement — le {new Date(start).toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' })}</label>
+                    <label>Heure d’arrivée au dépôt — le {new Date(start).toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' })}</label>
                     {pickupSlots.length > 0 ? (
                       <select value={slot} onChange={(e) => setSlot(e.target.value)}>
-                        <option value="">— Choisir un créneau —</option>
+                        <option value="">— Choisir une heure —</option>
                         {pickupSlots.map((s) => (
                           <option key={s} value={s}>
-                            {s}
+                            J’arrive à {s}
                           </option>
                         ))}
                       </select>
@@ -777,7 +781,7 @@ export default function CommandePage() {
               <p>
                 <strong>{mode === 'PICKUP' ? 'Enlèvement au dépôt' : 'Livraison'}</strong>
                 {mode === 'DELIVERY' && ` — ${addr.line1}, ${addr.postalCode} ${addr.city} (${slot})`}
-                {mode === 'PICKUP' && slot && ` — créneau ${slot}`}
+                {mode === 'PICKUP' && slot && ` — arrivée à ${slot}`}
               </p>
               <p>
                 <strong>Contact :</strong>{' '}

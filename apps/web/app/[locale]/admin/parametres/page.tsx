@@ -316,17 +316,19 @@ export default function AdminParametres() {
       </div>
 
       <div className="card card-pad stack">
-        <h3>Enlèvement au dépôt — créneaux</h3>
+        <h3>Enlèvement au dépôt — heures d’arrivée</h3>
         <p className="small muted">
-          Bricoloc n’a pas de guichet permanent : le client choisit un créneau d’enlèvement au
-          checkout, dans ces jours et heures d’ouverture.
+          Bricoloc n’a pas de guichet permanent : au checkout le client choisit une heure
+          d’arrivée précise (8h00, 8h30…), dans ces jours et heures d’ouverture. Quelqu’un se
+          déplace pour l’accueillir.
         </p>
         {(() => {
-          const p = (s.pickup ?? {}) as { days?: number[]; fromHour?: number; toHour?: number; slotHours?: number; note?: string };
+          const p = (s.pickup ?? {}) as { days?: number[]; fromHour?: number; toHour?: number; slotMinutes?: number; slotHours?: number; note?: string };
           const days = Array.isArray(p.days) && p.days.length ? p.days : [1, 2, 3, 4, 5, 6];
+          const slotMinutes = p.slotMinutes ?? (p.slotHours ? p.slotHours * 60 : 30);
           const DAY_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
           const patch = (next: Record<string, unknown>) =>
-            save('pickup', { days, fromHour: p.fromHour ?? 8, toHour: p.toHour ?? 17, slotHours: p.slotHours ?? 2, note: p.note ?? '', ...next });
+            save('pickup', { days, fromHour: p.fromHour ?? 8, toHour: p.toHour ?? 17, slotMinutes, note: p.note ?? '', ...next });
           return (
             <>
               <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
@@ -366,14 +368,18 @@ export default function AdminParametres() {
                 </label>
               </div>
               <label className="field small">
-                Durée d’un créneau (h)
+                Intervalle entre 2 heures proposées (min)
                 <input
                   type="number"
-                  min={1}
-                  max={8}
-                  defaultValue={p.slotHours ?? 2}
-                  onBlur={(e) => patch({ slotHours: Number(e.target.value) })}
+                  min={15}
+                  max={120}
+                  step={15}
+                  defaultValue={slotMinutes}
+                  onBlur={(e) => patch({ slotMinutes: Number(e.target.value) })}
                 />
+                <span className="small muted">
+                  30 = arrivées à 8h00, 8h30, 9h00… · 60 = toutes les heures.
+                </span>
               </label>
               <label className="field small">
                 Message affiché au client (checkout)

@@ -32,7 +32,8 @@ publicRouter.get(
           days: days.length ? days : [1, 2, 3, 4, 5, 6],
           fromHour: Number(p.fromHour ?? 8),
           toHour: Number(p.toHour ?? 17),
-          slotHours: Number(p.slotHours ?? 2),
+          // rétro-compat : ancien réglage `slotHours` (fenêtres) → minutes.
+          slotMinutes: Number(p.slotMinutes ?? (p.slotHours ? Number(p.slotHours) * 60 : 30)),
           note: typeof p.note === 'string' ? p.note : '',
         };
       })(),
