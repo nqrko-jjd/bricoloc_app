@@ -2616,7 +2616,7 @@ button { font-family: inherit; }
 }
 @media (max-width: 800px) { .bp-bottom { grid-template-columns: 1fr; gap: 28px; } }
 .bp-bottom svg { width: 30px; height: 30px; color: #fff; opacity: 0.9; }
-.bp-bottom h3 { font-size: 18px; font-weight: 900; letter-spacing: -0.02em; margin: 12px 0 6px; }
+.bp-bottom h3 { color: #fff; font-size: 18px; font-weight: 900; letter-spacing: -0.02em; margin: 12px 0 6px; }
 .bp-bottom p { color: #c9c8ec; font-size: 13.5px; line-height: 1.55; margin: 0; }
 
 /* ---- Composez votre pack (remise multi-machines) ---- */

@@ -47,7 +47,10 @@ COPY apps/api/package.json ./package.json
 COPY apps/api/prisma ./prisma
 COPY apps/api/scripts ./scripts
 
-RUN mkdir -p uploads && chown -R node:node /repo
+# `private` : volume Docker distinct (pièces d'identité) — doit exister et
+# appartenir à `node` AVANT le montage du volume nommé, sinon Docker crée un
+# dossier vide root:root et l'API (user node) ne peut plus y écrire (EACCES).
+RUN mkdir -p uploads private && chown -R node:node /repo
 USER node
 
 EXPOSE 4000
