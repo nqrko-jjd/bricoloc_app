@@ -1652,14 +1652,12 @@ button { font-family: inherit; }
   position: absolute; top: 50%; left: 6vw; transform: translateY(-50%);
   z-index: 2; max-width: 720px;
 }
-.chero__text > * { animation: chero-in 0.7s var(--ease-out) backwards; }
-.chero__text > *:nth-child(1) { animation-delay: 0.05s; }
-.chero__text > *:nth-child(2) { animation-delay: 0.14s; }
-.chero__text > *:nth-child(3) { animation-delay: 0.23s; }
-.chero__text > *:nth-child(4) { animation-delay: 0.32s; }
-@keyframes chero-in { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+/* Pas d'animation d'apparition sur le titre d'accueil : c'est le tout premier
+   contenu vu (au-dessus de la ligne de flottaison) — un fondu retardé par
+   enfant crée une fenêtre où le texte est visible « à mi-fondu » (donc pas
+   encore blanc plein) sur un chargement un peu lent, perçu comme un voile
+   opaque sur le texte. Le titre doit être là instantanément. */
 @media (prefers-reduced-motion: reduce) {
-  .chero__text > * { animation: none; }
   .chero__img { animation: none; }
 }
 .chero__text h1 { color: #fff; margin: 20px 0; }
