@@ -16,7 +16,6 @@
  * Idempotent-ish : NE PAS relancer sans --dry après un apply (rediviserait).
  */
 import '../src/env.js';
-import { suggestDegressivePricing } from '@bricoloc/shared';
 import { prisma } from '../src/db.js';
 import { getSettings } from '../src/lib/settings.js';
 
@@ -27,6 +26,9 @@ const scope = new Set(
 );
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+/** 4 décimales : garde assez de précision pour que ×(1+TVA) ré-affiche le
+ * chiffre TTC rond de la table (ex. 5 € → 4,1322 → 5,00 € TTC). */
+const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
 async function main() {
   const s = await getSettings();
@@ -57,24 +59,33 @@ async function main() {
   let done = 0;
   const perKind: Record<string, number> = {};
   for (const p of rows) {
-    const newDaily = r2(p.dailyPrice / div);
-    const newWeekend = p.weekendPrice != null ? r2(p.weekendPrice / div) : null;
+    // Le chiffre stocké EST le TTC voulu → on retrouve le HTVA en divisant.
+    const newDaily = r4(p.dailyPrice / div);
+    const newWeekend = p.weekendPrice != null ? r4(p.weekendPrice / div) : null;
 
     let newWeek: number | null;
     let newMonth: number | null;
     let newTiers: unknown;
     if (p.kind === 'MACHINE') {
-      const g = suggestDegressivePricing(newDaily);
-      const exWeek = p.weekPrice != null ? r2(p.weekPrice / div) : Infinity;
-      const exMonth = p.monthPrice != null ? r2(p.monthPrice / div) : Infinity;
-      newWeek = Math.min(exWeek, g.weekPrice);
-      newMonth = Math.min(exMonth, g.monthPrice);
-      newTiers = g.tiers;
+      // Grille « Option A » calculée sur le TTC (chiffres ronds pour le client),
+      // puis stockée en HTVA. Jamais au-dessus d'un forfait déjà meilleur.
+      const dTTC = p.dailyPrice;
+      const gWeekTTC = Math.round(dTTC * 3.5);
+      const gMonthTTC = Math.round(dTTC * 12);
+      const g3TTC = dTTC >= 4 ? Math.round(dTTC * 0.35 * 2) / 2 : r2(dTTC * 0.35);
+      const exWeekTTC = p.weekPrice ?? Infinity;
+      const exMonthTTC = p.monthPrice ?? Infinity;
+      newWeek = r4(Math.min(exWeekTTC, gWeekTTC) / div);
+      newMonth = r4(Math.min(exMonthTTC, gMonthTTC) / div);
+      newTiers = [
+        { minDays: 1, perDay: newDaily },
+        { minDays: 3, perDay: r4(g3TTC / div) },
+      ];
     } else {
-      newWeek = p.weekPrice != null ? r2(p.weekPrice / div) : null;
-      newMonth = p.monthPrice != null ? r2(p.monthPrice / div) : null;
+      newWeek = p.weekPrice != null ? r4(p.weekPrice / div) : null;
+      newMonth = p.monthPrice != null ? r4(p.monthPrice / div) : null;
       newTiers = Array.isArray(p.tiers)
-        ? (p.tiers as { minDays: number; perDay: number }[]).map((t) => ({ ...t, perDay: r2(t.perDay / div) }))
+        ? (p.tiers as { minDays: number; perDay: number }[]).map((t) => ({ ...t, perDay: r4(t.perDay / div) }))
         : p.tiers;
     }
 
