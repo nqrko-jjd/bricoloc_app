@@ -63,22 +63,47 @@ export default function CommandePage() {
     slotMinutes: number;
     note: string;
   } | null>(null);
+  const [minLeadHours, setMinLeadHours] = useState(2);
+  const [deliveryLeadDays, setDeliveryLeadDays] = useState(1);
   const pickupPoint = pickupPoints.find((p) => p.id === pickupPointId) ?? pickupPoints[0];
 
   // Heures d'arrivée proposées pour la date de début de location : le client
   // choisit une heure précise (8h00, 8h30…), pas une fenêtre.
   const pickupSlots = useMemo(() => {
     if (!pickupCfg) return [];
-    const day = start ? new Date(start).getDay() : new Date().getDay();
+    const startDate = start ? new Date(start) : new Date();
+    const day = startDate.getDay();
     if (!pickupCfg.days.includes(day)) return [];
     const step = Math.max(15, pickupCfg.slotMinutes || 30);
+    // Le jour même : plus tôt que « maintenant + délai de préparation » = indisponible.
+    const now = new Date();
+    const isToday = startDate.toDateString() === now.toDateString();
+    const earliestMin = isToday
+      ? Math.ceil((now.getHours() * 60 + now.getMinutes() + minLeadHours * 60) / step) * step
+      : 0;
     const out: string[] = [];
     for (let m = pickupCfg.fromHour * 60; m + step <= pickupCfg.toHour * 60; m += step) {
+      if (m < earliestMin) continue;
       const h = Math.floor(m / 60);
       const mm = m % 60;
       out.push(`${h}h${mm === 0 ? '00' : String(mm).padStart(2, '0')}`);
     }
     return out;
+  }, [pickupCfg, start, minLeadHours]);
+
+  // Livraison : jamais le jour même (pour l'instant).
+  const deliveryEarliest = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + Math.max(0, deliveryLeadDays));
+    return d;
+  }, [deliveryLeadDays]);
+  const deliveryTooSoon =
+    mode === 'DELIVERY' && !!start && deliveryLeadDays > 0 && new Date(start) < deliveryEarliest;
+  // Enlèvement : jour de dépôt fermé, ou aujourd'hui mais plus aucun créneau (délai de prépa).
+  const pickupDayClosed = useMemo(() => {
+    if (!pickupCfg || !start) return false;
+    return !pickupCfg.days.includes(new Date(start).getDay());
   }, [pickupCfg, start]);
   const [delivQuote, setDelivQuote] = useState<{
     served: boolean;
@@ -112,6 +137,8 @@ export default function CommandePage() {
       pickupPoints?: typeof pickupPoints;
       paymentProvider?: 'mock' | 'mollie';
       pickup?: typeof pickupCfg;
+      minLeadTimeHours?: number;
+      deliveryMinLeadDays?: number;
     }>('/api/public/config')
       .then((c) => {
         const pts = c.pickupPoints ?? [];
@@ -119,6 +146,8 @@ export default function CommandePage() {
         setPickupPointId(pts.find((p) => p.isMain)?.id ?? pts[0]?.id ?? '');
         setPayProvider(c.paymentProvider === 'mollie' ? 'mollie' : 'mock');
         if (c.pickup) setPickupCfg(c.pickup);
+        if (typeof c.minLeadTimeHours === 'number') setMinLeadHours(c.minLeadTimeHours);
+        if (typeof c.deliveryMinLeadDays === 'number') setDeliveryLeadDays(c.deliveryMinLeadDays);
       })
       .catch(() => undefined);
   }, []);
@@ -264,6 +293,15 @@ export default function CommandePage() {
     setError('');
     try {
       if (mode === 'DELIVERY') {
+        if (deliveryTooSoon) {
+          setError(
+            deliveryLeadDays === 1
+              ? 'La livraison n’est pas assurée le jour même. Revenez à l’étape 1 et choisissez au minimum demain.'
+              : `La livraison demande au moins ${deliveryLeadDays} jours. Choisissez une date de début plus tardive (étape 1).`,
+          );
+          setBusy(false);
+          return;
+        }
         if (!slot) {
           setError('Choisissez un créneau de livraison.');
           setBusy(false);
@@ -543,8 +581,9 @@ export default function CommandePage() {
                       </select>
                     ) : (
                       <p className="small alert alert-warn" style={{ margin: 0 }}>
-                        Le dépôt est fermé ce jour-là. Revenez à l’étape 1 pour choisir une autre
-                        date de début.
+                        {pickupDayClosed
+                          ? 'Le dépôt est fermé ce jour-là. Revenez à l’étape 1 pour choisir une autre date de début.'
+                          : `Plus d’heure disponible aujourd’hui (préparation ${minLeadHours} h avant l’enlèvement). Revenez à l’étape 1 et choisissez une date à partir de demain.`}
                       </p>
                     )}
                   </div>
@@ -558,6 +597,13 @@ export default function CommandePage() {
 
               {mode === 'DELIVERY' && (
                 <div className="stack">
+                  {deliveryTooSoon && (
+                    <p className="small alert alert-warn" style={{ margin: 0 }}>
+                      La livraison n’est pas assurée le jour même. Revenez à l’étape 1 et choisissez
+                      une date de début à partir du{' '}
+                      {deliveryEarliest.toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' })}.
+                    </p>
+                  )}
                   <div className="field">
                     <label>Adresse</label>
                     <AddressAutocomplete

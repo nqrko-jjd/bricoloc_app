@@ -20,6 +20,7 @@ publicRouter.get(
       vatRate: s.vatRate,
       currency: s.currency,
       minLeadTimeHours: s.minLeadTimeHours,
+      deliveryMinLeadDays: Number(s.deliveryMinLeadDays ?? 1),
       sameDayCutoffHour: s.sameDayCutoffHour,
       weekend: {
         enabled: Boolean(s.weekendRuleEnabled ?? true),

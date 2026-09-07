@@ -263,6 +263,7 @@ export interface PublicConfig {
   vatRate: number;
   currency: string;
   minLeadTimeHours: number;
+  deliveryMinLeadDays?: number;
   sameDayCutoffHour: number;
   weekend?: { enabled: boolean; returnGraceHour: number };
   deliveryBaseFee: number;

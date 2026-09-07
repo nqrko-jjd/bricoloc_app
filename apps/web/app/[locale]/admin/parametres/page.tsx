@@ -5,7 +5,8 @@ import { staffApi } from '@/lib/staff';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const NUMERIC = [
   ['vatRate', 'Taux de TVA (0-1)'],
-  ['minLeadTimeHours', 'Délai mini avant retrait (h)'],
+  ['minLeadTimeHours', 'Délai mini avant enlèvement (h) — jour même OK'],
+  ['deliveryMinLeadDays', 'Livraison : délai mini (jours) — 0 = jour même autorisé'],
   ['sameDayCutoffHour', 'Heure limite retour “même jour”'],
   ['lateFeeMultiplier', 'Multiplicateur frais de retard'],
   ['deliveryBaseFee', 'Frais de livraison de base'],

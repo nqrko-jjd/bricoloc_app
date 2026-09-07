@@ -44,8 +44,12 @@ export const DEFAULT_SETTINGS = {
   weekendReturnGraceHour: 10, // lundi avant 10h
   /** Multiplicateur applique au tarif jour pour les frais de retard. */
   lateFeeMultiplier: 1.5,
-  /** Delai (heures) de preparation minimal avant un retrait. */
+  /** Delai (heures) de preparation minimal avant un retrait (Click & Collect,
+   * le jour meme possible). */
   minLeadTimeHours: 2,
+  /** Livraison : delai minimal en jours (0 = jour meme autorise). Pour l'instant
+   * la livraison n'est jamais le jour meme -> 1. */
+  deliveryMinLeadDays: 1,
   /** Enlevement au depot : Bricoloc n'a PAS de guichet permanent, quelqu'un
    * se deplace pour chaque enlevement. Le client choisit un creneau. */
   pickup: {

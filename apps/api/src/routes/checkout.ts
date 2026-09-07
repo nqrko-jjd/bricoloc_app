@@ -103,6 +103,22 @@ checkoutRouter.post(
         `Le retrait doit etre planifie au moins ${settings.minLeadTimeHours}h a l'avance.`,
       );
     }
+    // Livraison : jamais le jour meme (deliveryMinLeadDays jours pleins d'avance).
+    if (data.fulfilment.mode === 'DELIVERY') {
+      const leadDays = Number(settings.deliveryMinLeadDays ?? 1);
+      if (leadDays > 0) {
+        const earliest = new Date();
+        earliest.setHours(0, 0, 0, 0);
+        earliest.setDate(earliest.getDate() + leadDays);
+        if (start.getTime() < earliest.getTime()) {
+          throw badRequest(
+            leadDays === 1
+              ? "La livraison n'est pas assuree le jour meme : choisissez au minimum demain."
+              : `La livraison demande au moins ${leadDays} jours : choisissez une date plus tardive.`,
+          );
+        }
+      }
+    }
 
     // Verification simultanee de toutes les lignes.
     const check = await checkMany(
