@@ -142,6 +142,9 @@ export const upsertProductSchema = z.object({
   parentProductId: z.string().nullable().optional(),
   name: z.string().min(1),
   kind: z.enum(PRODUCT_KINDS).default('MACHINE'),
+  // Marque/modèle précis : surtout utile sur une fiche technique (ex. "Makita" / "9741S").
+  brand: z.string().nullable().optional(),
+  model: z.string().nullable().optional(),
   categorySlug: z.string().optional(),
   shortDescription: z.string().optional(),
   description: z.string().optional(),

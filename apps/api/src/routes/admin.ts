@@ -291,6 +291,8 @@ adminRouter.post(
     const base = {
       name: data.name,
       kind: data.kind,
+      brand: data.brand ?? null,
+      model: data.model ?? null,
       categoryId: category?.id ?? null,
       shortDescription: data.shortDescription ?? null,
       description: data.description ?? null,
@@ -318,10 +320,12 @@ adminRouter.post(
       // supplierRef sert de réf. interne éditable pour tous les types : code
       // parc (O-XXXX) sur une machine, réf. pièce fournisseur sur le reste.
       supplierRef: data.supplierRef ?? null,
-      // Le reste (revendeur, lien, prix affiché) ne concerne que les articles
-      // achetés/revendus ; les machines LOISELET portent leur réf. partenaire
+      // Le reste (revendeur, lien, prix catalogue) ne concerne que les articles
+      // achetés/revendus ainsi que les fiches techniques (achat machine réel) ;
+      // une fiche vitrine générique (MACHINE sans parentProductId) n'a pas de
+      // revendeur propre. Les machines LOISELET portent leur réf. partenaire
       // à part (gérée à l'import).
-      ...(data.kind === 'MACHINE'
+      ...(data.kind === 'MACHINE' && !data.parentProductId
         ? {}
         : {
             partSupplier: data.partSupplier ?? null,

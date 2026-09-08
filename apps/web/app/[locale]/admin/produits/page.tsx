@@ -1,16 +1,45 @@
 'use client';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { formatEUR, suggestDegressivePricing } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { ImageDropzone } from '@/components/admin/ImageDropzone';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 import type { ProductDetail, Category } from '@/lib/types';
 
+type CreateMode = 'MACHINE' | 'TECHNICAL' | 'ACCESSORY' | 'CONSUMABLE' | 'PPE';
+
+const CREATE_TITLES: Record<CreateMode, string> = {
+  MACHINE: 'Nouvelle machine (vitrine)',
+  TECHNICAL: 'Nouvelle fiche technique',
+  ACCESSORY: 'Nouvel accessoire',
+  CONSUMABLE: 'Nouveau consommable',
+  PPE: 'Nouvelle protection (EPI)',
+};
+const EDIT_TITLES: Record<CreateMode, string> = {
+  MACHINE: 'Machine (vitrine)',
+  TECHNICAL: 'Fiche technique',
+  ACCESSORY: 'Accessoire',
+  CONSUMABLE: 'Consommable',
+  PPE: 'Protection (EPI)',
+};
+
+type KindFilter = 'CATALOG' | 'MACHINE' | 'TECHNICAL' | 'ACCESSORY' | 'CONSUMABLE' | 'PPE';
+const FILTER_LABELS: Record<KindFilter, string> = {
+  CATALOG: 'Catalogue (tout ce qui est vendable)',
+  MACHINE: 'Machines (vitrines)',
+  TECHNICAL: 'Fiches techniques',
+  ACCESSORY: 'Accessoires',
+  CONSUMABLE: 'Consommables',
+  PPE: 'Protections (EPI)',
+};
+
 const EMPTY = {
   id: '',
   slug: '',
   name: '',
   kind: 'MACHINE',
+  brand: '',
+  model: '',
   categorySlug: 'percage-demolition',
   shortDescription: '',
   description: '',
@@ -43,13 +72,16 @@ export default function AdminProduits() {
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<typeof EMPTY>(EMPTY);
-  const [editing, setEditing] = useState<string | null>(null);
+  const [mode, setMode] = useState<CreateMode | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [filter, setFilter] = useState('');
+  const [kindFilter, setKindFilter] = useState<KindFilter>('CATALOG');
   const [mergingSlug, setMergingSlug] = useState<string | null>(null);
   const [mergeTarget, setMergeTarget] = useState('');
   const [featuredIds, setFeaturedIds] = useState<string[]>([]);
   const [attachPick, setAttachPick] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
 
   async function load() {
     const [p, c, st] = await Promise.all([
@@ -90,15 +122,37 @@ export default function AdminProduits() {
 
   const dailyNum = Number(form.dailyPrice);
   const autoPricing =
-    form.kind === 'MACHINE' && dailyNum > 0 ? suggestDegressivePricing(dailyNum) : null;
+    mode === 'MACHINE' && dailyNum > 0 ? suggestDegressivePricing(dailyNum) : null;
+
+  function startCreate(m: CreateMode) {
+    setMode(m);
+    setEditingId(null);
+    setForm({ ...EMPTY, kind: m === 'TECHNICAL' ? 'MACHINE' : m });
+    setAttachPick('');
+    setMsg('');
+    requestAnimationFrame(() =>
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
+  }
+
+  function closeForm() {
+    setMode(null);
+    setEditingId(null);
+    setForm(EMPTY);
+    setAttachPick('');
+  }
 
   function edit(p: ProductDetail) {
-    setEditing(p.slug);
+    const m: CreateMode = p.parentProductId ? 'TECHNICAL' : (p.kind as CreateMode);
+    setMode(m);
+    setEditingId(p.id);
     setForm({
       id: p.id,
       slug: p.slug,
       name: p.name,
       kind: p.kind,
+      brand: p.brand ?? '',
+      model: p.model ?? '',
       categorySlug: p.category?.slug ?? '',
       shortDescription: p.shortDescription ?? '',
       description: p.description ?? '',
@@ -124,39 +178,49 @@ export default function AdminProduits() {
       supplierListPrice: p.supplierListPrice != null ? String(p.supplierListPrice) : '',
       purchasePrice: p.purchasePrice != null ? String(p.purchasePrice) : '',
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setAttachPick('');
+    requestAnimationFrame(() =>
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!mode) return;
     setMsg('');
+    const isTechnical = mode === 'TECHNICAL';
+    const isConsumable = mode === 'CONSUMABLE';
+    const isMachine = mode === 'MACHINE';
     try {
       const body = {
         id: form.id || undefined,
         slug: form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         name: form.name,
-        kind: form.kind,
-        categorySlug: form.categorySlug || undefined,
+        kind: isTechnical ? 'MACHINE' : mode,
+        brand: isTechnical ? form.brand || null : null,
+        model: isTechnical ? form.model || null : null,
+        categorySlug: isTechnical ? undefined : form.categorySlug || undefined,
         shortDescription: form.shortDescription || undefined,
         description: form.description || undefined,
-        recommendedUses: form.recommendedUses
-          ? form.recommendedUses.split('\n').filter(Boolean)
-          : [],
-        dailyPrice: Number(form.dailyPrice),
-        weekendPrice: form.weekendPrice ? Number(form.weekendPrice) : null,
-        weekPrice: form.weekPrice ? Number(form.weekPrice) : null,
-        monthPrice: form.monthPrice ? Number(form.monthPrice) : null,
-        tiers: form.tiers ? JSON.parse(form.tiers) : [],
-        deposit: Number(form.deposit),
-        published: form.published,
-        isNew: form.isNew,
+        recommendedUses:
+          !isTechnical && form.recommendedUses
+            ? form.recommendedUses.split('\n').filter(Boolean)
+            : [],
+        dailyPrice: isTechnical ? 0 : Number(form.dailyPrice),
+        weekendPrice: isTechnical || isConsumable ? null : form.weekendPrice ? Number(form.weekendPrice) : null,
+        weekPrice: isTechnical || isConsumable ? null : form.weekPrice ? Number(form.weekPrice) : null,
+        monthPrice: isTechnical || isConsumable ? null : form.monthPrice ? Number(form.monthPrice) : null,
+        tiers: isMachine && form.tiers ? JSON.parse(form.tiers) : [],
+        deposit: isTechnical ? 0 : Number(form.deposit),
+        published: isTechnical ? false : form.published,
+        isNew: isTechnical ? false : form.isNew,
         images: form.images,
-        recommendedAccessoryIds: form.recommendedAccessoryIds,
-        consumableIds: form.consumableIds,
-        ppeIds: form.ppeIds,
-        complementaryProductIds: form.complementaryProductIds,
-        stockQty: form.stockQty ? Number(form.stockQty) : null,
-        parentProductId: form.parentProductId || null,
+        recommendedAccessoryIds: isMachine ? form.recommendedAccessoryIds : [],
+        consumableIds: isMachine ? form.consumableIds : [],
+        ppeIds: isMachine ? form.ppeIds : [],
+        complementaryProductIds: isMachine ? form.complementaryProductIds : [],
+        stockQty: !isTechnical && !isMachine && form.stockQty ? Number(form.stockQty) : null,
+        parentProductId: isTechnical ? form.parentProductId || null : null,
         partSupplier: form.partSupplier || null,
         supplierRef: form.supplierRef || null,
         supplierUrl: form.supplierUrl || null,
@@ -164,9 +228,8 @@ export default function AdminProduits() {
         purchasePrice: form.purchasePrice ? Number(form.purchasePrice) : null,
       };
       await staffApi('/api/admin/products', { method: 'POST', body });
-      setMsg(editing ? 'Produit mis à jour.' : 'Produit créé et publié au catalogue.');
-      setForm(EMPTY);
-      setEditing(null);
+      setMsg(editingId ? 'Fiche mise à jour.' : 'Fiche créée.');
+      closeForm();
       await load();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
@@ -231,6 +294,11 @@ export default function AdminProduits() {
 
   const shown = products
     .filter((p) => p.kind !== 'PACK')
+    .filter((p) => {
+      if (kindFilter === 'CATALOG') return !p.parentProductId;
+      if (kindFilter === 'TECHNICAL') return !!p.parentProductId;
+      return p.kind === kindFilter && !p.parentProductId;
+    })
     .filter((p) => !filter || p.name.toLowerCase().includes(filter.toLowerCase()));
 
   // Doublons possibles : même nom normalisé (casse/accents/espaces ignorés).
@@ -243,254 +311,357 @@ export default function AdminProduits() {
       .trim();
   const nameCounts = new Map<string, number>();
   for (const p of products) {
-    if (p.kind === 'PACK') continue;
+    if (p.kind === 'PACK' || p.parentProductId) continue;
     const key = normalize(p.name);
     nameCounts.set(key, (nameCounts.get(key) ?? 0) + 1);
   }
-  const isDuplicate = (p: ProductDetail) => (nameCounts.get(normalize(p.name)) ?? 0) > 1;
+  const isDuplicate = (p: ProductDetail) =>
+    !p.parentProductId && (nameCounts.get(normalize(p.name)) ?? 0) > 1;
+
+  // Vitrines candidates pour « rattacher » une fiche technique (créée ou en édition).
+  const vitrineOptions = products.filter((p) => p.kind === 'MACHINE' && !p.parentProductId);
+
+  const isTechnical = mode === 'TECHNICAL';
+  const isMachine = mode === 'MACHINE';
+  const isConsumableMode = mode === 'CONSUMABLE';
+  const showRentalPricing = mode === 'MACHINE' || mode === 'ACCESSORY' || mode === 'PPE';
+  const showStockFields = mode === 'ACCESSORY' || mode === 'CONSUMABLE' || mode === 'PPE';
+  const current = editingId ? products.find((p) => p.id === editingId) : undefined;
 
   return (
     <div className="stack">
       <h1>Catalogue &amp; produits</h1>
 
-      <form className="card card-pad stack" onSubmit={submit}>
-        <div className="spread">
-          <h3>{editing ? `Modifier : ${editing}` : 'Nouveau produit'}</h3>
-          {editing && (
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={() => {
-                setEditing(null);
-                setForm(EMPTY);
-              }}
-            >
-              Annuler
-            </button>
-          )}
+      <div className="card card-body">
+        <p className="small muted" style={{ margin: '0 0 10px' }}>
+          Choisissez ce que vous créez : une fiche technique n&apos;a ni prix ni page publique —
+          seule la machine (vitrine) qu&apos;elle rejoint est montrée au client.
+        </p>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => startCreate('MACHINE')}>
+            + Nouvelle machine
+          </button>
+          <button type="button" className="btn btn-sm" onClick={() => startCreate('TECHNICAL')}>
+            + Fiche technique
+          </button>
+          <button type="button" className="btn btn-sm" onClick={() => startCreate('ACCESSORY')}>
+            + Accessoire
+          </button>
+          <button type="button" className="btn btn-sm" onClick={() => startCreate('CONSUMABLE')}>
+            + Consommable
+          </button>
+          <button type="button" className="btn btn-sm" onClick={() => startCreate('PPE')}>
+            + Protection (EPI)
+          </button>
         </div>
-        {msg && <div className="alert alert-info">{msg}</div>}
-        <div className="field-2">
-          <div className="field">
-            <label>Nom</label>
-            <input value={form.name} onChange={(e) => set('name', e.target.value)} required />
-          </div>
-          <div className="field">
-            <label>Slug (URL)</label>
-            <input
-              value={form.slug}
-              onChange={(e) => set('slug', e.target.value)}
-              placeholder="auto depuis le nom"
-            />
-            {editing && (
-              <span className="small muted">
-                Change l’adresse publique de la fiche (les anciens liens/QR ne suivront pas).
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="field-2">
-          <div className="field">
-            <label>Type</label>
-            <select value={form.kind} onChange={(e) => set('kind', e.target.value)}>
-              <option value="MACHINE">Machine</option>
-              <option value="ACCESSORY">Accessoire</option>
-              <option value="CONSUMABLE">Consommable</option>
-              <option value="PPE">Protection</option>
-            </select>
-            <p className="small muted" style={{ margin: '4px 0 0' }}>
-              Les BricoPacks se gèrent depuis l&apos;onglet « BricoPacks ».
-            </p>
-          </div>
-          <div className="field">
-            <label>Catégorie</label>
-            <select
-              value={form.categorySlug}
-              onChange={(e) => set('categorySlug', e.target.value)}
-            >
-              <option value="">—</option>
-              {categories.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="field">
-          <label>Description courte</label>
-          <input
-            value={form.shortDescription}
-            onChange={(e) => set('shortDescription', e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label>Description</label>
-          <textarea
-            rows={2}
-            value={form.description}
-            onChange={(e) => set('description', e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label>Utilisations conseillées (une par ligne)</label>
-          <textarea
-            rows={2}
-            value={form.recommendedUses}
-            onChange={(e) => set('recommendedUses', e.target.value)}
-          />
-        </div>
-        <div className="field-2">
-          <div className="field">
-            <label>Prix jour (HTVA) {form.kind === 'CONSUMABLE' && '= prix unitaire'}</label>
-            <input
-              type="number"
-              step="0.01"
-              value={form.dailyPrice}
-              onChange={(e) => set('dailyPrice', e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label>Caution</label>
-            <input
-              type="number"
-              step="0.01"
-              value={form.deposit}
-              onChange={(e) => set('deposit', e.target.value)}
-            />
-            {form.kind === 'PACK' && (
-              <span className="small muted">
-                Éditable. Par défaut = somme des cautions des machines du pack.
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="field-3">
-          <div className="field">
-            <label>Prix week-end</label>
-            <input
-              type="number"
-              step="0.01"
-              value={form.weekendPrice}
-              onChange={(e) => set('weekendPrice', e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label>Prix semaine (7 j)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={form.weekPrice}
-              onChange={(e) => set('weekPrice', e.target.value)}
-              placeholder={autoPricing ? String(autoPricing.weekPrice) : ''}
-            />
-          </div>
-          <div className="field">
-            <label>Prix mois (30 j)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={form.monthPrice}
-              onChange={(e) => set('monthPrice', e.target.value)}
-              placeholder={autoPricing ? String(autoPricing.monthPrice) : ''}
-            />
-          </div>
-        </div>
-        {form.kind === 'MACHINE' && (
-          <p className="small muted" style={{ marginTop: -6 }}>
-            Machine : laisse semaine / mois / dégressif <b>vides</b> → calculés
-            automatiquement depuis le prix jour (semaine −50 %, mois −60 %, palier dès
-            le 3<sup>e</sup> jour).
-            {autoPricing && (
-              <>
-                {' '}Pour {formatEUR(Number(form.dailyPrice))}/j : semaine{' '}
-                {formatEUR(autoPricing.weekPrice)} · mois {formatEUR(autoPricing.monthPrice)}.{' '}
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  onClick={() =>
-                    setForm((f) => ({
-                      ...f,
-                      weekPrice: String(autoPricing.weekPrice),
-                      monthPrice: String(autoPricing.monthPrice),
-                      tiers: JSON.stringify(autoPricing.tiers),
-                    }))
-                  }
-                >
-                  Remplir maintenant
-                </button>
-              </>
-            )}
-          </p>
-        )}
-        <div className="field">
-          <label>Tarifs dégressifs (JSON : [{'{'}"minDays":1,"perDay":30{'}'}, …])</label>
-          <input
-            value={form.tiers}
-            onChange={(e) => set('tiers', e.target.value)}
-            placeholder={
-              autoPricing ? JSON.stringify(autoPricing.tiers) : '[{"minDays":1,"perDay":30},{"minDays":4,"perDay":24}]'
-            }
-          />
-        </div>
-        <div className="field">
-          <label>Images (glisser-déposer, la 1re est la principale)</label>
-          <ImageDropzone value={form.images} onChange={(v) => set('images', v)} />
-        </div>
+      </div>
 
-        {form.kind === 'MACHINE' && (
-          <fieldset className="card card-body" style={{ margin: 0 }}>
-            <legend className="small" style={{ fontWeight: 700 }}>
-              Complétez votre location — proposé sur la fiche produit, la borne et l&apos;appli
-            </legend>
-            <div className="stack" style={{ gap: 14 }}>
-              <LinkPicker
-                label="Accessoires nécessaires"
-                hint="ex. rotabuse pour un nettoyeur haute pression"
-                candidates={products.filter((p) => p.kind === 'ACCESSORY')}
-                value={form.recommendedAccessoryIds}
-                onChange={(v) => set('recommendedAccessoryIds', v)}
+      {mode && (
+        <form className="card card-pad stack" onSubmit={submit} ref={formRef}>
+          <div className="spread">
+            <h3>{editingId ? `Modifier — ${EDIT_TITLES[mode]} : ${form.name || '…'}` : CREATE_TITLES[mode]}</h3>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={closeForm}>
+              Fermer
+            </button>
+          </div>
+          {msg && <div className="alert alert-info">{msg}</div>}
+
+          <div className="field-2">
+            <div className="field">
+              <label>Nom {isTechnical && <span className="small muted">(usage interne, ex. « Makita 9741S »)</span>}</label>
+              <input value={form.name} onChange={(e) => set('name', e.target.value)} required />
+            </div>
+            <div className="field">
+              <label>Slug (URL)</label>
+              <input
+                value={form.slug}
+                onChange={(e) => set('slug', e.target.value)}
+                placeholder="auto depuis le nom"
               />
-              <LinkPicker
-                label="Consommables"
-                hint="ex. disques diamant pour une disqueuse, mèches SDS+ pour un perforateur"
-                candidates={products.filter((p) => p.kind === 'CONSUMABLE')}
-                value={form.consumableIds}
-                onChange={(v) => set('consumableIds', v)}
-              />
-              <LinkPicker
-                label="Équipements de protection (EPI)"
-                hint="ex. masque, lunettes, gants"
-                candidates={products.filter((p) => p.kind === 'PPE')}
-                value={form.ppeIds}
-                onChange={(v) => set('ppeIds', v)}
-              />
-              <LinkPicker
-                label="Machines complémentaires"
-                hint="ex. proposer un aspirateur avec une ponceuse"
-                candidates={products.filter((p) => p.kind === 'MACHINE' && p.slug !== form.slug)}
-                value={form.complementaryProductIds}
-                onChange={(v) => set('complementaryProductIds', v)}
+              {editingId && !isTechnical && (
+                <span className="small muted">
+                  Change l’adresse publique de la fiche (les anciens liens/QR ne suivront pas).
+                </span>
+              )}
+            </div>
+          </div>
+
+          {isTechnical && (
+            <>
+              <div className="field-2">
+                <div className="field">
+                  <label>Marque</label>
+                  <input
+                    value={form.brand}
+                    onChange={(e) => set('brand', e.target.value)}
+                    placeholder="ex. Makita"
+                  />
+                </div>
+                <div className="field">
+                  <label>Modèle</label>
+                  <input
+                    value={form.model}
+                    onChange={(e) => set('model', e.target.value)}
+                    placeholder="ex. 9741S"
+                  />
+                </div>
+              </div>
+              <div className="field">
+                <label>Rattachée à la vitrine</label>
+                <select
+                  value={form.parentProductId}
+                  onChange={(e) => set('parentProductId', e.target.value)}
+                >
+                  <option value="">— Non rattachée pour l’instant —</option>
+                  {vitrineOptions.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="small muted">
+                  Le client réserve la vitrine, jamais cette fiche technique directement. Vous
+                  pourrez aussi la rattacher plus tard depuis la vitrine.
+                </span>
+              </div>
+            </>
+          )}
+
+          {!isTechnical && (
+            <div className="field">
+              <label>Catégorie</label>
+              <select
+                value={form.categorySlug}
+                onChange={(e) => set('categorySlug', e.target.value)}
+              >
+                <option value="">—</option>
+                {categories.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="field">
+            <label>Description courte {isTechnical && <span className="small muted">(note interne)</span>}</label>
+            <input
+              value={form.shortDescription}
+              onChange={(e) => set('shortDescription', e.target.value)}
+            />
+          </div>
+          {!isTechnical && (
+            <div className="field">
+              <label>Description</label>
+              <textarea
+                rows={2}
+                value={form.description}
+                onChange={(e) => set('description', e.target.value)}
               />
             </div>
-          </fieldset>
-        )}
+          )}
+          {isMachine && (
+            <div className="field">
+              <label>Utilisations conseillées (une par ligne)</label>
+              <textarea
+                rows={2}
+                value={form.recommendedUses}
+                onChange={(e) => set('recommendedUses', e.target.value)}
+              />
+            </div>
+          )}
 
-        <fieldset className="card card-body" style={{ margin: 0 }}>
-          <legend className="small" style={{ fontWeight: 700 }}>
-            Interne — approvisionnement (jamais affiché au client)
-          </legend>
-          {(form.kind === 'CONSUMABLE' || form.kind === 'ACCESSORY' || form.kind === 'PPE') && (
+          {isConsumableMode && (
             <div className="field-2">
               <div className="field">
-                <label>Quantité en stock</label>
+                <label>Prix unitaire (HTVA)</label>
                 <input
                   type="number"
-                  value={form.stockQty}
-                  onChange={(e) => set('stockQty', e.target.value)}
-                  placeholder="ex. 40"
+                  step="0.01"
+                  value={form.dailyPrice}
+                  onChange={(e) => set('dailyPrice', e.target.value)}
                 />
               </div>
+              <div className="field">
+                <label>Caution</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={form.deposit}
+                  onChange={(e) => set('deposit', e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {showRentalPricing && (
+            <>
+              <div className="field-2">
+                <div className="field">
+                  <label>Prix jour (HTVA)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.dailyPrice}
+                    onChange={(e) => set('dailyPrice', e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label>Caution</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.deposit}
+                    onChange={(e) => set('deposit', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="field-3">
+                <div className="field">
+                  <label>Prix week-end</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.weekendPrice}
+                    onChange={(e) => set('weekendPrice', e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label>Prix semaine (7 j)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.weekPrice}
+                    onChange={(e) => set('weekPrice', e.target.value)}
+                    placeholder={autoPricing ? String(autoPricing.weekPrice) : ''}
+                  />
+                </div>
+                <div className="field">
+                  <label>Prix mois (30 j)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.monthPrice}
+                    onChange={(e) => set('monthPrice', e.target.value)}
+                    placeholder={autoPricing ? String(autoPricing.monthPrice) : ''}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+          {isMachine && (
+            <>
+              <p className="small muted" style={{ marginTop: -6 }}>
+                Laisse semaine / mois / dégressif <b>vides</b> → calculés automatiquement depuis le
+                prix jour (semaine −50 %, mois −60 %, palier dès le 3<sup>e</sup> jour).
+                {autoPricing && (
+                  <>
+                    {' '}Pour {formatEUR(Number(form.dailyPrice))}/j : semaine{' '}
+                    {formatEUR(autoPricing.weekPrice)} · mois {formatEUR(autoPricing.monthPrice)}.{' '}
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          weekPrice: String(autoPricing.weekPrice),
+                          monthPrice: String(autoPricing.monthPrice),
+                          tiers: JSON.stringify(autoPricing.tiers),
+                        }))
+                      }
+                    >
+                      Remplir maintenant
+                    </button>
+                  </>
+                )}
+              </p>
+              <div className="field">
+                <label>Tarifs dégressifs (JSON : [{'{'}"minDays":1,"perDay":30{'}'}, …])</label>
+                <input
+                  value={form.tiers}
+                  onChange={(e) => set('tiers', e.target.value)}
+                  placeholder={
+                    autoPricing
+                      ? JSON.stringify(autoPricing.tiers)
+                      : '[{"minDays":1,"perDay":30},{"minDays":4,"perDay":24}]'
+                  }
+                />
+              </div>
+            </>
+          )}
+
+          <div className="field">
+            <label>Images (glisser-déposer, la 1re est la principale)</label>
+            <ImageDropzone value={form.images} onChange={(v) => set('images', v)} />
+          </div>
+
+          {isMachine && (
+            <fieldset className="card card-body" style={{ margin: 0 }}>
+              <legend className="small" style={{ fontWeight: 700 }}>
+                Complétez votre location — proposé sur la fiche produit, la borne et l&apos;appli
+              </legend>
+              <div className="stack" style={{ gap: 14 }}>
+                <LinkPicker
+                  label="Accessoires nécessaires"
+                  hint="ex. rotabuse pour un nettoyeur haute pression"
+                  candidates={products.filter((p) => p.kind === 'ACCESSORY' && !p.parentProductId)}
+                  value={form.recommendedAccessoryIds}
+                  onChange={(v) => set('recommendedAccessoryIds', v)}
+                />
+                <LinkPicker
+                  label="Consommables"
+                  hint="ex. disques diamant pour une disqueuse, mèches SDS+ pour un perforateur"
+                  candidates={products.filter((p) => p.kind === 'CONSUMABLE')}
+                  value={form.consumableIds}
+                  onChange={(v) => set('consumableIds', v)}
+                />
+                <LinkPicker
+                  label="Équipements de protection (EPI)"
+                  hint="ex. masque, lunettes, gants"
+                  candidates={products.filter((p) => p.kind === 'PPE' && !p.parentProductId)}
+                  value={form.ppeIds}
+                  onChange={(v) => set('ppeIds', v)}
+                />
+                <LinkPicker
+                  label="Machines complémentaires"
+                  hint="ex. proposer un aspirateur avec une ponceuse"
+                  candidates={products.filter(
+                    (p) => p.kind === 'MACHINE' && !p.parentProductId && p.slug !== form.slug,
+                  )}
+                  value={form.complementaryProductIds}
+                  onChange={(v) => set('complementaryProductIds', v)}
+                />
+              </div>
+            </fieldset>
+          )}
+
+          <fieldset className="card card-body" style={{ margin: 0 }}>
+            <legend className="small" style={{ fontWeight: 700 }}>
+              Interne — approvisionnement (jamais affiché au client)
+            </legend>
+            {showStockFields && (
+              <div className="field-2">
+                <div className="field">
+                  <label>Quantité en stock</label>
+                  <input
+                    type="number"
+                    value={form.stockQty}
+                    onChange={(e) => set('stockQty', e.target.value)}
+                    placeholder="ex. 40"
+                  />
+                </div>
+                <div className="field">
+                  <label>Revendeur</label>
+                  <input
+                    value={form.partSupplier}
+                    onChange={(e) => set('partSupplier', e.target.value)}
+                    placeholder="Cipac, Lecot, Sanimat…"
+                  />
+                </div>
+              </div>
+            )}
+            {isTechnical && (
               <div className="field">
                 <label>Revendeur</label>
                 <input
@@ -499,166 +670,155 @@ export default function AdminProduits() {
                   placeholder="Cipac, Lecot, Sanimat…"
                 />
               </div>
+            )}
+            <div className="field-2">
+              <div className="field">
+                <label>{mode === 'MACHINE' ? 'Référence interne' : 'Référence fournisseur'}</label>
+                <input
+                  value={form.supplierRef}
+                  onChange={(e) => set('supplierRef', e.target.value)}
+                  placeholder={mode === 'MACHINE' || isTechnical ? 'ex. O-0001' : 'ex. 2608900912'}
+                />
+              </div>
+              <div className="field">
+                <label>Lien fiche fournisseur</label>
+                <input
+                  value={form.supplierUrl}
+                  onChange={(e) => set('supplierUrl', e.target.value)}
+                  placeholder="https://www.cipac.be/…"
+                />
+              </div>
             </div>
-          )}
-          <div className="field-2">
-            <div className="field">
-              <label>{form.kind === 'MACHINE' ? 'Référence interne' : 'Référence fournisseur'}</label>
-              <input
-                value={form.supplierRef}
-                onChange={(e) => set('supplierRef', e.target.value)}
-                placeholder={form.kind === 'MACHINE' ? 'ex. O-0001' : 'ex. 2608900912'}
-              />
+            <div className="field-2">
+              <div className="field">
+                <label>Prix d&apos;achat / catalogue fournisseur (HTVA)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={form.supplierListPrice}
+                  onChange={(e) => set('supplierListPrice', e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Prix d&apos;achat réel négocié (HTVA)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={form.purchasePrice}
+                  onChange={(e) => set('purchasePrice', e.target.value)}
+                />
+              </div>
             </div>
-            <div className="field">
-              <label>Lien fiche fournisseur</label>
-              <input
-                value={form.supplierUrl}
-                onChange={(e) => set('supplierUrl', e.target.value)}
-                placeholder="https://www.cipac.be/…"
-              />
-            </div>
-          </div>
-          <div className="field-2">
-            <div className="field">
-              <label>Prix d&apos;achat / catalogue fournisseur (HTVA)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={form.supplierListPrice}
-                onChange={(e) => set('supplierListPrice', e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label>Prix d&apos;achat réel négocié (HTVA)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={form.purchasePrice}
-                onChange={(e) => set('purchasePrice', e.target.value)}
-              />
-            </div>
-          </div>
-        </fieldset>
+            {isTechnical && (
+              <p className="small muted" style={{ margin: '6px 0 0' }}>
+                Les exemplaires physiques (n° de série, étiquette QR) se gèrent dans{' '}
+                <strong>Admin → Exemplaires</strong> une fois la fiche enregistrée.
+              </p>
+            )}
+          </fieldset>
 
-        {editing &&
-          (() => {
-            const current = products.find((p) => p.id === form.id);
-            const isVariant = !!form.parentProductId;
-            const hasVariants = (current?.variants?.length ?? 0) > 0;
-            // Éligible pour être rattaché (ou pour devenir vitrine) : même
-            // type, ni déjà variante, ni déjà vitrine d'autre chose.
-            const eligible = products.filter(
-              (p) =>
-                p.id !== form.id &&
-                p.kind === form.kind &&
-                !p.parentProductId &&
-                (!p.variants || p.variants.length === 0),
-            );
-            return (
-              <fieldset className="card card-body" style={{ margin: 0 }}>
-                <legend className="small" style={{ fontWeight: 700 }}>
-                  Fiches techniques
-                </legend>
-                {isVariant ? (
-                  <p className="small">
-                    Cette fiche est une <strong>fiche technique</strong>, rattachée à la vitrine «{' '}
-                    {current?.parentProduct?.name ?? '…'} » — elle n’apparaît jamais seule au client.{' '}
+          {isMachine &&
+            editingId &&
+            (() => {
+              const hasVariants = (current?.variants?.length ?? 0) > 0;
+              const eligible = products.filter(
+                (p) =>
+                  p.id !== form.id &&
+                  p.kind === 'MACHINE' &&
+                  !p.parentProductId &&
+                  (!p.variants || p.variants.length === 0),
+              );
+              return (
+                <fieldset className="card card-body" style={{ margin: 0 }}>
+                  <legend className="small" style={{ fontWeight: 700 }}>
+                    Fiches techniques rattachées
+                  </legend>
+                  <p className="small muted">
+                    Le client réserve cette vitrine ; le stock affiché = somme des exemplaires de
+                    toutes les fiches techniques ci-dessous (marque/modèle précis, n° de série,
+                    fournisseur, accessoires propres).
+                  </p>
+                  {hasVariants && (
+                    <ul className="stack" style={{ gap: 6, margin: '8px 0' }}>
+                      {current!.variants!.map((v) => (
+                        <li
+                          key={v.id}
+                          className="row"
+                          style={{ justifyContent: 'space-between', gap: 8 }}
+                        >
+                          <span className="small">
+                            {v.brand && <strong>{v.brand} </strong>}
+                            {v.model ?? v.name}
+                            {v.supplierRef ? ` · ${v.supplierRef}` : ''} — {v.availableCount}/
+                            {v.unitsCount} dispo
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => detachVariant(v.id, v.name)}
+                          >
+                            Détacher
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="row" style={{ gap: 8 }}>
+                    <select
+                      value={attachPick}
+                      onChange={(e) => setAttachPick(e.target.value)}
+                      style={{ flex: 1 }}
+                    >
+                      <option value="">— Rattacher une fiche technique existante —</option>
+                      {eligible.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                          {p.brand ? ` (${p.brand})` : ''}
+                          {p.supplierRef ? ` · ${p.supplierRef}` : ''}
+                        </option>
+                      ))}
+                    </select>
                     <button
                       type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => detachVariant(form.id, form.name)}
+                      className="btn btn-sm"
+                      disabled={!attachPick}
+                      onClick={async () => {
+                        await attachVariant(attachPick, form.id);
+                        setAttachPick('');
+                      }}
                     >
-                      Détacher
+                      Rattacher
                     </button>
-                  </p>
-                ) : (
-                  <>
-                    <p className="small muted">
-                      Le client réserve cette fiche ; le stock affiché = somme des exemplaires de
-                      toutes les fiches techniques rattachées ci-dessous (marque/modèle précis,
-                      numéro de série, fournisseur, accessoires propres).
-                    </p>
-                    {hasVariants && (
-                      <ul className="stack" style={{ gap: 6, margin: '8px 0' }}>
-                        {current!.variants!.map((v) => (
-                          <li
-                            key={v.id}
-                            className="row"
-                            style={{ justifyContent: 'space-between', gap: 8 }}
-                          >
-                            <span className="small">
-                              {v.brand && <strong>{v.brand} </strong>}
-                              {v.model ?? v.name}
-                              {v.supplierRef ? ` · ${v.supplierRef}` : ''} — {v.availableCount}/
-                              {v.unitsCount} dispo
-                            </span>
-                            <button
-                              type="button"
-                              className="btn btn-ghost btn-sm"
-                              onClick={() => detachVariant(v.id, v.name)}
-                            >
-                              Détacher
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <div className="row" style={{ gap: 8 }}>
-                      <select
-                        value={attachPick}
-                        onChange={(e) => setAttachPick(e.target.value)}
-                        style={{ flex: 1 }}
-                      >
-                        <option value="">— Rattacher une fiche existante —</option>
-                        {eligible.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                            {p.brand ? ` (${p.brand})` : ''}
-                            {p.supplierRef ? ` · ${p.supplierRef}` : ''}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        disabled={!attachPick}
-                        onClick={async () => {
-                          await attachVariant(attachPick, form.id);
-                          setAttachPick('');
-                        }}
-                      >
-                        Rattacher
-                      </button>
-                    </div>
-                  </>
-                )}
-              </fieldset>
-            );
-          })()}
+                  </div>
+                </fieldset>
+              );
+            })()}
 
-        <label className="row" style={{ gap: 8 }}>
-          <input
-            type="checkbox"
-            checked={form.published}
-            onChange={(e) => set('published', e.target.checked)}
-          />
-          <span className="small">Publié (visible sur le site, l&apos;appli et la borne)</span>
-        </label>
-        {form.kind === 'MACHINE' && (
-          <label className="row" style={{ gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={form.isNew}
-              onChange={(e) => set('isNew', e.target.checked)}
-            />
-            <span className="small">Badge « Nouveauté » (accueil, catalogue)</span>
-          </label>
-        )}
-        <button className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
-          {editing ? 'Enregistrer' : 'Créer le produit'}
-        </button>
-      </form>
+          {!isTechnical && (
+            <label className="row" style={{ gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={form.published}
+                onChange={(e) => set('published', e.target.checked)}
+              />
+              <span className="small">Publié (visible sur le site, l&apos;appli et la borne)</span>
+            </label>
+          )}
+          {isMachine && (
+            <label className="row" style={{ gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={form.isNew}
+                onChange={(e) => set('isNew', e.target.checked)}
+              />
+              <span className="small">Badge « Nouveauté » (accueil, catalogue)</span>
+            </label>
+          )}
+          <button className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
+            {editingId ? 'Enregistrer' : 'Créer'}
+          </button>
+        </form>
+      )}
 
       <div className="card card-body">
         <p className="small muted" style={{ margin: '0 0 10px' }}>
@@ -667,12 +827,21 @@ export default function AdminProduits() {
           {featuredIds.length > 1 ? 's' : ''}, les 3 premières s’affichent). Rien de coché = repli
           automatique sur les machines les plus louées.
         </p>
-        <input
-          placeholder="Filtrer…"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          style={{ marginBottom: 12 }}
-        />
+        <div className="row" style={{ gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <input
+            placeholder="Filtrer par nom…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            style={{ flex: 1, minWidth: 220 }}
+          />
+          <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value as KindFilter)}>
+            {(Object.keys(FILTER_LABELS) as KindFilter[]).map((k) => (
+              <option key={k} value={k}>
+                {FILTER_LABELS[k]}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -702,6 +871,11 @@ export default function AdminProduits() {
                     </td>
                     <td>
                       {p.name}
+                      {(p.brand || p.model) && (
+                        <span className="small muted" style={{ marginLeft: 6 }}>
+                          ({[p.brand, p.model].filter(Boolean).join(' ')})
+                        </span>
+                      )}
                       {p.parentProductId && (
                         <span
                           className="badge"
@@ -732,7 +906,7 @@ export default function AdminProduits() {
                       )}
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      {p.kind === 'MACHINE' ? (
+                      {p.kind === 'MACHINE' && !p.parentProductId ? (
                         <button
                           type="button"
                           className="btn btn-ghost btn-sm"
@@ -758,11 +932,11 @@ export default function AdminProduits() {
                       )}
                     </td>
                     <td>
-                      <span className="badge">{p.kind}</span>
+                      <span className="badge">{p.parentProductId ? 'FICHE TECH.' : p.kind}</span>
                     </td>
                     <td>{p.category?.name ?? '—'}</td>
-                    <td>{formatEUR(p.dailyPrice)}</td>
-                    <td>{formatEUR(p.deposit)}</td>
+                    <td>{p.parentProductId ? '—' : formatEUR(p.dailyPrice)}</td>
+                    <td>{p.parentProductId ? '—' : formatEUR(p.deposit)}</td>
                     <td>{p.totalStock}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => edit(p)}>
