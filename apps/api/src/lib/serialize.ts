@@ -41,7 +41,14 @@ export const productInclude = {
 
 function unitStock(p: ProductWithRels): number {
   if (p.stockQty !== null && p.stockQty !== undefined) return p.stockQty;
-  return p.units.filter((u) => ['AVAILABLE', 'RENTED'].includes(u.state)).length;
+  // Le stock d'une fiche vitrine = ses propres exemplaires + ceux de toutes
+  // ses fiches techniques rattachées (cf. Product.parentProductId).
+  const own = p.units.filter((u) => ['AVAILABLE', 'RENTED'].includes(u.state)).length;
+  const fromVariants = p.variants.reduce(
+    (sum, v) => sum + v.units.filter((u) => ['AVAILABLE', 'RENTED'].includes(u.state)).length,
+    0,
+  );
+  return own + fromVariants;
 }
 
 export function serializeProductSummary(p: ProductWithRels, locale: Locale = SOURCE_LOCALE) {
