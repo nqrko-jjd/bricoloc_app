@@ -134,6 +134,9 @@ export const upsertCategorySchema = z.object({
 });
 
 export const upsertProductSchema = z.object({
+  // Présent = modification d'un produit existant (identifié par id, pas par
+  // slug, pour permettre de renommer le slug). Absent = création.
+  id: z.string().optional(),
   slug: z.string().min(1),
   name: z.string().min(1),
   kind: z.enum(PRODUCT_KINDS).default('MACHINE'),

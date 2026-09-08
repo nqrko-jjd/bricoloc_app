@@ -7,6 +7,7 @@ import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 import type { ProductDetail, Category } from '@/lib/types';
 
 const EMPTY = {
+  id: '',
   slug: '',
   name: '',
   kind: 'MACHINE',
@@ -92,6 +93,7 @@ export default function AdminProduits() {
   function edit(p: ProductDetail) {
     setEditing(p.slug);
     setForm({
+      id: p.id,
       slug: p.slug,
       name: p.name,
       kind: p.kind,
@@ -127,6 +129,7 @@ export default function AdminProduits() {
     setMsg('');
     try {
       const body = {
+        id: form.id || undefined,
         slug: form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         name: form.name,
         kind: form.kind,
@@ -247,8 +250,12 @@ export default function AdminProduits() {
               value={form.slug}
               onChange={(e) => set('slug', e.target.value)}
               placeholder="auto depuis le nom"
-              disabled={!!editing}
             />
+            {editing && (
+              <span className="small muted">
+                Change l’adresse publique de la fiche (les anciens liens/QR ne suivront pas).
+              </span>
+            )}
           </div>
         </div>
         <div className="field-2">
@@ -465,11 +472,11 @@ export default function AdminProduits() {
           )}
           <div className="field-2">
             <div className="field">
-              <label>Référence fournisseur</label>
+              <label>{form.kind === 'MACHINE' ? 'Référence interne' : 'Référence fournisseur'}</label>
               <input
                 value={form.supplierRef}
                 onChange={(e) => set('supplierRef', e.target.value)}
-                placeholder="ex. 2608900912"
+                placeholder={form.kind === 'MACHINE' ? 'ex. O-0001' : 'ex. 2608900912'}
               />
             </div>
             <div className="field">

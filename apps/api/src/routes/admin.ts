@@ -289,22 +289,40 @@ adminRouter.post(
       isNew: data.isNew,
       stockQty: data.stockQty ?? null,
       purchasePrice: data.purchasePrice ?? null,
-      // Champs revendeur : gérés ici pour les consommables/accessoires ;
-      // pour les machines LOISELET ils portent la réf. partenaire (gérée à l'import).
+      // supplierRef sert de réf. interne éditable pour tous les types : code
+      // parc (O-XXXX) sur une machine, réf. pièce fournisseur sur le reste.
+      supplierRef: data.supplierRef ?? null,
+      // Le reste (revendeur, lien, prix affiché) ne concerne que les articles
+      // achetés/revendus ; les machines LOISELET portent leur réf. partenaire
+      // à part (gérée à l'import).
       ...(data.kind === 'MACHINE'
         ? {}
         : {
             partSupplier: data.partSupplier ?? null,
-            supplierRef: data.supplierRef ?? null,
             supplierUrl: data.supplierUrl ?? null,
             supplierListPrice: data.supplierListPrice ?? null,
           }),
     };
-    const product = await prisma.product.upsert({
-      where: { slug: data.slug },
-      create: { slug: data.slug, ...base },
-      update: base,
-    });
+    // Modification (id fourni) : on identifie le produit par id, pas par
+    // slug, pour pouvoir renommer le slug sans créer un doublon. Création :
+    // upsert par slug (comportement historique).
+    let product;
+    if (data.id) {
+      const clash = await prisma.product.findUnique({ where: { slug: data.slug } });
+      if (clash && clash.id !== data.id) {
+        throw badRequest(`Le slug « ${data.slug} » est déjà utilisé par un autre produit.`);
+      }
+      product = await prisma.product.update({
+        where: { id: data.id },
+        data: { slug: data.slug, ...base },
+      });
+    } else {
+      product = await prisma.product.upsert({
+        where: { slug: data.slug },
+        create: { slug: data.slug, ...base },
+        update: base,
+      });
+    }
 
     // Reconstruit les liens. La composition d'un BricoPack (PACK_ITEM) est gérée
     // par le seed dédié : on ne la touche que si le formulaire l'a explicitée.
