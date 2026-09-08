@@ -279,11 +279,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <div className="capp__phones reveal">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            className="appphoto"
-            src="/img/app/app-screens.webp"
+            className="appphoto--cut"
+            src="/img/app/app-phone-home.png"
             alt={t('appPhotoAlt')}
-            width={1400}
-            height={787}
+            width={658}
+            height={1348}
             loading="lazy"
           />
         </div>

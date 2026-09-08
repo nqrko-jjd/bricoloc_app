@@ -52,11 +52,11 @@ export default async function ApplicationPage({
       <div className="appviz__screens reveal">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          className="appphoto"
-          src="/img/app/app-screens.webp"
+          className="appphoto--cut"
+          src="/img/app/app-phone-home.png"
           alt={t('photoAlt')}
-          width={1400}
-          height={787}
+          width={658}
+          height={1348}
           loading="lazy"
         />
       </div>
