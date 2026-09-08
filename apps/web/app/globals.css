@@ -1965,6 +1965,16 @@ button { font-family: inherit; }
 .capp__phones { display: flex; justify-content: center; }
 @media (max-width: 900px) { .capp__phones { margin-top: 40px; } }
 
+/* Photo des écrans de l'appli (capture réelle du concept) : le fond studio
+   gris de la photo n'existe pas en tant que tel, on l'estompe en fondu vers
+   le fond de la section (rouge en accueil, clair sur /application) plutôt
+   que de le laisser en rectangle net. */
+.appphoto {
+  display: block; width: 100%; max-width: 640px; height: auto;
+  -webkit-mask-image: radial-gradient(ellipse 76% 80% at 50% 45%, #000 58%, transparent 97%);
+  mask-image: radial-gradient(ellipse 76% 80% at 50% 45%, #000 58%, transparent 97%);
+}
+
 /* ---- Mockup de téléphone interactif (aperçu appli) ---- */
 .phdemo { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .phdemo__bezel {

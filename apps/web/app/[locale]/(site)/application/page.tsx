@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { PhoneDemo } from '@/components/PhoneDemo';
 import { NewsletterForm } from '@/components/NewsletterForm';
 
 export const dynamic = 'force-dynamic';
@@ -50,11 +49,19 @@ export default async function ApplicationPage({
         </div>
       </header>
 
-      <div className="appviz__screens">
-        <PhoneDemo extraScreen />
+      <div className="appviz__screens reveal">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="appphoto"
+          src="/img/app/app-screens.webp"
+          alt={t('photoAlt')}
+          width={1400}
+          height={787}
+          loading="lazy"
+        />
       </div>
 
-      <div className="appviz__features">
+      <div className="appviz__features reveal">
         {features.map(([title, text]) => (
           <div key={title} className="appviz__feature">
             <h3>{t(title)}</h3>
@@ -63,7 +70,7 @@ export default async function ApplicationPage({
         ))}
       </div>
 
-      <section className="home-cta" style={{ borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
+      <section className="home-cta reveal" style={{ borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
         <div className="home-cta__bg" aria-hidden />
         <div className="container home-cta__inner">
           <h2>{t('ctaTitle')}</h2>

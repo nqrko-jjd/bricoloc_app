@@ -223,7 +223,7 @@ export default async function ProductPage({
       </div>
 
       {accessories.length > 0 && (
-        <section className="complete">
+        <section className="complete reveal">
           <h2>{t('complete')}</h2>
           <p className="muted">{t('completeHint')}</p>
           <ul className="complete__grid">
@@ -246,7 +246,7 @@ export default async function ProductPage({
       )}
 
       {consumables.length > 0 && (
-        <section className="complete">
+        <section className="complete reveal">
           <h2>{t('consumables')}</h2>
           <p className="muted">{t('consumablesHint')}</p>
           <ul className="complete__grid">
@@ -276,7 +276,7 @@ export default async function ProductPage({
       <ReviewSection slug={product.slug} />
 
       {product.complementary.length > 0 && (
-        <section className="section">
+        <section className="section reveal">
           <h2>{t('similar')}</h2>
           <div className="grid grid-cards carousel">
             {product.complementary.map((c) => (
@@ -292,7 +292,7 @@ export default async function ProductPage({
       )}
 
       {similar.length > 0 && (
-        <section className="section">
+        <section className="section reveal">
           <h2>{t('similar')}</h2>
           <div className="grid grid-cards carousel">
             {similar.map((s) => (

@@ -67,7 +67,7 @@ export default async function BricoPacksPage({ params }: { params: Promise<{ loc
         <ComposePack tiers={composedPack.tiers} />
       )}
 
-      <section className="bp-bottom">
+      <section className="bp-bottom reveal">
         <div>
           <PackageIcon />
           <h3>Le matériel réutilisable</h3>

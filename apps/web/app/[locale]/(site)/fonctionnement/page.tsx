@@ -11,7 +11,7 @@ export default async function Page() {
   return (
     <>
       <ContentPage contentKey="how-it-works" fallbackTitle="Comment ça marche" />
-      <section className="hiw-highlights">
+      <section className="hiw-highlights reveal">
         <div className="container">
           <span className="kicker">{t('kicker')}</span>
           <div className="hiw-highlights__grid">

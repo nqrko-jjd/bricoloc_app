@@ -69,7 +69,7 @@ export function ReviewSection({ slug }: { slug: string }) {
   }
 
   return (
-    <section className="reviews" id="avis">
+    <section className="reviews reveal" id="avis">
       <div className="spread">
         <h2>{t('reviewsTitle')}</h2>
         {!done && (

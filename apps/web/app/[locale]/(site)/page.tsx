@@ -6,7 +6,6 @@ import { loadContent } from '@/lib/content';
 import type { Category, GuideSummary, ProductSummary, PublicConfig } from '@/lib/types';
 import { SearchAutocomplete } from '@/components/SearchAutocomplete';
 import { DegressivePricing } from '@/components/DegressivePricing';
-import { PhoneDemo } from '@/components/PhoneDemo';
 import { PopularSlider } from '@/components/PopularSlider';
 import {
   CATEGORY_ICON,
@@ -278,7 +277,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </Link>
         </div>
         <div className="capp__phones reveal">
-          <PhoneDemo />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="appphoto"
+            src="/img/app/app-screens.webp"
+            alt={t('appPhotoAlt')}
+            width={1400}
+            height={787}
+            loading="lazy"
+          />
         </div>
       </section>
 
