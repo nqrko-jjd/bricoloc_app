@@ -138,6 +138,8 @@ export const upsertProductSchema = z.object({
   // slug, pour permettre de renommer le slug). Absent = création.
   id: z.string().optional(),
   slug: z.string().min(1),
+  // Fiche technique (marque/modèle précis) rattachée à une fiche vitrine.
+  parentProductId: z.string().nullable().optional(),
   name: z.string().min(1),
   kind: z.enum(PRODUCT_KINDS).default('MACHINE'),
   categorySlug: z.string().optional(),

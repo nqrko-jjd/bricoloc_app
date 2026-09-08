@@ -31,6 +31,7 @@ const EMPTY = {
   ppeIds: [] as string[],
   complementaryProductIds: [] as string[],
   // Internes
+  parentProductId: '',
   partSupplier: '',
   supplierRef: '',
   supplierUrl: '',
@@ -48,6 +49,7 @@ export default function AdminProduits() {
   const [mergingSlug, setMergingSlug] = useState<string | null>(null);
   const [mergeTarget, setMergeTarget] = useState('');
   const [featuredIds, setFeaturedIds] = useState<string[]>([]);
+  const [attachPick, setAttachPick] = useState('');
 
   async function load() {
     const [p, c, st] = await Promise.all([
@@ -115,6 +117,7 @@ export default function AdminProduits() {
       consumableIds: p.consumables.map((x) => x.id),
       ppeIds: p.ppe.map((x) => x.id),
       complementaryProductIds: p.complementary.map((x) => x.id),
+      parentProductId: p.parentProductId ?? '',
       partSupplier: p.partSupplier ?? '',
       supplierRef: p.supplierRef ?? '',
       supplierUrl: p.supplierUrl ?? '',
@@ -153,6 +156,7 @@ export default function AdminProduits() {
         ppeIds: form.ppeIds,
         complementaryProductIds: form.complementaryProductIds,
         stockQty: form.stockQty ? Number(form.stockQty) : null,
+        parentProductId: form.parentProductId || null,
         partSupplier: form.partSupplier || null,
         supplierRef: form.supplierRef || null,
         supplierUrl: form.supplierUrl || null,
@@ -192,6 +196,33 @@ export default function AdminProduits() {
       setMsg(`Fusionné dans « ${target?.name ?? targetSlug} ».`);
       setMergingSlug(null);
       setMergeTarget('');
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    }
+  }
+
+  async function attachVariant(childId: string, parentProductId: string) {
+    try {
+      await staffApi(`/api/admin/products/${childId}/parent`, {
+        method: 'PATCH',
+        body: { parentProductId },
+      });
+      setMsg('Fiche technique rattachée.');
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    }
+  }
+
+  async function detachVariant(childId: string, childName: string) {
+    if (!confirm(`Détacher « ${childName} » de sa fiche vitrine ? Elle redevient une fiche indépendante (non publiée).`)) return;
+    try {
+      await staffApi(`/api/admin/products/${childId}/parent`, {
+        method: 'PATCH',
+        body: { parentProductId: null },
+      });
+      setMsg('Fiche technique détachée.');
       await load();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
@@ -510,6 +541,102 @@ export default function AdminProduits() {
           </div>
         </fieldset>
 
+        {editing &&
+          (() => {
+            const current = products.find((p) => p.id === form.id);
+            const isVariant = !!form.parentProductId;
+            const hasVariants = (current?.variants?.length ?? 0) > 0;
+            // Éligible pour être rattaché (ou pour devenir vitrine) : même
+            // type, ni déjà variante, ni déjà vitrine d'autre chose.
+            const eligible = products.filter(
+              (p) =>
+                p.id !== form.id &&
+                p.kind === form.kind &&
+                !p.parentProductId &&
+                (!p.variants || p.variants.length === 0),
+            );
+            return (
+              <fieldset className="card card-body" style={{ margin: 0 }}>
+                <legend className="small" style={{ fontWeight: 700 }}>
+                  Fiches techniques
+                </legend>
+                {isVariant ? (
+                  <p className="small">
+                    Cette fiche est une <strong>fiche technique</strong>, rattachée à la vitrine «{' '}
+                    {current?.parentProduct?.name ?? '…'} » — elle n’apparaît jamais seule au client.{' '}
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => detachVariant(form.id, form.name)}
+                    >
+                      Détacher
+                    </button>
+                  </p>
+                ) : (
+                  <>
+                    <p className="small muted">
+                      Le client réserve cette fiche ; le stock affiché = somme des exemplaires de
+                      toutes les fiches techniques rattachées ci-dessous (marque/modèle précis,
+                      numéro de série, fournisseur, accessoires propres).
+                    </p>
+                    {hasVariants && (
+                      <ul className="stack" style={{ gap: 6, margin: '8px 0' }}>
+                        {current!.variants!.map((v) => (
+                          <li
+                            key={v.id}
+                            className="row"
+                            style={{ justifyContent: 'space-between', gap: 8 }}
+                          >
+                            <span className="small">
+                              {v.brand && <strong>{v.brand} </strong>}
+                              {v.model ?? v.name}
+                              {v.supplierRef ? ` · ${v.supplierRef}` : ''} — {v.availableCount}/
+                              {v.unitsCount} dispo
+                            </span>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => detachVariant(v.id, v.name)}
+                            >
+                              Détacher
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="row" style={{ gap: 8 }}>
+                      <select
+                        value={attachPick}
+                        onChange={(e) => setAttachPick(e.target.value)}
+                        style={{ flex: 1 }}
+                      >
+                        <option value="">— Rattacher une fiche existante —</option>
+                        {eligible.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                            {p.brand ? ` (${p.brand})` : ''}
+                            {p.supplierRef ? ` · ${p.supplierRef}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        disabled={!attachPick}
+                        onClick={async () => {
+                          await attachVariant(attachPick, form.id);
+                          setAttachPick('');
+                        }}
+                      >
+                        Rattacher
+                      </button>
+                    </div>
+                  </>
+                )}
+              </fieldset>
+            );
+          })()}
+
         <label className="row" style={{ gap: 8 }}>
           <input
             type="checkbox"
@@ -575,6 +702,25 @@ export default function AdminProduits() {
                     </td>
                     <td>
                       {p.name}
+                      {p.parentProductId && (
+                        <span
+                          className="badge"
+                          style={{ marginLeft: 8 }}
+                          title={`Fiche technique rattachée à ${p.parentProduct?.name ?? '…'}`}
+                        >
+                          ↳ {p.parentProduct?.name ?? 'fiche technique'}
+                        </span>
+                      )}
+                      {!p.parentProductId && (p.variants?.length ?? 0) > 0 && (
+                        <span
+                          className="badge"
+                          style={{ marginLeft: 8 }}
+                          title="Fiche vitrine : le stock vient de ses fiches techniques"
+                        >
+                          {p.variants!.length} fiche{p.variants!.length > 1 ? 's' : ''} technique
+                          {p.variants!.length > 1 ? 's' : ''}
+                        </span>
+                      )}
                       {isDuplicate(p) && (
                         <span
                           className="badge badge-warn"

@@ -19,9 +19,26 @@ export const BLOCKING_STATUSES = [
 const MS_DAY = 86_400_000;
 
 /**
- * Nombre d'exemplaires d'un produit **immobilises pour maintenance** sur la periode.
- * Corrige le bug : un entretien / une reparation doit retirer l'exemplaire des
- * disponibilites. Compte les exemplaires distincts qui ont soit :
+ * Une fiche "vitrine" (celle que le client reserve) peut avoir des fiches
+ * techniques rattachees (marque/modele precis, ex. "Makita 9741S") qui
+ * portent chacune leurs propres exemplaires. Le stock disponible d'une
+ * vitrine = somme des exemplaires de la vitrine elle-meme (s'il y en a) et de
+ * toutes ses fiches techniques. Renvoie juste `[productId]` si aucune fiche
+ * technique n'est rattachee (comportement identique a avant).
+ */
+export async function resolveUnitProductIds(productId: string): Promise<string[]> {
+  const variants = await prisma.product.findMany({
+    where: { parentProductId: productId },
+    select: { id: true },
+  });
+  return variants.length ? [productId, ...variants.map((v) => v.id)] : [productId];
+}
+
+/**
+ * Nombre d'exemplaires d'un produit (et de ses fiches techniques rattachees)
+ * **immobilises pour maintenance** sur la periode. Corrige le bug : un
+ * entretien / une reparation doit retirer l'exemplaire des disponibilites.
+ * Compte les exemplaires distincts qui ont soit :
  *  - un `Maintenance` bloquant dont [startAt, endAt] chevauche [start, end),
  *  - un `immobilisedUntil` posterieur au debut de la periode demandee.
  */
@@ -30,8 +47,9 @@ export async function maintenanceBlockedQty(
   start: Date,
   end: Date,
 ): Promise<number> {
+  const productIds = await resolveUnitProductIds(productId);
   const units = await prisma.productUnit.findMany({
-    where: { productId },
+    where: { productId: { in: productIds } },
     select: {
       id: true,
       immobilisedUntil: true,
@@ -75,8 +93,9 @@ async function capacityOf(productId: string): Promise<CapacityInfo> {
       kind: product.kind,
     };
   }
+  const productIds = await resolveUnitProductIds(productId);
   const units = await prisma.productUnit.count({
-    where: { productId, state: { in: ['AVAILABLE', 'RENTED'] } },
+    where: { productId: { in: productIds }, state: { in: ['AVAILABLE', 'RENTED'] } },
   });
   return { productId, capacity: units, isConsumable: product.isConsumable, kind: product.kind };
 }

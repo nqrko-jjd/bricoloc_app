@@ -2,6 +2,7 @@
 
 import { useCallback, useId, useRef, useState } from 'react';
 import { API_URL } from '@/lib/api';
+import { MediaLibraryPicker } from './MediaLibraryPicker';
 
 interface UploadedMedia {
   id: string;
@@ -30,6 +31,7 @@ export function ImageDropzone({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [libOpen, setLibOpen] = useState(false);
   const dragIndex = useRef<number | null>(null);
 
   const staffToken = () =>
@@ -119,6 +121,30 @@ export function ImageDropzone({
           </span>
         </p>
       </div>
+
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm"
+        style={{ marginTop: 8 }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setLibOpen(true);
+        }}
+        disabled={value.length >= max}
+      >
+        🖼️ Choisir dans la bibliothèque
+      </button>
+
+      {libOpen && (
+        <MediaLibraryPicker
+          alreadyUsed={value}
+          onClose={() => setLibOpen(false)}
+          onPick={(urls) => {
+            const room = max - value.length;
+            onChange([...value, ...urls.slice(0, room)]);
+          }}
+        />
+      )}
 
       {error && <p className="alert alert-err small">{error}</p>}
 

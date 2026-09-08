@@ -228,6 +228,17 @@ model Product {
   kind                String    @default("MACHINE") // MACHINE | ACCESSORY | CONSUMABLE | PPE | PACK
   categoryId          String?
   category            Category? @relation(fields: [categoryId], references: [id])
+
+  /// Fiche technique (marque/modele precis, ex. "Makita 9741S") rattachee a une
+  /// fiche vitrine (ex. "Ponceuse girafe") : le client ne voit/reserve que la
+  /// vitrine (parentProductId null) ; le stock de la vitrine = somme des
+  /// exemplaires (ProductUnit) de toutes ses fiches techniques. Une fiche
+  /// technique garde son propre brand/model/supplier/images/accessoires —
+  /// c'est un Product normal, juste rattache et jamais montre seul au client.
+  parentProductId String?
+  parentProduct   Product?  @relation("ProductVariants", fields: [parentProductId], references: [id], onDelete: SetNull)
+  variants        Product[] @relation("ProductVariants")
+
   shortDescription    String?
   description         String?
   recommendedUses     Json?

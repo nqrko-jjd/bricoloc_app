@@ -56,6 +56,21 @@ export interface ProductDetail extends ProductSummary {
   supplierUrl?: string | null;
   supplierListPrice?: number | null;
   purchasePrice?: number | null;
+  // Fiches techniques (marque/modèle rattaché à une fiche vitrine) — interne.
+  parentProductId?: string | null;
+  parentProduct?: { id: string; slug: string; name: string } | null;
+  variants?: {
+    id: string;
+    slug: string;
+    name: string;
+    brand: string | null;
+    model: string | null;
+    supplierRef: string | null;
+    published: boolean;
+    image: string | null;
+    unitsCount: number;
+    availableCount: number;
+  }[];
   seo?: { title: string | null; description: string | null };
   rating?: { avg: number; count: number };
   recommendedAccessories: LinkedProduct[];

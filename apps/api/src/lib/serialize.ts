@@ -24,6 +24,8 @@ export type ProductWithRels = Prisma.ProductGetPayload<{
     category: true;
     units: true;
     linksFrom: { include: { to: { include: { category: true } } } };
+    variants: { include: { units: true } };
+    parentProduct: true;
   };
 }>;
 
@@ -31,6 +33,10 @@ export const productInclude = {
   category: true,
   units: true,
   linksFrom: { include: { to: { include: { category: true } } } },
+  // Fiches techniques rattachees (jamais montrees au client, back-office
+  // seulement — cf. serializeProductDetail `internal`).
+  variants: { include: { units: true } },
+  parentProduct: true,
 } satisfies Prisma.ProductInclude;
 
 function unitStock(p: ProductWithRels): number {
@@ -147,6 +153,23 @@ export function serializeProductDetail(
           supplierRef: p.supplierRef,
           supplierListPrice: p.supplierListPrice,
           purchasePrice: p.purchasePrice,
+          // Fiches techniques : cf. Product.parentProductId (schema.prisma).
+          parentProductId: p.parentProductId,
+          parentProduct: p.parentProduct
+            ? { id: p.parentProduct.id, slug: p.parentProduct.slug, name: p.parentProduct.name }
+            : null,
+          variants: p.variants.map((v) => ({
+            id: v.id,
+            slug: v.slug,
+            name: v.name,
+            brand: v.brand,
+            model: v.model,
+            supplierRef: v.supplierRef,
+            published: v.published,
+            image: (v.images as string[])?.[0] ?? null,
+            unitsCount: v.units.length,
+            availableCount: v.units.filter((u) => u.state === 'AVAILABLE').length,
+          })),
         }
       : {}),
   };

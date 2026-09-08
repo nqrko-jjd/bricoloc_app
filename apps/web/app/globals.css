@@ -3371,3 +3371,52 @@ button { font-family: inherit; }
 .appdemo-empty .appdemo-cta { display: inline-block; width: auto; padding: 12px 22px; }
 .appdemo-demo-note { background: #EEEEF7; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #5B5F7A; margin-top: 18px; }
 
+/* ---- Bibliothèque de médias (admin, façon WordPress) ---- */
+.medialib-overlay {
+  position: fixed; inset: 0; background: rgba(8, 6, 93, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 220;
+}
+.medialib {
+  background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-lg);
+  width: 760px; max-width: 100%; max-height: 85vh; color: var(--ink);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.medialib__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+}
+.medialib__close {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  width: 30px; height: 30px; border-radius: var(--r-pill); cursor: pointer;
+  font-size: 1.1rem; line-height: 1;
+}
+.medialib__close:hover { background: var(--surface-2); }
+.medialib__grid {
+  list-style: none; margin: 0; padding: 12px 16px; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px;
+}
+.medialib__item {
+  position: relative; padding: 0; border: 2px solid transparent; border-radius: var(--r-xs);
+  overflow: hidden; cursor: pointer; aspect-ratio: 1; background: var(--surface-2);
+}
+.medialib__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.medialib__item.is-selected { border-color: var(--primary); }
+.medialib__item.is-used { cursor: not-allowed; opacity: 0.4; }
+.medialib__check {
+  position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 900;
+}
+.medialib__usedTag {
+  position: absolute; inset: auto 0 0 0; background: rgba(8, 6, 93, 0.75); color: #fff;
+  font-size: 0.6rem; font-weight: 700; text-align: center; padding: 2px 0;
+}
+.medialib__pager {
+  display: flex; align-items: center; justify-content: center; gap: 14px; padding: 8px 16px;
+}
+.medialib__foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 16px; border-top: 1px solid var(--border);
+}
+
