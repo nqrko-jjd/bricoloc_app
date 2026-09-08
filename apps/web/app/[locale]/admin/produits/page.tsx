@@ -79,6 +79,8 @@ export default function AdminProduits() {
   const [kindFilter, setKindFilter] = useState<KindFilter>('CATALOG');
   const [mergingSlug, setMergingSlug] = useState<string | null>(null);
   const [mergeTarget, setMergeTarget] = useState('');
+  const [convertingSlug, setConvertingSlug] = useState<string | null>(null);
+  const [convertTarget, setConvertTarget] = useState('');
   const [featuredIds, setFeaturedIds] = useState<string[]>([]);
   const [attachPick, setAttachPick] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
@@ -276,6 +278,20 @@ export default function AdminProduits() {
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
     }
+  }
+
+  async function convertToTechnical(p: ProductDetail, targetId: string) {
+    if (!targetId) return;
+    const target = products.find((x) => x.id === targetId);
+    if (
+      !confirm(
+        `Transformer « ${p.name} » en fiche technique de « ${target?.name ?? ''} » ? Elle disparaît du catalogue public et son stock rejoint celui de la vitrine.`,
+      )
+    )
+      return;
+    await attachVariant(p.id, targetId);
+    setConvertingSlug(null);
+    setConvertTarget('');
   }
 
   async function detachVariant(childId: string, childName: string) {
@@ -942,6 +958,18 @@ export default function AdminProduits() {
                       <button className="btn btn-ghost btn-sm" onClick={() => edit(p)}>
                         Modifier
                       </button>
+                      {p.kind === 'MACHINE' && !p.parentProductId && (p.variants?.length ?? 0) === 0 && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title="Transformer cette vitrine en fiche technique rattachée à une autre vitrine"
+                          onClick={() => {
+                            setConvertingSlug(convertingSlug === p.slug ? null : p.slug);
+                            setConvertTarget('');
+                          }}
+                        >
+                          → Fiche technique
+                        </button>
+                      )}
                       <button
                         className="btn btn-ghost btn-sm"
                         onClick={() => {
@@ -956,6 +984,35 @@ export default function AdminProduits() {
                       </button>
                     </td>
                   </tr>
+                  {convertingSlug === p.slug && (
+                    <tr>
+                      <td colSpan={9}>
+                        <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
+                          <span className="small">Transformer « {p.name} » en fiche technique de :</span>
+                          <select value={convertTarget} onChange={(e) => setConvertTarget(e.target.value)}>
+                            <option value="">— Choisir la vitrine —</option>
+                            {products
+                              .filter((o) => o.kind === 'MACHINE' && !o.parentProductId && o.id !== p.id)
+                              .map((o) => (
+                                <option key={o.id} value={o.id}>
+                                  {o.name}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            disabled={!convertTarget}
+                            onClick={() => convertToTechnical(p, convertTarget)}
+                          >
+                            Confirmer
+                          </button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setConvertingSlug(null)}>
+                            Annuler
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   {mergingSlug === p.slug && (
                     <tr>
                       <td colSpan={9}>
