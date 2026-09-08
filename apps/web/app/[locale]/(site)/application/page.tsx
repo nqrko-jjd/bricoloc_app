@@ -53,10 +53,10 @@ export default async function ApplicationPage({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="appphoto--cut"
-          src="/img/app/app-phone-home.png"
+          src="/img/app/app-phone-product.png"
           alt={t('photoAlt')}
-          width={658}
-          height={1348}
+          width={900}
+          height={1287}
           loading="lazy"
         />
       </div>

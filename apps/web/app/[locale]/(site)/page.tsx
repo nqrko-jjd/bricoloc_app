@@ -179,7 +179,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
         <div className="cdiff__grid reveal">
           <div className="cdiff__card cdiff__card--delivery">
-            <ITruck />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="cdiff__photo"
+              src="/img/home/livraison-camion.webp"
+              alt=""
+              width={541}
+              height={392}
+              loading="lazy"
+            />
             <h3>{t('diffDeliveryTitle')}</h3>
             <p>{t('diffDeliveryText')}</p>
             <ul className="cdiff__points">
@@ -191,7 +199,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </Link>
           </div>
           <div className="cdiff__card cdiff__card--pack">
-            <PackageIcon />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="cdiff__photo"
+              src="/img/home/bricopack-mallette.webp"
+              alt=""
+              width={1000}
+              height={440}
+              loading="lazy"
+            />
             <h3>{t('diffPackTitle')}</h3>
             <p>{t('diffPackText')}</p>
             {packs.length > 0 && (
