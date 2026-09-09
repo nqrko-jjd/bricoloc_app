@@ -255,19 +255,22 @@ adminRouter.post(
       ? await prisma.category.findUnique({ where: { slug: data.categorySlug } })
       : null;
 
-    // Fiche technique (parentProductId) : jamais montrée seule au client, et
-    // hiérarchie à plat (une fiche technique n'a pas elle-même de variantes).
-    if (data.parentProductId) {
-      if (data.parentProductId === data.id) {
-        throw badRequest('Une fiche ne peut pas être sa propre fiche vitrine.');
-      }
-      const parent = await prisma.product.findUnique({
-        where: { id: data.parentProductId },
-        select: { id: true, parentProductId: true },
-      });
-      if (!parent) throw badRequest('Fiche vitrine introuvable.');
-      if (parent.parentProductId) {
-        throw badRequest('Cette fiche est déjà une fiche technique : rattachez-vous à sa vitrine directement.');
+    // Fiche technique (parentProductId, ou technical seul si pas encore
+    // rattachée) : jamais montrée seule au client, et hiérarchie à plat (une
+    // fiche technique n'a pas elle-même de variantes).
+    if (data.parentProductId || data.technical) {
+      if (data.parentProductId) {
+        if (data.parentProductId === data.id) {
+          throw badRequest('Une fiche ne peut pas être sa propre fiche vitrine.');
+        }
+        const parent = await prisma.product.findUnique({
+          where: { id: data.parentProductId },
+          select: { id: true, parentProductId: true },
+        });
+        if (!parent) throw badRequest('Fiche vitrine introuvable.');
+        if (parent.parentProductId) {
+          throw badRequest('Cette fiche est déjà une fiche technique : rattachez-vous à sa vitrine directement.');
+        }
       }
       if (data.id) {
         const childCount = await prisma.product.count({ where: { parentProductId: data.id } });
@@ -312,20 +315,21 @@ adminRouter.post(
       isConsumable: data.kind === 'CONSUMABLE',
       isDemo: data.isDemo,
       // Une fiche technique n'est jamais publiée seule, quoi que le formulaire envoie.
-      published: data.parentProductId ? false : data.published,
+      published: data.parentProductId || data.technical ? false : data.published,
       isNew: data.isNew,
       stockQty: data.stockQty ?? null,
       purchasePrice: data.purchasePrice ?? null,
       parentProductId: data.parentProductId ?? null,
+      technical: data.technical ?? false,
       // supplierRef sert de réf. interne éditable pour tous les types : code
       // parc (O-XXXX) sur une machine, réf. pièce fournisseur sur le reste.
       supplierRef: data.supplierRef ?? null,
       // Le reste (revendeur, lien, prix catalogue) ne concerne que les articles
       // achetés/revendus ainsi que les fiches techniques (achat machine réel) ;
-      // une fiche vitrine générique (MACHINE sans parentProductId) n'a pas de
-      // revendeur propre. Les machines LOISELET portent leur réf. partenaire
-      // à part (gérée à l'import).
-      ...(data.kind === 'MACHINE' && !data.parentProductId
+      // une fiche vitrine générique (MACHINE sans parentProductId ni technical)
+      // n'a pas de revendeur propre. Les machines LOISELET portent leur réf.
+      // partenaire à part (gérée à l'import).
+      ...(data.kind === 'MACHINE' && !data.parentProductId && !data.technical
         ? {}
         : {
             partSupplier: data.partSupplier ?? null,
@@ -394,6 +398,16 @@ adminRouter.patch(
     const self = await prisma.product.findUnique({ where: { id }, select: { id: true } });
     if (!self) throw notFound('Produit introuvable.');
 
+    // Hiérarchie à plat, quel que soit le sens de l'appel (rattacher, détacher
+    // ou juste basculer sans vitrine) : une fiche technique n'a pas elle-même
+    // de variantes.
+    const childCount = await prisma.product.count({ where: { parentProductId: id } });
+    if (childCount > 0) {
+      throw badRequest(
+        'Cette fiche a déjà des fiches techniques rattachées : elle ne peut pas devenir elle-même une fiche technique.',
+      );
+    }
+
     if (parentProductId) {
       if (parentProductId === id) throw badRequest('Une fiche ne peut pas être sa propre fiche vitrine.');
       const parent = await prisma.product.findUnique({
@@ -404,17 +418,14 @@ adminRouter.patch(
       if (parent.parentProductId) {
         throw badRequest('Cette fiche est déjà une fiche technique : rattachez-vous à sa vitrine directement.');
       }
-      const childCount = await prisma.product.count({ where: { parentProductId: id } });
-      if (childCount > 0) {
-        throw badRequest(
-          'Cette fiche a déjà des fiches techniques rattachées : elle ne peut pas devenir elle-même une fiche technique.',
-        );
-      }
     }
 
+    // Passer par cette route — rattacher, détacher ou juste basculer sans
+    // vitrine — marque toujours la fiche comme technique : jamais montrée
+    // seule au client, quel que soit l'état de rattachement.
     const product = await prisma.product.update({
       where: { id },
-      data: { parentProductId, ...(parentProductId ? { published: false } : {}) },
+      data: { parentProductId, technical: true, published: false },
       include: productInclude,
     });
     res.json({ product: serializeProductDetail(product, undefined, undefined, { internal: true }) });

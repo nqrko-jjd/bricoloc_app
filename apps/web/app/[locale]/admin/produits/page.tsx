@@ -145,7 +145,7 @@ export default function AdminProduits() {
   }
 
   function edit(p: ProductDetail) {
-    const m: CreateMode = p.parentProductId ? 'TECHNICAL' : (p.kind as CreateMode);
+    const m: CreateMode = p.technical ? 'TECHNICAL' : (p.kind as CreateMode);
     setMode(m);
     setEditingId(p.id);
     setForm({
@@ -223,6 +223,7 @@ export default function AdminProduits() {
         complementaryProductIds: isMachine ? form.complementaryProductIds : [],
         stockQty: !isTechnical && !isMachine && form.stockQty ? Number(form.stockQty) : null,
         parentProductId: isTechnical ? form.parentProductId || null : null,
+        technical: isTechnical,
         partSupplier: form.partSupplier || null,
         supplierRef: form.supplierRef || null,
         supplierUrl: form.supplierUrl || null,
@@ -294,6 +295,30 @@ export default function AdminProduits() {
     setConvertTarget('');
   }
 
+  /** Bascule une fiche en fiche technique sans choisir de vitrine tout de
+   * suite (rattachement possible plus tard, depuis la vitrine ou en éditant
+   * cette fiche). */
+  async function makeTechnical(p: ProductDetail) {
+    if (
+      !confirm(
+        `Transformer « ${p.name} » en fiche technique, sans la rattacher à une vitrine pour l’instant ? Elle disparaît du catalogue public.`,
+      )
+    )
+      return;
+    try {
+      await staffApi(`/api/admin/products/${p.id}/parent`, {
+        method: 'PATCH',
+        body: { parentProductId: null },
+      });
+      setMsg(`« ${p.name} » est maintenant une fiche technique (non rattachée).`);
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    }
+    setConvertingSlug(null);
+    setConvertTarget('');
+  }
+
   async function detachVariant(childId: string, childName: string) {
     if (!confirm(`Détacher « ${childName} » de sa fiche vitrine ? Elle redevient une fiche indépendante (non publiée).`)) return;
     try {
@@ -311,9 +336,9 @@ export default function AdminProduits() {
   const shown = products
     .filter((p) => p.kind !== 'PACK')
     .filter((p) => {
-      if (kindFilter === 'CATALOG') return !p.parentProductId;
-      if (kindFilter === 'TECHNICAL') return !!p.parentProductId;
-      return p.kind === kindFilter && !p.parentProductId;
+      if (kindFilter === 'CATALOG') return !p.technical;
+      if (kindFilter === 'TECHNICAL') return !!p.technical;
+      return p.kind === kindFilter && !p.technical;
     })
     .filter((p) => !filter || p.name.toLowerCase().includes(filter.toLowerCase()));
 
@@ -327,15 +352,15 @@ export default function AdminProduits() {
       .trim();
   const nameCounts = new Map<string, number>();
   for (const p of products) {
-    if (p.kind === 'PACK' || p.parentProductId) continue;
+    if (p.kind === 'PACK' || p.technical) continue;
     const key = normalize(p.name);
     nameCounts.set(key, (nameCounts.get(key) ?? 0) + 1);
   }
   const isDuplicate = (p: ProductDetail) =>
-    !p.parentProductId && (nameCounts.get(normalize(p.name)) ?? 0) > 1;
+    !p.technical && (nameCounts.get(normalize(p.name)) ?? 0) > 1;
 
   // Vitrines candidates pour « rattacher » une fiche technique (créée ou en édition).
-  const vitrineOptions = products.filter((p) => p.kind === 'MACHINE' && !p.parentProductId);
+  const vitrineOptions = products.filter((p) => p.kind === 'MACHINE' && !p.parentProductId && !p.technical);
 
   const isTechnical = mode === 'TECHNICAL';
   const isMachine = mode === 'MACHINE';
@@ -621,21 +646,21 @@ export default function AdminProduits() {
                 <LinkPicker
                   label="Accessoires nécessaires"
                   hint="ex. rotabuse pour un nettoyeur haute pression"
-                  candidates={products.filter((p) => p.kind === 'ACCESSORY' && !p.parentProductId)}
+                  candidates={products.filter((p) => p.kind === 'ACCESSORY' && !p.technical)}
                   value={form.recommendedAccessoryIds}
                   onChange={(v) => set('recommendedAccessoryIds', v)}
                 />
                 <LinkPicker
                   label="Consommables"
                   hint="ex. disques diamant pour une disqueuse, mèches SDS+ pour un perforateur"
-                  candidates={products.filter((p) => p.kind === 'CONSUMABLE')}
+                  candidates={products.filter((p) => p.kind === 'CONSUMABLE' && !p.technical)}
                   value={form.consumableIds}
                   onChange={(v) => set('consumableIds', v)}
                 />
                 <LinkPicker
                   label="Équipements de protection (EPI)"
                   hint="ex. masque, lunettes, gants"
-                  candidates={products.filter((p) => p.kind === 'PPE' && !p.parentProductId)}
+                  candidates={products.filter((p) => p.kind === 'PPE' && !p.technical)}
                   value={form.ppeIds}
                   onChange={(v) => set('ppeIds', v)}
                 />
@@ -643,7 +668,7 @@ export default function AdminProduits() {
                   label="Machines complémentaires"
                   hint="ex. proposer un aspirateur avec une ponceuse"
                   candidates={products.filter(
-                    (p) => p.kind === 'MACHINE' && !p.parentProductId && p.slug !== form.slug,
+                    (p) => p.kind === 'MACHINE' && !p.technical && p.slug !== form.slug,
                   )}
                   value={form.complementaryProductIds}
                   onChange={(v) => set('complementaryProductIds', v)}
@@ -922,7 +947,7 @@ export default function AdminProduits() {
                       )}
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      {p.kind === 'MACHINE' && !p.parentProductId ? (
+                      {p.kind === 'MACHINE' && !p.technical ? (
                         <button
                           type="button"
                           className="btn btn-ghost btn-sm"
@@ -948,26 +973,40 @@ export default function AdminProduits() {
                       )}
                     </td>
                     <td>
-                      <span className="badge">{p.parentProductId ? 'FICHE TECH.' : p.kind}</span>
+                      <span className="badge">
+                        {p.technical ? (p.parentProductId ? 'FICHE TECH.' : 'FICHE TECH. (libre)') : p.kind}
+                      </span>
                     </td>
                     <td>{p.category?.name ?? '—'}</td>
-                    <td>{p.parentProductId ? '—' : formatEUR(p.dailyPrice)}</td>
-                    <td>{p.parentProductId ? '—' : formatEUR(p.deposit)}</td>
+                    <td>{p.technical ? '—' : formatEUR(p.dailyPrice)}</td>
+                    <td>{p.technical ? '—' : formatEUR(p.deposit)}</td>
                     <td>{p.totalStock}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => edit(p)}>
                         Modifier
                       </button>
-                      {p.kind === 'MACHINE' && !p.parentProductId && (p.variants?.length ?? 0) === 0 && (
+                      {p.kind === 'MACHINE' && !p.technical && (p.variants?.length ?? 0) === 0 && (
                         <button
                           className="btn btn-ghost btn-sm"
-                          title="Transformer cette vitrine en fiche technique rattachée à une autre vitrine"
+                          title="Transformer en fiche technique, avec ou sans vitrine choisie tout de suite"
                           onClick={() => {
                             setConvertingSlug(convertingSlug === p.slug ? null : p.slug);
                             setConvertTarget('');
                           }}
                         >
                           → Fiche technique
+                        </button>
+                      )}
+                      {p.technical && !p.parentProductId && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title="Rattacher cette fiche technique à une vitrine"
+                          onClick={() => {
+                            setConvertingSlug(convertingSlug === p.slug ? null : p.slug);
+                            setConvertTarget('');
+                          }}
+                        >
+                          Rattacher
                         </button>
                       )}
                       <button
@@ -988,11 +1027,15 @@ export default function AdminProduits() {
                     <tr>
                       <td colSpan={9}>
                         <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
-                          <span className="small">Transformer « {p.name} » en fiche technique de :</span>
+                          <span className="small">
+                            {p.technical ? `Rattacher « ${p.name} » à :` : `Transformer « ${p.name} » en fiche technique de :`}
+                          </span>
                           <select value={convertTarget} onChange={(e) => setConvertTarget(e.target.value)}>
-                            <option value="">— Choisir la vitrine —</option>
+                            <option value="">
+                              {p.technical ? '— Choisir la vitrine —' : '— Aucune vitrine pour l’instant —'}
+                            </option>
                             {products
-                              .filter((o) => o.kind === 'MACHINE' && !o.parentProductId && o.id !== p.id)
+                              .filter((o) => o.kind === 'MACHINE' && !o.parentProductId && !o.technical && o.id !== p.id)
                               .map((o) => (
                                 <option key={o.id} value={o.id}>
                                   {o.name}
@@ -1001,8 +1044,10 @@ export default function AdminProduits() {
                           </select>
                           <button
                             className="btn btn-primary btn-sm"
-                            disabled={!convertTarget}
-                            onClick={() => convertToTechnical(p, convertTarget)}
+                            disabled={p.technical && !convertTarget}
+                            onClick={() =>
+                              convertTarget ? convertToTechnical(p, convertTarget) : makeTechnical(p)
+                            }
                           >
                             Confirmer
                           </button>

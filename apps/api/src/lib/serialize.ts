@@ -162,6 +162,7 @@ export function serializeProductDetail(
           purchasePrice: p.purchasePrice,
           // Fiches techniques : cf. Product.parentProductId (schema.prisma).
           parentProductId: p.parentProductId,
+          technical: p.technical,
           parentProduct: p.parentProduct
             ? { id: p.parentProduct.id, slug: p.parentProduct.slug, name: p.parentProduct.name }
             : null,

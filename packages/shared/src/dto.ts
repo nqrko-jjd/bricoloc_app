@@ -140,6 +140,9 @@ export const upsertProductSchema = z.object({
   slug: z.string().min(1),
   // Fiche technique (marque/modèle précis) rattachée à une fiche vitrine.
   parentProductId: z.string().nullable().optional(),
+  // Vrai dès que la fiche est traitée comme fiche technique (formulaire dédié,
+  // jamais publiée), même avant d'être rattachée à une vitrine.
+  technical: z.boolean().optional(),
   name: z.string().min(1),
   kind: z.enum(PRODUCT_KINDS).default('MACHINE'),
   // Marque/modèle précis : surtout utile sur une fiche technique (ex. "Makita" / "9741S").

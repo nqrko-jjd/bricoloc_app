@@ -57,6 +57,7 @@ export interface ProductDetail extends ProductSummary {
   supplierListPrice?: number | null;
   purchasePrice?: number | null;
   // Fiches techniques (marque/modèle rattaché à une fiche vitrine) — interne.
+  technical?: boolean;
   parentProductId?: string | null;
   parentProduct?: { id: string; slug: string; name: string } | null;
   variants?: {

@@ -238,6 +238,10 @@ model Product {
   parentProductId String?
   parentProduct   Product?  @relation("ProductVariants", fields: [parentProductId], references: [id], onDelete: SetNull)
   variants        Product[] @relation("ProductVariants")
+  /// Vrai dès qu'une fiche est traitee comme fiche technique (formulaire dedie,
+  /// jamais publiee), meme avant d'etre rattachee a une vitrine — evite de la
+  /// confondre avec un simple brouillon de vitrine le temps qu'elle soit rattachee.
+  technical       Boolean   @default(false)
 
   shortDescription    String?
   description         String?
