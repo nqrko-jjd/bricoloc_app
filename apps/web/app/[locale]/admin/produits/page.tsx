@@ -130,6 +130,8 @@ export default function AdminProduits() {
   const [msg, setMsg] = useState('');
   const [filter, setFilter] = useState('');
   const [kindFilter, setKindFilter] = useState<KindFilter>('CATALOG');
+  const [sortBy, setSortBy] = useState<'name' | 'internalRef' | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [mergingSlug, setMergingSlug] = useState<string | null>(null);
   const [mergeTarget, setMergeTarget] = useState('');
   const [convertingSlug, setConvertingSlug] = useState<string | null>(null);
@@ -432,6 +434,14 @@ export default function AdminProduits() {
     }
   }
 
+  function toggleSort(col: 'name' | 'internalRef') {
+    if (sortBy === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortBy(col);
+      setSortDir('asc');
+    }
+  }
+
   const shown = products
     .filter((p) => p.kind !== 'PACK')
     .filter((p) => {
@@ -439,7 +449,15 @@ export default function AdminProduits() {
       if (kindFilter === 'TECHNICAL') return !!p.technical;
       return p.kind === kindFilter && !p.technical;
     })
-    .filter((p) => !filter || p.name.toLowerCase().includes(filter.toLowerCase()));
+    .filter((p) => !filter || p.name.toLowerCase().includes(filter.toLowerCase()))
+    .sort((a, b) => {
+      if (!sortBy) return 0;
+      const av = (sortBy === 'internalRef' ? a.internalRef : a.name) ?? '';
+      const bv = (sortBy === 'internalRef' ? b.internalRef : b.name) ?? '';
+      // Tri "naturel" : O-2 avant O-10 (pas un tri alphabétique pur).
+      const cmp = av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
 
   // Doublons possibles : même nom normalisé (casse/accents/espaces ignorés).
   const normalize = (s: string) =>
@@ -1064,7 +1082,21 @@ export default function AdminProduits() {
             <thead>
               <tr>
                 <th></th>
-                <th>Nom</th>
+                <th>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => toggleSort('name')}>
+                    Nom {sortBy === 'name' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                  </button>
+                </th>
+                <th>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => toggleSort('internalRef')}
+                    title="Trier par référence interne (O-XXXX)"
+                  >
+                    Réf. interne {sortBy === 'internalRef' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                  </button>
+                </th>
                 <th title="Mise en avant sur l'accueil (« Ce que louent nos clients »)">★ Accueil</th>
                 <th>Type</th>
                 <th>Catégorie</th>
@@ -1121,6 +1153,7 @@ export default function AdminProduits() {
                         </span>
                       )}
                     </td>
+                    <td>{p.internalRef ?? '—'}</td>
                     <td style={{ textAlign: 'center' }}>
                       {p.kind === 'MACHINE' && !p.technical ? (
                         <button
@@ -1207,7 +1240,7 @@ export default function AdminProduits() {
                   </tr>
                   {convertingSlug === p.slug && (
                     <tr>
-                      <td colSpan={9}>
+                      <td colSpan={10}>
                         <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
                           <span className="small">
                             {p.technical ? `Rattacher « ${p.name} » à :` : `Transformer « ${p.name} » en machine de :`}
@@ -1242,7 +1275,7 @@ export default function AdminProduits() {
                   )}
                   {mergingSlug === p.slug && (
                     <tr>
-                      <td colSpan={9}>
+                      <td colSpan={10}>
                         <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
                           <span className="small">Fusionner « {p.name} » dans :</span>
                           <select value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)}>
