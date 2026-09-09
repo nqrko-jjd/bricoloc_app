@@ -277,9 +277,13 @@ model Product {
   supplierUrl         String?
   supplierListPrice   Float? // prix affiche partenaire (= prix client)
   supplierDiscountPct Float? // remise Bricoloc sur ce prix (ex 0.25)
-  /// Coût de location facturé par le partenaire (jour, HTVA) — machine
-  /// externe uniquement (supplier != "BRICOLOC").
+  /// Coût de location facturé par le partenaire (jour, HTVA), sa référence
+  /// pour cette machine, le lien vers sa fiche et son site — pour réserver
+  /// par mail rapidement (supplier != "BRICOLOC" uniquement).
   partnerCostPerDay   Float?
+  partnerRef          String?
+  partnerUrl          String?
+  partnerWebsite      String?
   /// STANDARD = livraison tarif geo normal ; QUOTE_ONLY = volumineux, sur devis.
   deliveryPolicy      String    @default("STANDARD")
   /// INSTANT = reservable en direct ; ON_REQUEST = confirmation partenaire sous 1 h.

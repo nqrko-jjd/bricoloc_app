@@ -165,6 +165,9 @@ export function serializeProductDetail(
           supplier: p.supplier,
           availabilityMode: p.availabilityMode,
           partnerCostPerDay: p.partnerCostPerDay,
+          partnerRef: p.partnerRef,
+          partnerUrl: p.partnerUrl,
+          partnerWebsite: p.partnerWebsite,
           suppliers:
             (p.suppliers as
               | { name?: string; ref?: string; url?: string; listPrice?: number | null; purchasePrice?: number | null }[]
@@ -184,6 +187,8 @@ export function serializeProductDetail(
             internalRef: v.internalRef,
             supplier: v.supplier,
             availabilityMode: v.availabilityMode,
+            partnerRef: v.partnerRef,
+            partnerUrl: v.partnerUrl,
             published: v.published,
             image: (v.images as string[])?.[0] ?? null,
             unitsCount: v.units.length,

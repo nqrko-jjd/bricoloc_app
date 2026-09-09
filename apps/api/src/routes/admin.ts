@@ -348,6 +348,9 @@ adminRouter.post(
       supplier: isTechnicalRow ? data.supplier || 'BRICOLOC' : 'BRICOLOC',
       availabilityMode: isTechnicalRow ? (data.availabilityMode ?? 'INSTANT') : 'INSTANT',
       partnerCostPerDay: isTechnicalRow ? (data.partnerCostPerDay ?? null) : null,
+      partnerRef: isTechnicalRow ? (data.partnerRef ?? null) : null,
+      partnerUrl: isTechnicalRow ? (data.partnerUrl ?? null) : null,
+      partnerWebsite: isTechnicalRow ? (data.partnerWebsite ?? null) : null,
       parentProductId: data.parentProductId ?? null,
       technical: data.technical ?? false,
       // Les machines LOISELET portent leur réf. partenaire à part (import) ;

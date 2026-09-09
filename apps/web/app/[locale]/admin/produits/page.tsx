@@ -79,6 +79,9 @@ const EMPTY = {
   supplier: 'BRICOLOC',
   availabilityMode: 'INSTANT',
   partnerCostPerDay: '',
+  partnerRef: '',
+  partnerUrl: '',
+  partnerWebsite: '',
 };
 
 type SupplierRow = {
@@ -212,6 +215,9 @@ export default function AdminProduits() {
       supplier: p.supplier ?? 'BRICOLOC',
       availabilityMode: p.availabilityMode ?? 'INSTANT',
       partnerCostPerDay: p.partnerCostPerDay != null ? String(p.partnerCostPerDay) : '',
+      partnerRef: p.partnerRef ?? '',
+      partnerUrl: p.partnerUrl ?? '',
+      partnerWebsite: p.partnerWebsite ?? '',
     });
     setAttachPick('');
     requestAnimationFrame(() =>
@@ -278,6 +284,9 @@ export default function AdminProduits() {
         supplier: isTechnical ? form.supplier : 'BRICOLOC',
         availabilityMode: isTechnical ? form.availabilityMode : 'INSTANT',
         partnerCostPerDay: isExternal && form.partnerCostPerDay ? Number(form.partnerCostPerDay) : null,
+        partnerRef: isExternal ? form.partnerRef || null : null,
+        partnerUrl: isExternal ? form.partnerUrl || null : null,
+        partnerWebsite: isExternal ? form.partnerWebsite || null : null,
       };
       await staffApi('/api/admin/products', { method: 'POST', body });
       setMsg(editingId ? 'Fiche mise à jour.' : 'Fiche créée.');
@@ -808,6 +817,36 @@ export default function AdminProduits() {
                       <option value="INSTANT">Toujours disponible chez le partenaire</option>
                     </select>
                   </div>
+                  <div className="field-2">
+                    <div className="field">
+                      <label>Sa référence</label>
+                      <input
+                        value={form.partnerRef}
+                        onChange={(e) => set('partnerRef', e.target.value)}
+                        placeholder="ex. REF-1234"
+                      />
+                    </div>
+                    <div className="field">
+                      <label>Lien vers sa fiche</label>
+                      <input
+                        value={form.partnerUrl}
+                        onChange={(e) => set('partnerUrl', e.target.value)}
+                        placeholder="https://loiselet.be/produit/…"
+                      />
+                    </div>
+                  </div>
+                  <div className="field">
+                    <label>Site du partenaire</label>
+                    <input
+                      value={form.partnerWebsite}
+                      onChange={(e) => set('partnerWebsite', e.target.value)}
+                      placeholder="https://www.loiselet.be"
+                    />
+                  </div>
+                  <p className="small muted" style={{ margin: '6px 0 0' }}>
+                    Sa référence et le lien facilitent la réservation par mail — tout est repris ici,
+                    prêt à copier.
+                  </p>
                 </div>
               )}
             </fieldset>
@@ -912,16 +951,29 @@ export default function AdminProduits() {
                             {v.model ?? v.name}
                             {v.internalRef ? ` · ${v.internalRef}` : ''} — {v.availableCount}/
                             {v.unitsCount} dispo
-                            {v.supplier !== 'BRICOLOC' && (
-                              <span
-                                className="badge"
-                                style={{ marginLeft: 6 }}
-                                title="Aussi disponible chez ce partenaire (dépannage / comparaison)"
-                              >
-                                + {v.supplier}
-                                {v.availabilityMode === 'ON_REQUEST' ? ' (sur demande)' : ''}
-                              </span>
-                            )}
+                            {v.supplier !== 'BRICOLOC' &&
+                              (v.partnerUrl ? (
+                                <a
+                                  className="badge"
+                                  style={{ marginLeft: 6 }}
+                                  href={v.partnerUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={`Réserver chez ${v.supplier}${v.partnerRef ? ` · réf. ${v.partnerRef}` : ''}`}
+                                >
+                                  + {v.supplier}
+                                  {v.availabilityMode === 'ON_REQUEST' ? ' (sur demande)' : ''} ↗
+                                </a>
+                              ) : (
+                                <span
+                                  className="badge"
+                                  style={{ marginLeft: 6 }}
+                                  title={v.partnerRef ? `Réf. ${v.partnerRef}` : 'Aussi disponible chez ce partenaire'}
+                                >
+                                  + {v.supplier}
+                                  {v.availabilityMode === 'ON_REQUEST' ? ' (sur demande)' : ''}
+                                </span>
+                              ))}
                           </span>
                           <button
                             type="button"

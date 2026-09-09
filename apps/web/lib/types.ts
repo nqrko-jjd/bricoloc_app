@@ -70,6 +70,9 @@ export interface ProductDetail extends ProductSummary {
   supplier?: string;
   availabilityMode?: string;
   partnerCostPerDay?: number | null;
+  partnerRef?: string | null;
+  partnerUrl?: string | null;
+  partnerWebsite?: string | null;
   // Fiches techniques (marque/modèle rattaché à une fiche vitrine) — interne.
   technical?: boolean;
   parentProductId?: string | null;
@@ -83,6 +86,8 @@ export interface ProductDetail extends ProductSummary {
     internalRef: string | null;
     supplier: string;
     availabilityMode: string;
+    partnerRef: string | null;
+    partnerUrl: string | null;
     published: boolean;
     image: string | null;
     unitsCount: number;
