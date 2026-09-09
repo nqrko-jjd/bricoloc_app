@@ -161,17 +161,21 @@ export function serializeProductDetail(
           supplierListPrice: p.supplierListPrice,
           purchasePrice: p.purchasePrice,
           internalRef: p.internalRef,
-          // Machine externe (louée chez un partenaire) : supplier != "BRICOLOC".
-          supplier: p.supplier,
-          availabilityMode: p.availabilityMode,
-          partnerCostPerDay: p.partnerCostPerDay,
-          partnerInsurancePct: p.partnerInsurancePct,
-          partnerRef: p.partnerRef,
-          partnerUrl: p.partnerUrl,
-          partnerWebsite: p.partnerWebsite,
           suppliers:
             (p.suppliers as
               | { name?: string; ref?: string; url?: string; listPrice?: number | null; purchasePrice?: number | null }[]
+              | null) ?? [],
+          // Partenaires de secours (plusieurs possibles) : machine (fiche technique) uniquement.
+          partners:
+            (p.partners as
+              | {
+                  name?: string;
+                  ref?: string;
+                  url?: string;
+                  costPerDay?: number | null;
+                  insurancePct?: number | null;
+                  availabilityMode?: string;
+                }[]
               | null) ?? [],
           // Fiches techniques : cf. Product.parentProductId (schema.prisma).
           parentProductId: p.parentProductId,
@@ -186,10 +190,17 @@ export function serializeProductDetail(
             brand: v.brand,
             model: v.model,
             internalRef: v.internalRef,
-            supplier: v.supplier,
-            availabilityMode: v.availabilityMode,
-            partnerRef: v.partnerRef,
-            partnerUrl: v.partnerUrl,
+            partners:
+              (v.partners as
+                | {
+                    name?: string;
+                    ref?: string;
+                    url?: string;
+                    costPerDay?: number | null;
+                    insurancePct?: number | null;
+                    availabilityMode?: string;
+                  }[]
+                | null) ?? [],
             published: v.published,
             image: (v.images as string[])?.[0] ?? null,
             unitsCount: v.units.length,

@@ -191,16 +191,22 @@ export const upsertProductSchema = z.object({
       }),
     )
     .optional(),
-  // Machine externe (louée chez un partenaire — Loiselet ou un autre loueur,
-  // pour dépanner une fiche produit quand le stock interne est à sec) :
-  // supplier = nom du partenaire ("BRICOLOC" = machine interne, par défaut).
-  supplier: z.string().optional(),
-  availabilityMode: z.enum(['INSTANT', 'ON_REQUEST']).optional(),
-  partnerCostPerDay: z.number().min(0).nullable().optional(),
-  partnerInsurancePct: z.number().min(0).max(1).nullable().optional(),
-  partnerRef: z.string().nullable().optional(),
-  partnerUrl: z.string().nullable().optional(),
-  partnerWebsite: z.string().nullable().optional(),
+  // Machine : partenaires de secours possibles (plusieurs — Loiselet, Loxam,
+  // un autre loueur — pour dépanner une fiche produit à sec de stock interne,
+  // ou comparer les prix). insurancePct = fraction (0,07 = 7 %), souvent
+  // facturée en plus par le partenaire et absente de costPerDay.
+  partners: z
+    .array(
+      z.object({
+        name: z.string().optional(),
+        ref: z.string().optional(),
+        url: z.string().optional(),
+        costPerDay: z.number().min(0).nullable().optional(),
+        insurancePct: z.number().min(0).max(1).nullable().optional(),
+        availabilityMode: z.enum(['INSTANT', 'ON_REQUEST']).optional(),
+      }),
+    )
+    .optional(),
   recommendedAccessoryIds: z.array(z.string()).default([]),
   consumableIds: z.array(z.string()).default([]),
   ppeIds: z.array(z.string()).default([]),

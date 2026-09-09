@@ -343,15 +343,9 @@ adminRouter.post(
       // Côté interne (nos exemplaires) : notre réf. + fournisseurs d'achat.
       internalRef: isTechnicalRow ? (data.internalRef ?? null) : null,
       suppliers: isTechnicalRow ? ((data.suppliers ?? []) as never) : [],
-      // Côté partenaire (secours/comparaison) : peut coexister avec le côté
-      // interne ci-dessus — supplier="BRICOLOC" = pas de partenaire noté.
-      supplier: isTechnicalRow ? data.supplier || 'BRICOLOC' : 'BRICOLOC',
-      availabilityMode: isTechnicalRow ? (data.availabilityMode ?? 'INSTANT') : 'INSTANT',
-      partnerCostPerDay: isTechnicalRow ? (data.partnerCostPerDay ?? null) : null,
-      partnerInsurancePct: isTechnicalRow ? (data.partnerInsurancePct ?? null) : null,
-      partnerRef: isTechnicalRow ? (data.partnerRef ?? null) : null,
-      partnerUrl: isTechnicalRow ? (data.partnerUrl ?? null) : null,
-      partnerWebsite: isTechnicalRow ? (data.partnerWebsite ?? null) : null,
+      // Côté partenaires de secours/comparaison (plusieurs possibles) : peut
+      // coexister avec le côté interne ci-dessus.
+      partners: isTechnicalRow ? ((data.partners ?? []) as never) : [],
       parentProductId: data.parentProductId ?? null,
       technical: data.technical ?? false,
       // Les machines LOISELET portent leur réf. partenaire à part (import) ;

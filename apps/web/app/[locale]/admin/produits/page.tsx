@@ -75,14 +75,8 @@ const EMPTY = {
   // Machine : notre réf. + fournisseurs possibles (plusieurs sources d'achat).
   internalRef: '',
   suppliers: [] as SupplierRow[],
-  // Machine externe (louée chez un partenaire) : 'BRICOLOC' = interne (défaut).
-  supplier: 'BRICOLOC',
-  availabilityMode: 'INSTANT',
-  partnerCostPerDay: '',
-  partnerInsurancePct: '',
-  partnerRef: '',
-  partnerUrl: '',
-  partnerWebsite: '',
+  // Machine : partenaires de secours possibles (plusieurs — Loiselet, Loxam…).
+  partners: [] as PartnerRow[],
 };
 
 type SupplierRow = {
@@ -93,6 +87,23 @@ type SupplierRow = {
   purchasePrice: string;
 };
 const EMPTY_SUPPLIER: SupplierRow = { name: '', ref: '', url: '', listPrice: '', purchasePrice: '' };
+
+type PartnerRow = {
+  name: string;
+  ref: string;
+  url: string;
+  costPerDay: string;
+  insurancePct: string;
+  availabilityMode: string;
+};
+const EMPTY_PARTNER: PartnerRow = {
+  name: '',
+  ref: '',
+  url: '',
+  costPerDay: '',
+  insurancePct: '',
+  availabilityMode: 'ON_REQUEST',
+};
 
 export default function AdminProduits() {
   const [products, setProducts] = useState<ProductDetail[]>([]);
@@ -213,13 +224,14 @@ export default function AdminProduits() {
         listPrice: s.listPrice != null ? String(s.listPrice) : '',
         purchasePrice: s.purchasePrice != null ? String(s.purchasePrice) : '',
       })),
-      supplier: p.supplier ?? 'BRICOLOC',
-      availabilityMode: p.availabilityMode ?? 'INSTANT',
-      partnerCostPerDay: p.partnerCostPerDay != null ? String(p.partnerCostPerDay) : '',
-      partnerInsurancePct: p.partnerInsurancePct != null ? String(Math.round(p.partnerInsurancePct * 1000) / 10) : '',
-      partnerRef: p.partnerRef ?? '',
-      partnerUrl: p.partnerUrl ?? '',
-      partnerWebsite: p.partnerWebsite ?? '',
+      partners: (p.partners ?? []).map((pt) => ({
+        name: pt.name ?? '',
+        ref: pt.ref ?? '',
+        url: pt.url ?? '',
+        costPerDay: pt.costPerDay != null ? String(pt.costPerDay) : '',
+        insurancePct: pt.insurancePct != null ? String(Math.round(pt.insurancePct * 1000) / 10) : '',
+        availabilityMode: pt.availabilityMode ?? 'ON_REQUEST',
+      })),
     });
     setAttachPick('');
     requestAnimationFrame(() =>
@@ -234,7 +246,6 @@ export default function AdminProduits() {
     const isTechnical = mode === 'TECHNICAL';
     const isConsumable = mode === 'CONSUMABLE';
     const isMachine = mode === 'MACHINE';
-    const isExternal = isTechnical && form.supplier !== 'BRICOLOC';
     try {
       const body = {
         id: form.id || undefined,
@@ -283,14 +294,18 @@ export default function AdminProduits() {
                 purchasePrice: s.purchasePrice ? Number(s.purchasePrice) : null,
               }))
           : [],
-        supplier: isTechnical ? form.supplier : 'BRICOLOC',
-        availabilityMode: isTechnical ? form.availabilityMode : 'INSTANT',
-        partnerCostPerDay: isExternal && form.partnerCostPerDay ? Number(form.partnerCostPerDay) : null,
-        partnerInsurancePct:
-          isExternal && form.partnerInsurancePct ? Number(form.partnerInsurancePct) / 100 : null,
-        partnerRef: isExternal ? form.partnerRef || null : null,
-        partnerUrl: isExternal ? form.partnerUrl || null : null,
-        partnerWebsite: isExternal ? form.partnerWebsite || null : null,
+        partners: isTechnical
+          ? form.partners
+              .filter((pt) => pt.name || pt.ref || pt.url || pt.costPerDay || pt.insurancePct)
+              .map((pt) => ({
+                name: pt.name || undefined,
+                ref: pt.ref || undefined,
+                url: pt.url || undefined,
+                costPerDay: pt.costPerDay ? Number(pt.costPerDay) : null,
+                insurancePct: pt.insurancePct ? Number(pt.insurancePct) / 100 : null,
+                availabilityMode: pt.availabilityMode || 'ON_REQUEST',
+              }))
+          : [],
       };
       await staffApi('/api/admin/products', { method: 'POST', body });
       setMsg(editingId ? 'Fiche mise à jour.' : 'Fiche créée.');
@@ -427,7 +442,6 @@ export default function AdminProduits() {
   const isTechnical = mode === 'TECHNICAL';
   const isMachine = mode === 'MACHINE';
   const isConsumableMode = mode === 'CONSUMABLE';
-  const isExternalForm = isTechnical && form.supplier !== 'BRICOLOC';
   const showRentalPricing = mode === 'MACHINE' || mode === 'ACCESSORY' || mode === 'PPE';
   const showStockFields = mode === 'ACCESSORY' || mode === 'CONSUMABLE' || mode === 'PPE';
   const current = editingId ? products.find((p) => p.id === editingId) : undefined;
@@ -775,115 +789,9 @@ export default function AdminProduits() {
                 )}
               </p>
 
-              <label className="row" style={{ gap: 8, marginTop: 12 }}>
-                <input
-                  type="checkbox"
-                  checked={isExternalForm}
-                  onChange={(e) =>
-                    set('supplier', e.target.checked ? '' : 'BRICOLOC')
-                  }
-                />
-                <span className="small">
-                  Aussi disponible chez un partenaire (dépannage si le stock interne est à sec, ou
-                  simplement pour comparer son prix)
-                </span>
-              </label>
-              {isExternalForm && (
-                <div style={{ marginTop: 8 }}>
-                  <div className="field-2">
-                    <div className="field">
-                      <label>Partenaire</label>
-                      <input
-                        value={form.supplier === 'BRICOLOC' ? '' : form.supplier}
-                        onChange={(e) => set('supplier', e.target.value)}
-                        placeholder="ex. Loiselet"
-                        required
-                      />
-                    </div>
-                    <div className="field">
-                      <label>Son prix / jour (HTVA)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={form.partnerCostPerDay}
-                        onChange={(e) => set('partnerCostPerDay', e.target.value)}
-                        placeholder="ce qu'il facture — utile pour comparer"
-                      />
-                    </div>
-                  </div>
-                  <div className="field-2">
-                    <div className="field">
-                      <label>Assurance / garantie dommages (%)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={form.partnerInsurancePct}
-                        onChange={(e) => set('partnerInsurancePct', e.target.value)}
-                        placeholder="ex. 7 — voir sa facture, ça varie"
-                      />
-                    </div>
-                    <div className="field">
-                      <label>Coût réel / jour</label>
-                      <input
-                        disabled
-                        value={
-                          Number(form.partnerCostPerDay) > 0
-                            ? `${(
-                                Number(form.partnerCostPerDay) *
-                                (1 + (Number(form.partnerInsurancePct) || 0) / 100)
-                              ).toFixed(2)} € (assurance incluse)`
-                            : '—'
-                        }
-                      />
-                    </div>
-                  </div>
-                  <p className="small muted" style={{ margin: '-4px 0 0' }}>
-                    La plupart des loueurs facturent une assurance en plus, en % du prix jour (7 % chez
-                    Loiselet, ~11 % chez Loxam sur des exemples récents — ça varie). Sans ce %, le prix
-                    jour seul n&apos;est pas le coût réel pour nous ni pour le client.
-                  </p>
-                  <div className="field">
-                    <label>Disponibilité chez le partenaire</label>
-                    <select
-                      value={form.availabilityMode}
-                      onChange={(e) => set('availabilityMode', e.target.value)}
-                    >
-                      <option value="ON_REQUEST">Sur demande (à confirmer avec le partenaire)</option>
-                      <option value="INSTANT">Toujours disponible chez le partenaire</option>
-                    </select>
-                  </div>
-                  <div className="field-2">
-                    <div className="field">
-                      <label>Sa référence</label>
-                      <input
-                        value={form.partnerRef}
-                        onChange={(e) => set('partnerRef', e.target.value)}
-                        placeholder="ex. REF-1234"
-                      />
-                    </div>
-                    <div className="field">
-                      <label>Lien vers sa fiche</label>
-                      <input
-                        value={form.partnerUrl}
-                        onChange={(e) => set('partnerUrl', e.target.value)}
-                        placeholder="https://loiselet.be/produit/…"
-                      />
-                    </div>
-                  </div>
-                  <div className="field">
-                    <label>Site du partenaire</label>
-                    <input
-                      value={form.partnerWebsite}
-                      onChange={(e) => set('partnerWebsite', e.target.value)}
-                      placeholder="https://www.loiselet.be"
-                    />
-                  </div>
-                  <p className="small muted" style={{ margin: '6px 0 0' }}>
-                    Sa référence et le lien facilitent la réservation par mail — tout est repris ici,
-                    prêt à copier.
-                  </p>
-                </div>
-              )}
+              <div style={{ marginTop: 12 }}>
+                <PartnerList value={form.partners} onChange={(v) => set('partners', v)} />
+              </div>
             </fieldset>
           ) : isMachine ? null : (
             <fieldset className="card card-body" style={{ margin: 0 }}>
@@ -986,29 +894,32 @@ export default function AdminProduits() {
                             {v.model ?? v.name}
                             {v.internalRef ? ` · ${v.internalRef}` : ''} — {v.availableCount}/
                             {v.unitsCount} dispo
-                            {v.supplier !== 'BRICOLOC' &&
-                              (v.partnerUrl ? (
+                            {v.partners.map((pt, i) =>
+                              pt.url ? (
                                 <a
+                                  key={i}
                                   className="badge"
                                   style={{ marginLeft: 6 }}
-                                  href={v.partnerUrl}
+                                  href={pt.url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  title={`Réserver chez ${v.supplier}${v.partnerRef ? ` · réf. ${v.partnerRef}` : ''}`}
+                                  title={`Réserver chez ${pt.name}${pt.ref ? ` · réf. ${pt.ref}` : ''}`}
                                 >
-                                  + {v.supplier}
-                                  {v.availabilityMode === 'ON_REQUEST' ? ' (sur demande)' : ''} ↗
+                                  + {pt.name}
+                                  {pt.availabilityMode === 'ON_REQUEST' ? ' (sur demande)' : ''} ↗
                                 </a>
                               ) : (
                                 <span
+                                  key={i}
                                   className="badge"
                                   style={{ marginLeft: 6 }}
-                                  title={v.partnerRef ? `Réf. ${v.partnerRef}` : 'Aussi disponible chez ce partenaire'}
+                                  title={pt.ref ? `Réf. ${pt.ref}` : 'Partenaire de secours'}
                                 >
-                                  + {v.supplier}
-                                  {v.availabilityMode === 'ON_REQUEST' ? ' (sur demande)' : ''}
+                                  + {pt.name}
+                                  {pt.availabilityMode === 'ON_REQUEST' ? ' (sur demande)' : ''}
                                 </span>
-                              ))}
+                              ),
+                            )}
                           </span>
                           <button
                             type="button"
@@ -1192,7 +1103,9 @@ export default function AdminProduits() {
                       <span className="badge">
                         {p.technical
                           ? (p.parentProductId ? 'MACHINE' : 'MACHINE (libre)') +
-                            (p.supplier && p.supplier !== 'BRICOLOC' ? ` · ${p.supplier}` : '')
+                            (p.partners?.length
+                              ? ` · +${p.partners.length} partenaire${p.partners.length > 1 ? 's' : ''}`
+                              : '')
                           : p.kind === 'MACHINE'
                             ? 'FICHE PRODUIT'
                             : p.kind}
@@ -1399,6 +1312,116 @@ function SupplierList({
       >
         + Ajouter un fournisseur
       </button>
+    </div>
+  );
+}
+
+/** Liste éditable des partenaires de secours pour une machine (plusieurs
+ * possibles — Loiselet, Loxam, un autre loueur — chacun son prix, son
+ * assurance, sa réf. et son lien, pour dépanner une commande ou comparer). */
+function PartnerList({
+  value,
+  onChange,
+}: {
+  value: PartnerRow[];
+  onChange: (v: PartnerRow[]) => void;
+}) {
+  const patch = (i: number, p: Partial<PartnerRow>) =>
+    onChange(value.map((s, idx) => (idx === i ? { ...s, ...p } : s)));
+  const remove = (i: number) => onChange(value.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="field">
+      <label>Partenaires de secours (dépannage si le stock interne est à sec, ou comparaison de prix)</label>
+      {value.length === 0 && (
+        <p className="small muted" style={{ margin: '0 0 6px' }}>
+          Aucun partenaire renseigné pour l&apos;instant.
+        </p>
+      )}
+      <div className="stack" style={{ gap: 10 }}>
+        {value.map((s, i) => {
+          const cost = Number(s.costPerDay);
+          const realCost = cost > 0 ? cost * (1 + (Number(s.insurancePct) || 0) / 100) : null;
+          return (
+            <div key={i} className="card card-body" style={{ padding: 10 }}>
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  placeholder="Partenaire (ex. Loiselet)"
+                  value={s.name}
+                  onChange={(e) => patch(i, { name: e.target.value })}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+                <select
+                  value={s.availabilityMode}
+                  onChange={(e) => patch(i, { availabilityMode: e.target.value })}
+                  style={{ flex: 1, minWidth: 180 }}
+                >
+                  <option value="ON_REQUEST">Sur demande (à confirmer)</option>
+                  <option value="INSTANT">Toujours disponible</option>
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => remove(i)}
+                  aria-label="Retirer ce partenaire"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="row" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Son prix / jour (HTVA)"
+                  value={s.costPerDay}
+                  onChange={(e) => patch(i, { costPerDay: e.target.value })}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="Assurance (%) — voir sa facture"
+                  value={s.insurancePct}
+                  onChange={(e) => patch(i, { insurancePct: e.target.value })}
+                  style={{ flex: 1, minWidth: 160 }}
+                />
+                <input
+                  disabled
+                  value={realCost != null ? `${realCost.toFixed(2)} € coût réel/j` : '—'}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+              </div>
+              <div className="row" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                <input
+                  placeholder="Sa référence"
+                  value={s.ref}
+                  onChange={(e) => patch(i, { ref: e.target.value })}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+                <input
+                  placeholder="Lien vers sa fiche"
+                  value={s.url}
+                  onChange={(e) => patch(i, { url: e.target.value })}
+                  style={{ flex: 2, minWidth: 180 }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm"
+        style={{ marginTop: 8 }}
+        onClick={() => onChange([...value, { ...EMPTY_PARTNER }])}
+      >
+        + Ajouter un partenaire
+      </button>
+      <p className="small muted" style={{ margin: '6px 0 0' }}>
+        La plupart des loueurs facturent une assurance en plus du prix jour (7 % chez Loiselet,
+        ~11 % chez Loxam sur des exemples récents — ça varie). Sans ce %, le prix jour seul
+        n&apos;est pas le coût réel. Référence et lien facilitent la réservation par mail.
+      </p>
     </div>
   );
 }

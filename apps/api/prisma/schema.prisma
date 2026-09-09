@@ -265,11 +265,6 @@ model Product {
 
   /// Provenance : parc Bricoloc, ou nom d'un partenaire loueur (Loiselet, ou
   /// un autre loueur chez qui on peut se dépanner). "BRICOLOC" = interne.
-  /// Sur une machine (fiche technique) rattachée à une fiche produit, permet
-  /// d'avoir à la fois des machines internes (les nôtres, avec exemplaires)
-  /// et externes (chez un partenaire, sans exemplaires) sous la même fiche
-  /// produit — le client ne voit jamais cette distinction, c'est un repère
-  /// interne pour dépanner une commande quand le stock interne est à sec.
   supplier            String    @default("BRICOLOC")
   supplierId          String?
   supplierRel         Supplier? @relation(fields: [supplierId], references: [id])
@@ -277,17 +272,16 @@ model Product {
   supplierUrl         String?
   supplierListPrice   Float? // prix affiche partenaire (= prix client)
   supplierDiscountPct Float? // remise Bricoloc sur ce prix (ex 0.25)
-  /// Coût de location facturé par le partenaire (jour, HTVA), sa référence
-  /// pour cette machine, le lien vers sa fiche et son site — pour réserver
-  /// par mail rapidement (supplier != "BRICOLOC" uniquement).
-  partnerCostPerDay   Float?
-  /// Assurance/garantie dommages facturée en plus par le partenaire, en % du
-  /// coût journalier (ex. 0,07 = 7 % — varie selon le partenaire, voir sa
-  /// facture). partnerCostPerDay seul n'est donc PAS le coût réel.
-  partnerInsurancePct Float?
-  partnerRef          String?
-  partnerUrl          String?
-  partnerWebsite      String?
+  /// Partenaires de secours pour une machine (fiche technique) : plusieurs
+  /// possibles (Loiselet, Loxam, un autre loueur), chacun avec son coût/jour,
+  /// son % d'assurance (varie selon le partenaire — pas inclus dans le prix
+  /// jour), sa réf., le lien vers sa fiche et sa disponibilité. Permet d'avoir
+  /// à la fois des machines internes (les nôtres, avec exemplaires) et des
+  /// partenaires de secours sous la même fiche produit — le client ne voit
+  /// jamais cette distinction, c'est un repère interne pour dépanner une
+  /// commande quand le stock interne est à sec, ou comparer les prix.
+  /// [{ name, ref, url, costPerDay, insurancePct, availabilityMode }]
+  partners Json?
   /// STANDARD = livraison tarif geo normal ; QUOTE_ONLY = volumineux, sur devis.
   deliveryPolicy      String    @default("STANDARD")
   /// INSTANT = reservable en direct ; ON_REQUEST = confirmation partenaire sous 1 h.
