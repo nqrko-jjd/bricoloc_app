@@ -197,6 +197,7 @@ export const upsertProductSchema = z.object({
   supplier: z.string().optional(),
   availabilityMode: z.enum(['INSTANT', 'ON_REQUEST']).optional(),
   partnerCostPerDay: z.number().min(0).nullable().optional(),
+  partnerInsurancePct: z.number().min(0).max(1).nullable().optional(),
   partnerRef: z.string().nullable().optional(),
   partnerUrl: z.string().nullable().optional(),
   partnerWebsite: z.string().nullable().optional(),

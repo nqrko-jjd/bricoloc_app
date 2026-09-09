@@ -70,6 +70,7 @@ export interface ProductDetail extends ProductSummary {
   supplier?: string;
   availabilityMode?: string;
   partnerCostPerDay?: number | null;
+  partnerInsurancePct?: number | null;
   partnerRef?: string | null;
   partnerUrl?: string | null;
   partnerWebsite?: string | null;

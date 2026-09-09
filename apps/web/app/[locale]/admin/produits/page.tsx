@@ -79,6 +79,7 @@ const EMPTY = {
   supplier: 'BRICOLOC',
   availabilityMode: 'INSTANT',
   partnerCostPerDay: '',
+  partnerInsurancePct: '',
   partnerRef: '',
   partnerUrl: '',
   partnerWebsite: '',
@@ -215,6 +216,7 @@ export default function AdminProduits() {
       supplier: p.supplier ?? 'BRICOLOC',
       availabilityMode: p.availabilityMode ?? 'INSTANT',
       partnerCostPerDay: p.partnerCostPerDay != null ? String(p.partnerCostPerDay) : '',
+      partnerInsurancePct: p.partnerInsurancePct != null ? String(Math.round(p.partnerInsurancePct * 1000) / 10) : '',
       partnerRef: p.partnerRef ?? '',
       partnerUrl: p.partnerUrl ?? '',
       partnerWebsite: p.partnerWebsite ?? '',
@@ -284,6 +286,8 @@ export default function AdminProduits() {
         supplier: isTechnical ? form.supplier : 'BRICOLOC',
         availabilityMode: isTechnical ? form.availabilityMode : 'INSTANT',
         partnerCostPerDay: isExternal && form.partnerCostPerDay ? Number(form.partnerCostPerDay) : null,
+        partnerInsurancePct:
+          isExternal && form.partnerInsurancePct ? Number(form.partnerInsurancePct) / 100 : null,
         partnerRef: isExternal ? form.partnerRef || null : null,
         partnerUrl: isExternal ? form.partnerUrl || null : null,
         partnerWebsite: isExternal ? form.partnerWebsite || null : null,
@@ -807,6 +811,37 @@ export default function AdminProduits() {
                       />
                     </div>
                   </div>
+                  <div className="field-2">
+                    <div className="field">
+                      <label>Assurance / garantie dommages (%)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={form.partnerInsurancePct}
+                        onChange={(e) => set('partnerInsurancePct', e.target.value)}
+                        placeholder="ex. 7 — voir sa facture, ça varie"
+                      />
+                    </div>
+                    <div className="field">
+                      <label>Coût réel / jour</label>
+                      <input
+                        disabled
+                        value={
+                          Number(form.partnerCostPerDay) > 0
+                            ? `${(
+                                Number(form.partnerCostPerDay) *
+                                (1 + (Number(form.partnerInsurancePct) || 0) / 100)
+                              ).toFixed(2)} € (assurance incluse)`
+                            : '—'
+                        }
+                      />
+                    </div>
+                  </div>
+                  <p className="small muted" style={{ margin: '-4px 0 0' }}>
+                    La plupart des loueurs facturent une assurance en plus, en % du prix jour (7 % chez
+                    Loiselet, ~11 % chez Loxam sur des exemples récents — ça varie). Sans ce %, le prix
+                    jour seul n&apos;est pas le coût réel pour nous ni pour le client.
+                  </p>
                   <div className="field">
                     <label>Disponibilité chez le partenaire</label>
                     <select

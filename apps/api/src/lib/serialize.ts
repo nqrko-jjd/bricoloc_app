@@ -165,6 +165,7 @@ export function serializeProductDetail(
           supplier: p.supplier,
           availabilityMode: p.availabilityMode,
           partnerCostPerDay: p.partnerCostPerDay,
+          partnerInsurancePct: p.partnerInsurancePct,
           partnerRef: p.partnerRef,
           partnerUrl: p.partnerUrl,
           partnerWebsite: p.partnerWebsite,

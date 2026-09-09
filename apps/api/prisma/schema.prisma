@@ -281,6 +281,10 @@ model Product {
   /// pour cette machine, le lien vers sa fiche et son site — pour réserver
   /// par mail rapidement (supplier != "BRICOLOC" uniquement).
   partnerCostPerDay   Float?
+  /// Assurance/garantie dommages facturée en plus par le partenaire, en % du
+  /// coût journalier (ex. 0,07 = 7 % — varie selon le partenaire, voir sa
+  /// facture). partnerCostPerDay seul n'est donc PAS le coût réel.
+  partnerInsurancePct Float?
   partnerRef          String?
   partnerUrl          String?
   partnerWebsite      String?
