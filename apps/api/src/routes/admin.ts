@@ -299,12 +299,13 @@ adminRouter.post(
     // effet sur accessoires/consommables/EPI, où la marque est un attribut
     // normal (ex. un disque diamant Bosch).
     const isVitrineMachine = data.kind === 'MACHINE' && !data.parentProductId && !data.technical;
-    // Machine externe : louée chez un partenaire (Loiselet ou un autre loueur,
-    // pour dépanner une fiche produit à sec de stock interne) plutôt que
-    // possédée. Réservé aux machines (technical) ; jamais sur une fiche
+    // Une machine peut être interne (nos exemplaires, référence interne,
+    // fournisseurs d'achat) ET avoir un partenaire de secours/comparaison en
+    // même temps (ex. dépannage chez Loiselet, ou juste noter leur prix pour
+    // comparer) — les deux jeux de champs coexistent, ce n'est pas un choix
+    // exclusif. Réservé aux machines (technical) ; jamais sur une fiche
     // produit ni un autre type de fiche.
     const isTechnicalRow = data.kind === 'MACHINE' && !!data.technical;
-    const isExternalMachine = isTechnicalRow && (data.supplier || 'BRICOLOC') !== 'BRICOLOC';
     const base = {
       name: data.name,
       kind: data.kind,
@@ -339,14 +340,14 @@ adminRouter.post(
       // un seul fournisseur suffit.
       purchasePrice: data.kind === 'MACHINE' ? null : (data.purchasePrice ?? null),
       supplierRef: data.kind === 'MACHINE' ? null : (data.supplierRef ?? null),
-      // Machine interne (par défaut) : notre réf. + fournisseurs d'achat.
-      // Machine externe : ni l'un ni l'autre — elle n'est pas achetée, elle
-      // est louée chez le partenaire ci-dessous.
-      internalRef: isTechnicalRow && !isExternalMachine ? (data.internalRef ?? null) : null,
-      suppliers: isTechnicalRow && !isExternalMachine ? ((data.suppliers ?? []) as never) : [],
+      // Côté interne (nos exemplaires) : notre réf. + fournisseurs d'achat.
+      internalRef: isTechnicalRow ? (data.internalRef ?? null) : null,
+      suppliers: isTechnicalRow ? ((data.suppliers ?? []) as never) : [],
+      // Côté partenaire (secours/comparaison) : peut coexister avec le côté
+      // interne ci-dessus — supplier="BRICOLOC" = pas de partenaire noté.
       supplier: isTechnicalRow ? data.supplier || 'BRICOLOC' : 'BRICOLOC',
       availabilityMode: isTechnicalRow ? (data.availabilityMode ?? 'INSTANT') : 'INSTANT',
-      partnerCostPerDay: isExternalMachine ? (data.partnerCostPerDay ?? null) : null,
+      partnerCostPerDay: isTechnicalRow ? (data.partnerCostPerDay ?? null) : null,
       parentProductId: data.parentProductId ?? null,
       technical: data.technical ?? false,
       // Les machines LOISELET portent leur réf. partenaire à part (import) ;
