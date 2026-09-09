@@ -160,6 +160,11 @@ export function serializeProductDetail(
           supplierRef: p.supplierRef,
           supplierListPrice: p.supplierListPrice,
           purchasePrice: p.purchasePrice,
+          internalRef: p.internalRef,
+          suppliers:
+            (p.suppliers as
+              | { name?: string; ref?: string; url?: string; listPrice?: number | null; purchasePrice?: number | null }[]
+              | null) ?? [],
           // Fiches techniques : cf. Product.parentProductId (schema.prisma).
           parentProductId: p.parentProductId,
           technical: p.technical,
@@ -172,7 +177,7 @@ export function serializeProductDetail(
             name: v.name,
             brand: v.brand,
             model: v.model,
-            supplierRef: v.supplierRef,
+            internalRef: v.internalRef,
             published: v.published,
             image: (v.images as string[])?.[0] ?? null,
             unitsCount: v.units.length,

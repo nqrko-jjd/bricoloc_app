@@ -57,6 +57,10 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         published: p.published ? 1 : 0,
         isNew: p.isNew ? 1 : 0,
         supplier: p.supplier,
+        // Machine : internalRef (notre réf.) — le détail fournisseurs
+        // (plusieurs possibles) ne se gère que dans le formulaire admin.
+        // Accessoire/consommable/EPI : réf. fournisseur unique, inchangé.
+        internalRef: p.internalRef ?? '',
         partSupplier: p.partSupplier ?? '',
         supplierRef: p.supplierRef ?? '',
         supplierUrl: p.supplierUrl ?? '',
@@ -65,7 +69,7 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
       })),
       ['slug', 'name', 'kind', 'categorySlug', 'brand', 'model', 'shortDescription', 'dailyPrice',
         'weekendPrice', 'weekPrice', 'monthPrice', 'deposit', 'proDiscountPct', 'stockQty',
-        'published', 'isNew', 'supplier', 'partSupplier', 'supplierRef', 'supplierUrl',
+        'published', 'isNew', 'supplier', 'internalRef', 'partSupplier', 'supplierRef', 'supplierUrl',
         'supplierListPrice', 'purchasePrice'],
     );
   },
@@ -281,11 +285,15 @@ const IMPORTERS: Record<string, Importer> = {
           stockQty: 'stockQty' in r ? csv.int(r.stockQty) : undefined,
           published: 'published' in r ? csv.bool(r.published) ?? undefined : undefined,
           isNew: 'isNew' in r ? csv.bool(r.isNew) ?? undefined : undefined,
-          partSupplier: 'partSupplier' in r ? csv.str(r.partSupplier) : undefined,
-          supplierRef: 'supplierRef' in r ? csv.str(r.supplierRef) : undefined,
-          supplierUrl: 'supplierUrl' in r ? csv.str(r.supplierUrl) : undefined,
-          supplierListPrice: 'supplierListPrice' in r ? csv.num(r.supplierListPrice) : undefined,
-          purchasePrice: 'purchasePrice' in r ? csv.num(r.purchasePrice) : undefined,
+          // Machine : internalRef (notre réf.) à la place de supplierRef ; le
+          // détail fournisseurs (plusieurs possibles) ne se gère qu'au
+          // formulaire admin, pas par CSV — on n'y touche pas ici.
+          internalRef: kind === 'MACHINE' && 'internalRef' in r ? csv.str(r.internalRef) : undefined,
+          partSupplier: kind !== 'MACHINE' && 'partSupplier' in r ? csv.str(r.partSupplier) : undefined,
+          supplierRef: kind !== 'MACHINE' && 'supplierRef' in r ? csv.str(r.supplierRef) : undefined,
+          supplierUrl: kind !== 'MACHINE' && 'supplierUrl' in r ? csv.str(r.supplierUrl) : undefined,
+          supplierListPrice: kind !== 'MACHINE' && 'supplierListPrice' in r ? csv.num(r.supplierListPrice) : undefined,
+          purchasePrice: kind !== 'MACHINE' && 'purchasePrice' in r ? csv.num(r.purchasePrice) : undefined,
           isConsumable: kind === 'CONSUMABLE',
         };
         if (catSlug) data.categoryId = cats.get(catSlug);

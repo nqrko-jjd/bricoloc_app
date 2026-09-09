@@ -56,6 +56,15 @@ export interface ProductDetail extends ProductSummary {
   supplierUrl?: string | null;
   supplierListPrice?: number | null;
   purchasePrice?: number | null;
+  // Machine : référence interne Bricoloc + fournisseurs possibles (plusieurs).
+  internalRef?: string | null;
+  suppliers?: {
+    name?: string;
+    ref?: string;
+    url?: string;
+    listPrice?: number | null;
+    purchasePrice?: number | null;
+  }[];
   // Fiches techniques (marque/modèle rattaché à une fiche vitrine) — interne.
   technical?: boolean;
   parentProductId?: string | null;
@@ -66,7 +75,7 @@ export interface ProductDetail extends ProductSummary {
     name: string;
     brand: string | null;
     model: string | null;
-    supplierRef: string | null;
+    internalRef: string | null;
     published: boolean;
     image: string | null;
     unitsCount: number;

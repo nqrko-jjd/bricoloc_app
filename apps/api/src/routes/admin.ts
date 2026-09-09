@@ -326,18 +326,21 @@ adminRouter.post(
       published: data.parentProductId || data.technical ? false : data.published,
       isNew: data.isNew,
       stockQty: data.stockQty ?? null,
-      purchasePrice: data.purchasePrice ?? null,
+      // Une machine utilise désormais internalRef (notre réf.) + suppliers[]
+      // (plusieurs fournisseurs possibles, chacun sa réf./prix) à la place de
+      // supplierRef/partSupplier/supplierUrl/supplierListPrice/purchasePrice —
+      // ces derniers restent la place pour un accessoire/consommable/EPI, où
+      // un seul fournisseur suffit.
+      purchasePrice: data.kind === 'MACHINE' ? null : (data.purchasePrice ?? null),
+      supplierRef: data.kind === 'MACHINE' ? null : (data.supplierRef ?? null),
+      internalRef: data.kind === 'MACHINE' ? (data.internalRef ?? null) : null,
+      suppliers: data.kind === 'MACHINE' ? ((data.suppliers ?? []) as never) : [],
       parentProductId: data.parentProductId ?? null,
       technical: data.technical ?? false,
-      // supplierRef sert de réf. interne éditable pour tous les types : code
-      // parc (O-XXXX) sur une machine, réf. pièce fournisseur sur le reste.
-      supplierRef: data.supplierRef ?? null,
-      // Le reste (revendeur, lien, prix catalogue) ne concerne que les articles
-      // achetés/revendus ainsi que les fiches techniques (achat machine réel) ;
+      // Les machines LOISELET portent leur réf. partenaire à part (import) ;
       // une fiche vitrine générique (MACHINE sans parentProductId ni technical)
-      // n'a pas de revendeur propre. Les machines LOISELET portent leur réf.
-      // partenaire à part (gérée à l'import).
-      ...(data.kind === 'MACHINE' && !data.parentProductId && !data.technical
+      // n'a pas de revendeur propre.
+      ...(data.kind === 'MACHINE'
         ? {}
         : {
             partSupplier: data.partSupplier ?? null,

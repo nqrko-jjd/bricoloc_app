@@ -8,16 +8,22 @@ import type { ProductDetail, Category } from '@/lib/types';
 
 type CreateMode = 'MACHINE' | 'TECHNICAL' | 'ACCESSORY' | 'CONSUMABLE' | 'PPE';
 
+// Termes (2026-09-09, à la demande de David) : ce qu'on appelait « machine
+// (vitrine) » est une fiche produit e-commerce (nom générique, prix, montrée
+// au client) ; ce qu'on appelait « fiche technique » EST la machine réelle
+// (marque/modèle précis, exemplaires physiques, fournisseurs) — le CreateMode
+// interne 'MACHINE'/'TECHNICAL' ne change pas (trop de logique en dépend),
+// seuls les libellés affichés changent.
 const CREATE_TITLES: Record<CreateMode, string> = {
-  MACHINE: 'Nouvelle machine (vitrine)',
-  TECHNICAL: 'Nouvelle fiche technique',
+  MACHINE: 'Nouvelle fiche produit',
+  TECHNICAL: 'Nouvelle machine',
   ACCESSORY: 'Nouvel accessoire',
   CONSUMABLE: 'Nouveau consommable',
   PPE: 'Nouvelle protection (EPI)',
 };
 const EDIT_TITLES: Record<CreateMode, string> = {
-  MACHINE: 'Machine (vitrine)',
-  TECHNICAL: 'Fiche technique',
+  MACHINE: 'Fiche produit',
+  TECHNICAL: 'Machine',
   ACCESSORY: 'Accessoire',
   CONSUMABLE: 'Consommable',
   PPE: 'Protection (EPI)',
@@ -26,8 +32,8 @@ const EDIT_TITLES: Record<CreateMode, string> = {
 type KindFilter = 'CATALOG' | 'MACHINE' | 'TECHNICAL' | 'ACCESSORY' | 'CONSUMABLE' | 'PPE';
 const FILTER_LABELS: Record<KindFilter, string> = {
   CATALOG: 'Catalogue (tout ce qui est vendable)',
-  MACHINE: 'Machines (vitrines)',
-  TECHNICAL: 'Fiches techniques',
+  MACHINE: 'Fiches produits',
+  TECHNICAL: 'Machines',
   ACCESSORY: 'Accessoires',
   CONSUMABLE: 'Consommables',
   PPE: 'Protections (EPI)',
@@ -66,7 +72,19 @@ const EMPTY = {
   supplierUrl: '',
   supplierListPrice: '',
   purchasePrice: '',
+  // Machine : notre réf. + fournisseurs possibles (plusieurs sources d'achat).
+  internalRef: '',
+  suppliers: [] as SupplierRow[],
 };
+
+type SupplierRow = {
+  name: string;
+  ref: string;
+  url: string;
+  listPrice: string;
+  purchasePrice: string;
+};
+const EMPTY_SUPPLIER: SupplierRow = { name: '', ref: '', url: '', listPrice: '', purchasePrice: '' };
 
 export default function AdminProduits() {
   const [products, setProducts] = useState<ProductDetail[]>([]);
@@ -179,6 +197,14 @@ export default function AdminProduits() {
       supplierUrl: p.supplierUrl ?? '',
       supplierListPrice: p.supplierListPrice != null ? String(p.supplierListPrice) : '',
       purchasePrice: p.purchasePrice != null ? String(p.purchasePrice) : '',
+      internalRef: p.internalRef ?? '',
+      suppliers: (p.suppliers ?? []).map((s) => ({
+        name: s.name ?? '',
+        ref: s.ref ?? '',
+        url: s.url ?? '',
+        listPrice: s.listPrice != null ? String(s.listPrice) : '',
+        purchasePrice: s.purchasePrice != null ? String(s.purchasePrice) : '',
+      })),
     });
     setAttachPick('');
     requestAnimationFrame(() =>
@@ -229,6 +255,18 @@ export default function AdminProduits() {
         supplierUrl: form.supplierUrl || null,
         supplierListPrice: form.supplierListPrice ? Number(form.supplierListPrice) : null,
         purchasePrice: form.purchasePrice ? Number(form.purchasePrice) : null,
+        internalRef: isTechnical ? form.internalRef || null : null,
+        suppliers: isTechnical
+          ? form.suppliers
+              .filter((s) => s.name || s.ref || s.url || s.listPrice || s.purchasePrice)
+              .map((s) => ({
+                name: s.name || undefined,
+                ref: s.ref || undefined,
+                url: s.url || undefined,
+                listPrice: s.listPrice ? Number(s.listPrice) : null,
+                purchasePrice: s.purchasePrice ? Number(s.purchasePrice) : null,
+              }))
+          : [],
       };
       await staffApi('/api/admin/products', { method: 'POST', body });
       setMsg(editingId ? 'Fiche mise à jour.' : 'Fiche créée.');
@@ -274,7 +312,7 @@ export default function AdminProduits() {
         method: 'PATCH',
         body: { parentProductId },
       });
-      setMsg('Fiche technique rattachée.');
+      setMsg('Machine rattachée.');
       await load();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
@@ -286,7 +324,7 @@ export default function AdminProduits() {
     const target = products.find((x) => x.id === targetId);
     if (
       !confirm(
-        `Transformer « ${p.name} » en fiche technique de « ${target?.name ?? ''} » ? Elle disparaît du catalogue public et son stock rejoint celui de la vitrine.`,
+        `Transformer « ${p.name} » en machine de « ${target?.name ?? ''} » ? Elle disparaît du catalogue public et son stock rejoint celui de la fiche produit.`,
       )
     )
       return;
@@ -295,13 +333,13 @@ export default function AdminProduits() {
     setConvertTarget('');
   }
 
-  /** Bascule une fiche en fiche technique sans choisir de vitrine tout de
-   * suite (rattachement possible plus tard, depuis la vitrine ou en éditant
-   * cette fiche). */
+  /** Bascule une fiche en machine sans choisir de fiche produit tout de
+   * suite (rattachement possible plus tard, depuis la fiche produit ou en
+   * éditant cette fiche). */
   async function makeTechnical(p: ProductDetail) {
     if (
       !confirm(
-        `Transformer « ${p.name} » en fiche technique, sans la rattacher à une vitrine pour l’instant ? Elle disparaît du catalogue public.`,
+        `Transformer « ${p.name} » en machine, sans la rattacher à une fiche produit pour l’instant ? Elle disparaît du catalogue public.`,
       )
     )
       return;
@@ -310,7 +348,7 @@ export default function AdminProduits() {
         method: 'PATCH',
         body: { parentProductId: null },
       });
-      setMsg(`« ${p.name} » est maintenant une fiche technique (non rattachée).`);
+      setMsg(`« ${p.name} » est maintenant une machine (non rattachée).`);
       await load();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
@@ -320,13 +358,13 @@ export default function AdminProduits() {
   }
 
   async function detachVariant(childId: string, childName: string) {
-    if (!confirm(`Détacher « ${childName} » de sa fiche vitrine ? Elle redevient une fiche indépendante (non publiée).`)) return;
+    if (!confirm(`Détacher « ${childName} » de sa fiche produit ? Elle redevient une machine indépendante (non publiée).`)) return;
     try {
       await staffApi(`/api/admin/products/${childId}/parent`, {
         method: 'PATCH',
         body: { parentProductId: null },
       });
-      setMsg('Fiche technique détachée.');
+      setMsg('Machine détachée.');
       await load();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
@@ -359,7 +397,7 @@ export default function AdminProduits() {
   const isDuplicate = (p: ProductDetail) =>
     !p.technical && (nameCounts.get(normalize(p.name)) ?? 0) > 1;
 
-  // Vitrines candidates pour « rattacher » une fiche technique (créée ou en édition).
+  // Fiches produits candidates pour « rattacher » une machine (créée ou en édition).
   const vitrineOptions = products.filter((p) => p.kind === 'MACHINE' && !p.parentProductId && !p.technical);
 
   const isTechnical = mode === 'TECHNICAL';
@@ -375,15 +413,17 @@ export default function AdminProduits() {
 
       <div className="card card-body">
         <p className="small muted" style={{ margin: '0 0 10px' }}>
-          Choisissez ce que vous créez : une fiche technique n&apos;a ni prix ni page publique —
-          seule la machine (vitrine) qu&apos;elle rejoint est montrée au client.
+          Choisissez ce que vous créez : une <strong>fiche produit</strong> est ce que le client voit
+          (nom générique, prix, page publique) ; une <strong>machine</strong> est l&apos;exemplaire réel
+          (marque/modèle, fournisseurs, exemplaires physiques) rattaché à une fiche produit — elle n&apos;a
+          ni prix ni page publique à elle.
         </p>
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <button type="button" className="btn btn-primary btn-sm" onClick={() => startCreate('MACHINE')}>
-            + Nouvelle machine
+            + Nouvelle fiche produit
           </button>
           <button type="button" className="btn btn-sm" onClick={() => startCreate('TECHNICAL')}>
-            + Fiche technique
+            + Machine
           </button>
           <button type="button" className="btn btn-sm" onClick={() => startCreate('ACCESSORY')}>
             + Accessoire
@@ -448,7 +488,7 @@ export default function AdminProduits() {
                 </div>
               </div>
               <div className="field">
-                <label>Rattachée à la vitrine</label>
+                <label>Rattachée à la fiche produit</label>
                 <select
                   value={form.parentProductId}
                   onChange={(e) => set('parentProductId', e.target.value)}
@@ -461,8 +501,8 @@ export default function AdminProduits() {
                   ))}
                 </select>
                 <span className="small muted">
-                  Le client réserve la vitrine, jamais cette fiche technique directement. Vous
-                  pourrez aussi la rattacher plus tard depuis la vitrine.
+                  Le client réserve la fiche produit, jamais cette machine directement. Vous
+                  pourrez aussi la rattacher plus tard depuis la fiche produit.
                 </span>
               </div>
             </>
@@ -677,86 +717,105 @@ export default function AdminProduits() {
             </fieldset>
           )}
 
-          <fieldset className="card card-body" style={{ margin: 0 }}>
-            <legend className="small" style={{ fontWeight: 700 }}>
-              Interne — approvisionnement (jamais affiché au client)
-            </legend>
-            {showStockFields && (
+          {isTechnical ? (
+            <fieldset className="card card-body" style={{ margin: 0 }}>
+              <legend className="small" style={{ fontWeight: 700 }}>
+                Interne — référence &amp; fournisseurs (jamais affiché au client)
+              </legend>
+              <div className="field">
+                <label>Référence interne (Bricoloc)</label>
+                <input
+                  value={form.internalRef}
+                  onChange={(e) => set('internalRef', e.target.value)}
+                  placeholder="ex. O-0001"
+                />
+              </div>
+              <SupplierList value={form.suppliers} onChange={(v) => set('suppliers', v)} />
+              <p className="small muted" style={{ margin: '10px 0 0' }}>
+                {editingId ? (
+                  <>
+                    {current?.totalStock ?? 0} exemplaire{(current?.totalStock ?? 0) > 1 ? 's' : ''}{' '}
+                    physique{(current?.totalStock ?? 0) > 1 ? 's' : ''} (n° de série, étiquette QR — une
+                    même machine peut en avoir plusieurs, un par exemplaire).{' '}
+                    <a
+                      href={`/admin/exemplaires?q=${encodeURIComponent(form.name)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Gérer les exemplaires →
+                    </a>
+                  </>
+                ) : (
+                  'Les exemplaires physiques (n° de série, étiquette QR — une même machine peut en avoir plusieurs) se gèrent dans Admin → Exemplaires une fois la fiche enregistrée.'
+                )}
+              </p>
+            </fieldset>
+          ) : (
+            <fieldset className="card card-body" style={{ margin: 0 }}>
+              <legend className="small" style={{ fontWeight: 700 }}>
+                Interne — approvisionnement (jamais affiché au client)
+              </legend>
+              {showStockFields && (
+                <div className="field-2">
+                  <div className="field">
+                    <label>Quantité en stock</label>
+                    <input
+                      type="number"
+                      value={form.stockQty}
+                      onChange={(e) => set('stockQty', e.target.value)}
+                      placeholder="ex. 40"
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Revendeur</label>
+                    <input
+                      value={form.partSupplier}
+                      onChange={(e) => set('partSupplier', e.target.value)}
+                      placeholder="Cipac, Lecot, Sanimat…"
+                    />
+                  </div>
+                </div>
+              )}
               <div className="field-2">
                 <div className="field">
-                  <label>Quantité en stock</label>
+                  <label>Référence fournisseur</label>
                   <input
-                    type="number"
-                    value={form.stockQty}
-                    onChange={(e) => set('stockQty', e.target.value)}
-                    placeholder="ex. 40"
+                    value={form.supplierRef}
+                    onChange={(e) => set('supplierRef', e.target.value)}
+                    placeholder="ex. 2608900912"
                   />
                 </div>
                 <div className="field">
-                  <label>Revendeur</label>
+                  <label>Lien fiche fournisseur</label>
                   <input
-                    value={form.partSupplier}
-                    onChange={(e) => set('partSupplier', e.target.value)}
-                    placeholder="Cipac, Lecot, Sanimat…"
+                    value={form.supplierUrl}
+                    onChange={(e) => set('supplierUrl', e.target.value)}
+                    placeholder="https://www.cipac.be/…"
                   />
                 </div>
               </div>
-            )}
-            {isTechnical && (
-              <div className="field">
-                <label>Revendeur</label>
-                <input
-                  value={form.partSupplier}
-                  onChange={(e) => set('partSupplier', e.target.value)}
-                  placeholder="Cipac, Lecot, Sanimat…"
-                />
+              <div className="field-2">
+                <div className="field">
+                  <label>Prix d&apos;achat / catalogue fournisseur (HTVA)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.supplierListPrice}
+                    onChange={(e) => set('supplierListPrice', e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label>Prix d&apos;achat réel négocié (HTVA)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.purchasePrice}
+                    onChange={(e) => set('purchasePrice', e.target.value)}
+                  />
+                </div>
               </div>
-            )}
-            <div className="field-2">
-              <div className="field">
-                <label>{mode === 'MACHINE' ? 'Référence interne' : 'Référence fournisseur'}</label>
-                <input
-                  value={form.supplierRef}
-                  onChange={(e) => set('supplierRef', e.target.value)}
-                  placeholder={mode === 'MACHINE' || isTechnical ? 'ex. O-0001' : 'ex. 2608900912'}
-                />
-              </div>
-              <div className="field">
-                <label>Lien fiche fournisseur</label>
-                <input
-                  value={form.supplierUrl}
-                  onChange={(e) => set('supplierUrl', e.target.value)}
-                  placeholder="https://www.cipac.be/…"
-                />
-              </div>
-            </div>
-            <div className="field-2">
-              <div className="field">
-                <label>Prix d&apos;achat / catalogue fournisseur (HTVA)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.supplierListPrice}
-                  onChange={(e) => set('supplierListPrice', e.target.value)}
-                />
-              </div>
-              <div className="field">
-                <label>Prix d&apos;achat réel négocié (HTVA)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.purchasePrice}
-                  onChange={(e) => set('purchasePrice', e.target.value)}
-                />
-              </div>
-            </div>
-            {isTechnical && (
-              <p className="small muted" style={{ margin: '6px 0 0' }}>
-                Les exemplaires physiques (n° de série, étiquette QR) se gèrent dans{' '}
-                <strong>Admin → Exemplaires</strong> une fois la fiche enregistrée.
-              </p>
-            )}
-          </fieldset>
+            </fieldset>
+          )}
 
           {isMachine &&
             editingId &&
@@ -772,12 +831,12 @@ export default function AdminProduits() {
               return (
                 <fieldset className="card card-body" style={{ margin: 0 }}>
                   <legend className="small" style={{ fontWeight: 700 }}>
-                    Fiches techniques rattachées
+                    Machines rattachées
                   </legend>
                   <p className="small muted">
-                    Le client réserve cette vitrine ; le stock affiché = somme des exemplaires de
-                    toutes les fiches techniques ci-dessous (marque/modèle précis, n° de série,
-                    fournisseur, accessoires propres).
+                    Le client réserve cette fiche produit ; le stock affiché = somme des exemplaires
+                    de toutes les machines ci-dessous (marque/modèle précis, n° de série, fournisseur,
+                    accessoires propres).
                   </p>
                   {hasVariants && (
                     <ul className="stack" style={{ gap: 6, margin: '8px 0' }}>
@@ -790,7 +849,7 @@ export default function AdminProduits() {
                           <span className="small">
                             {v.brand && <strong>{v.brand} </strong>}
                             {v.model ?? v.name}
-                            {v.supplierRef ? ` · ${v.supplierRef}` : ''} — {v.availableCount}/
+                            {v.internalRef ? ` · ${v.internalRef}` : ''} — {v.availableCount}/
                             {v.unitsCount} dispo
                           </span>
                           <button
@@ -810,12 +869,12 @@ export default function AdminProduits() {
                       onChange={(e) => setAttachPick(e.target.value)}
                       style={{ flex: 1 }}
                     >
-                      <option value="">— Rattacher une fiche technique existante —</option>
+                      <option value="">— Rattacher une machine existante —</option>
                       {eligible.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name}
                           {p.brand ? ` (${p.brand})` : ''}
-                          {p.supplierRef ? ` · ${p.supplierRef}` : ''}
+                          {p.internalRef ? ` · ${p.internalRef}` : ''}
                         </option>
                       ))}
                     </select>
@@ -921,19 +980,18 @@ export default function AdminProduits() {
                         <span
                           className="badge"
                           style={{ marginLeft: 8 }}
-                          title={`Fiche technique rattachée à ${p.parentProduct?.name ?? '…'}`}
+                          title={`Machine rattachée à ${p.parentProduct?.name ?? '…'}`}
                         >
-                          ↳ {p.parentProduct?.name ?? 'fiche technique'}
+                          ↳ {p.parentProduct?.name ?? 'fiche produit'}
                         </span>
                       )}
                       {!p.parentProductId && (p.variants?.length ?? 0) > 0 && (
                         <span
                           className="badge"
                           style={{ marginLeft: 8 }}
-                          title="Fiche vitrine : le stock vient de ses fiches techniques"
+                          title="Fiche produit : le stock vient de ses machines rattachées"
                         >
-                          {p.variants!.length} fiche{p.variants!.length > 1 ? 's' : ''} technique
-                          {p.variants!.length > 1 ? 's' : ''}
+                          {p.variants!.length} machine{p.variants!.length > 1 ? 's' : ''}
                         </span>
                       )}
                       {isDuplicate(p) && (
@@ -974,7 +1032,13 @@ export default function AdminProduits() {
                     </td>
                     <td>
                       <span className="badge">
-                        {p.technical ? (p.parentProductId ? 'FICHE TECH.' : 'FICHE TECH. (libre)') : p.kind}
+                        {p.technical
+                          ? p.parentProductId
+                            ? 'MACHINE'
+                            : 'MACHINE (libre)'
+                          : p.kind === 'MACHINE'
+                            ? 'FICHE PRODUIT'
+                            : p.kind}
                       </span>
                     </td>
                     <td>{p.category?.name ?? '—'}</td>
@@ -988,19 +1052,19 @@ export default function AdminProduits() {
                       {p.kind === 'MACHINE' && !p.technical && (p.variants?.length ?? 0) === 0 && (
                         <button
                           className="btn btn-ghost btn-sm"
-                          title="Transformer en fiche technique, avec ou sans vitrine choisie tout de suite"
+                          title="Transformer en machine, avec ou sans fiche produit choisie tout de suite"
                           onClick={() => {
                             setConvertingSlug(convertingSlug === p.slug ? null : p.slug);
                             setConvertTarget('');
                           }}
                         >
-                          → Fiche technique
+                          → Machine
                         </button>
                       )}
                       {p.technical && !p.parentProductId && (
                         <button
                           className="btn btn-ghost btn-sm"
-                          title="Rattacher cette fiche technique à une vitrine"
+                          title="Rattacher cette machine à une fiche produit"
                           onClick={() => {
                             setConvertingSlug(convertingSlug === p.slug ? null : p.slug);
                             setConvertTarget('');
@@ -1028,11 +1092,11 @@ export default function AdminProduits() {
                       <td colSpan={9}>
                         <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
                           <span className="small">
-                            {p.technical ? `Rattacher « ${p.name} » à :` : `Transformer « ${p.name} » en fiche technique de :`}
+                            {p.technical ? `Rattacher « ${p.name} » à :` : `Transformer « ${p.name} » en machine de :`}
                           </span>
                           <select value={convertTarget} onChange={(e) => setConvertTarget(e.target.value)}>
                             <option value="">
-                              {p.technical ? '— Choisir la vitrine —' : '— Aucune vitrine pour l’instant —'}
+                              {p.technical ? '— Choisir la fiche produit —' : '— Aucune fiche produit pour l’instant —'}
                             </option>
                             {products
                               .filter((o) => o.kind === 'MACHINE' && !o.parentProductId && !o.technical && o.id !== p.id)
@@ -1093,6 +1157,91 @@ export default function AdminProduits() {
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Liste éditable des fournisseurs possibles pour une machine (plusieurs
+ * sources d'achat, chacune sa réf./lien/prix). */
+function SupplierList({
+  value,
+  onChange,
+}: {
+  value: SupplierRow[];
+  onChange: (v: SupplierRow[]) => void;
+}) {
+  const patch = (i: number, p: Partial<SupplierRow>) =>
+    onChange(value.map((s, idx) => (idx === i ? { ...s, ...p } : s)));
+  const remove = (i: number) => onChange(value.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="field">
+      <label>Fournisseurs (plusieurs sources d&apos;achat possibles)</label>
+      {value.length === 0 && (
+        <p className="small muted" style={{ margin: '0 0 6px' }}>
+          Aucun fournisseur renseigné pour l&apos;instant.
+        </p>
+      )}
+      <div className="stack" style={{ gap: 10 }}>
+        {value.map((s, i) => (
+          <div key={i} className="card card-body" style={{ padding: 10 }}>
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <input
+                placeholder="Fournisseur (ex. Cipac)"
+                value={s.name}
+                onChange={(e) => patch(i, { name: e.target.value })}
+                style={{ flex: 1, minWidth: 140 }}
+              />
+              <input
+                placeholder="Référence fournisseur"
+                value={s.ref}
+                onChange={(e) => patch(i, { ref: e.target.value })}
+                style={{ flex: 1, minWidth: 140 }}
+              />
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => remove(i)}
+                aria-label="Retirer ce fournisseur"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="row" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+              <input
+                placeholder="Lien fiche fournisseur"
+                value={s.url}
+                onChange={(e) => patch(i, { url: e.target.value })}
+                style={{ flex: 2, minWidth: 180 }}
+              />
+              <input
+                type="number"
+                step="0.01"
+                placeholder="Prix catalogue (HTVA)"
+                value={s.listPrice}
+                onChange={(e) => patch(i, { listPrice: e.target.value })}
+                style={{ flex: 1, minWidth: 140 }}
+              />
+              <input
+                type="number"
+                step="0.01"
+                placeholder="Prix payé (HTVA)"
+                value={s.purchasePrice}
+                onChange={(e) => patch(i, { purchasePrice: e.target.value })}
+                style={{ flex: 1, minWidth: 140 }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm"
+        style={{ marginTop: 8 }}
+        onClick={() => onChange([...value, { ...EMPTY_SUPPLIER }])}
+      >
+        + Ajouter un fournisseur
+      </button>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 import { Fragment, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { formatDateBE } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { ScanField } from '@/components/admin/ScanField';
@@ -180,13 +181,15 @@ function MachineRow({
   units,
   onReload,
   setMsg,
+  autoOpen,
 }: {
   r: StockRow;
   units: Unit[];
   onReload: () => Promise<void>;
   setMsg: (s: string) => void;
+  autoOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!autoOpen);
   const [maintFor, setMaintFor] = useState<string | null>(null);
   const [scanFor, setScanFor] = useState<string | null>(null);
   const [addN, setAddN] = useState('2');
@@ -220,6 +223,16 @@ function MachineRow({
     try {
       await staffApi(`/api/admin/units/${unitId}`, { method: 'PATCH', body: { assetTag } });
       setMsg(`Identifiant → ${assetTag}`);
+      await onReload();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+      await onReload();
+    }
+  }
+  async function setSerial(unitId: string, serialNumber: string) {
+    try {
+      await staffApi(`/api/admin/units/${unitId}`, { method: 'PATCH', body: { serialNumber: serialNumber || null } });
+      setMsg(`N° de série → ${serialNumber || '—'}`);
       await onReload();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
@@ -300,16 +313,28 @@ function MachineRow({
                     <Fragment key={u.id}>
                       <tr>
                         <td>
-                          <input
-                            key={u.assetTag}
-                            defaultValue={u.assetTag}
-                            style={{ width: 110, fontWeight: 700 }}
-                            onBlur={(e) => {
-                              if (e.target.value.trim() && e.target.value !== u.assetTag)
-                                renameTag(u.id, e.target.value.trim());
-                            }}
-                          />
-                          {u.serialNumber ? <span className="small muted"> · SN {u.serialNumber}</span> : null}
+                          <div className="row" style={{ gap: 4, alignItems: 'center' }}>
+                            <input
+                              key={u.assetTag}
+                              defaultValue={u.assetTag}
+                              style={{ width: 90, fontWeight: 700 }}
+                              onBlur={(e) => {
+                                if (e.target.value.trim() && e.target.value !== u.assetTag)
+                                  renameTag(u.id, e.target.value.trim());
+                              }}
+                            />
+                            <span className="small muted">SN</span>
+                            <input
+                              key={u.serialNumber ?? ''}
+                              defaultValue={u.serialNumber ?? ''}
+                              placeholder="n° de série"
+                              style={{ width: 110 }}
+                              onBlur={(e) => {
+                                if (e.target.value.trim() !== (u.serialNumber ?? ''))
+                                  setSerial(u.id, e.target.value.trim());
+                              }}
+                            />
+                          </div>
                         </td>
                         <td>
                           <div className="row" style={{ gap: 4, alignItems: 'center' }}>
@@ -441,13 +466,15 @@ function MachineRow({
 }
 
 export default function AdminExemplaires() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q') ?? '';
   const [tab, setTab] = useState<'machines' | 'accessories' | 'consumables'>('machines');
   const [stock, setStock] = useState<{ machines: StockRow[]; consumables: ConsumableRow[] }>({
     machines: [],
     consumables: [],
   });
   const [units, setUnits] = useState<Unit[]>([]);
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState(initialQuery);
   const [msg, setMsg] = useState('');
 
   async function load() {
@@ -533,7 +560,14 @@ export default function AdminExemplaires() {
                 </thead>
                 <tbody>
                   {rows.map((r) => (
-                    <MachineRow key={r.id} r={r} units={units} onReload={load} setMsg={setMsg} />
+                    <MachineRow
+                      key={r.id}
+                      r={r}
+                      units={units}
+                      onReload={load}
+                      setMsg={setMsg}
+                      autoOpen={!!initialQuery && r.name.toLowerCase() === initialQuery.toLowerCase()}
+                    />
                   ))}
                 </tbody>
               </table>

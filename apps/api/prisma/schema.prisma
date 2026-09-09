@@ -280,6 +280,17 @@ model Product {
   purchasePrice  Float?
   competitorRefs Json?
 
+  /// Référence interne Bricoloc/JJD (ex. code parc O-0042) — machine (fiche
+  /// technique) uniquement, distincte de la référence de CHAQUE fournisseur
+  /// (cf. `suppliers` ci-dessous : une même machine peut être achetée chez
+  /// plusieurs fournisseurs, chacun avec sa propre référence).
+  internalRef String?
+  /// Fournisseurs possibles pour cette machine : [{ name, ref, url, listPrice,
+  /// purchasePrice }]. Remplace, pour les machines, les anciens champs
+  /// partSupplier/supplierRef/supplierUrl/supplierListPrice/purchasePrice
+  /// (gardés pour compat accessoires/consommables où un seul fournisseur suffit).
+  suppliers Json?
+
   weightKg Float?
   bulky    Boolean @default(false)
 

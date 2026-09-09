@@ -177,6 +177,20 @@ export const upsertProductSchema = z.object({
   supplierUrl: z.string().nullable().optional(),
   supplierListPrice: z.number().min(0).nullable().optional(),
   purchasePrice: z.number().min(0).nullable().optional(),
+  // Machine : référence interne Bricoloc (distincte de celle de chaque
+  // fournisseur) + liste de fournisseurs possibles (plusieurs sources d'achat).
+  internalRef: z.string().nullable().optional(),
+  suppliers: z
+    .array(
+      z.object({
+        name: z.string().optional(),
+        ref: z.string().optional(),
+        url: z.string().optional(),
+        listPrice: z.number().min(0).nullable().optional(),
+        purchasePrice: z.number().min(0).nullable().optional(),
+      }),
+    )
+    .optional(),
   recommendedAccessoryIds: z.array(z.string()).default([]),
   consumableIds: z.array(z.string()).default([]),
   ppeIds: z.array(z.string()).default([]),
