@@ -445,6 +445,13 @@ export default function AdminProduits() {
   const showRentalPricing = mode === 'MACHINE' || mode === 'ACCESSORY' || mode === 'PPE';
   const showStockFields = mode === 'ACCESSORY' || mode === 'CONSUMABLE' || mode === 'PPE';
   const current = editingId ? products.find((p) => p.id === editingId) : undefined;
+  // Prix pratiqués par les partenaires des machines rattachées à cette fiche
+  // produit (tous les partenaires, toutes machines confondues) — juste pour
+  // comparer visuellement au prix jour qu'on facture, pas une donnée éditée ici.
+  const competitorPrices =
+    isMachine && current?.variants
+      ? current.variants.flatMap((v) => v.partners.map((pt) => ({ machine: v.model ?? v.name, ...pt })))
+      : [];
 
   return (
     <div className="stack">
@@ -617,6 +624,23 @@ export default function AdminProduits() {
 
           {showRentalPricing && (
             <>
+              {competitorPrices.length > 0 && (
+                <p className="small muted" style={{ margin: '-4px 0 0' }}>
+                  Chez les partenaires (pour comparer) :{' '}
+                  {competitorPrices
+                    .map((c, i) => {
+                      const real = c.costPerDay ? c.costPerDay * (1 + (c.insurancePct ?? 0)) : null;
+                      return (
+                        <span key={i}>
+                          {i > 0 && ' · '}
+                          <strong>{c.name}</strong>
+                          {real != null ? ` ${real.toFixed(2)} €/j` : ''}
+                          {c.machine ? ` (${c.machine})` : ''}
+                        </span>
+                      );
+                    })}
+                </p>
+              )}
               <div className="field-2">
                 <div className="field">
                   <label>Prix jour (HTVA)</label>
@@ -1231,8 +1255,34 @@ export default function AdminProduits() {
   );
 }
 
+/** Bascule un index dans un Set, et réindexe le Set après suppression d'une
+ * ligne (les index après celle retirée décalent de 1). Partagé par
+ * SupplierList et PartnerList (mêmes règles de pliage). */
+function useRowToggle() {
+  const [open, setOpen] = useState<Set<number>>(new Set());
+  const toggle = (i: number) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  const openOne = (i: number) => setOpen((prev) => new Set(prev).add(i));
+  const reindexAfterRemove = (removed: number) =>
+    setOpen((prev) => {
+      const next = new Set<number>();
+      prev.forEach((idx) => {
+        if (idx < removed) next.add(idx);
+        else if (idx > removed) next.add(idx - 1);
+      });
+      return next;
+    });
+  return { open, toggle, openOne, reindexAfterRemove };
+}
+
 /** Liste éditable des fournisseurs possibles pour une machine (plusieurs
- * sources d'achat, chacune sa réf./lien/prix). */
+ * sources d'achat, chacune sa réf./lien/prix). Une ligne déjà remplie se
+ * replie en résumé cliquable ; une ligne vide (nouvelle) reste dépliée. */
 function SupplierList({
   value,
   onChange,
@@ -1240,9 +1290,17 @@ function SupplierList({
   value: SupplierRow[];
   onChange: (v: SupplierRow[]) => void;
 }) {
+  const { open, toggle, openOne, reindexAfterRemove } = useRowToggle();
   const patch = (i: number, p: Partial<SupplierRow>) =>
     onChange(value.map((s, idx) => (idx === i ? { ...s, ...p } : s)));
-  const remove = (i: number) => onChange(value.filter((_, idx) => idx !== i));
+  const remove = (i: number) => {
+    onChange(value.filter((_, idx) => idx !== i));
+    reindexAfterRemove(i);
+  };
+  const add = () => {
+    openOne(value.length);
+    onChange([...value, { ...EMPTY_SUPPLIER }]);
+  };
 
   return (
     <div className="field">
@@ -1252,64 +1310,100 @@ function SupplierList({
           Aucun fournisseur renseigné pour l&apos;instant.
         </p>
       )}
-      <div className="stack" style={{ gap: 10 }}>
-        {value.map((s, i) => (
-          <div key={i} className="card card-body" style={{ padding: 10 }}>
-            <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <input
-                placeholder="Fournisseur (ex. Cipac)"
-                value={s.name}
-                onChange={(e) => patch(i, { name: e.target.value })}
-                style={{ flex: 1, minWidth: 140 }}
-              />
-              <input
-                placeholder="Référence fournisseur"
-                value={s.ref}
-                onChange={(e) => patch(i, { ref: e.target.value })}
-                style={{ flex: 1, minWidth: 140 }}
-              />
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => remove(i)}
-                aria-label="Retirer ce fournisseur"
+      <div className="stack" style={{ gap: 8 }}>
+        {value.map((s, i) => {
+          const isOpen = open.has(i) || !s.name;
+          if (!isOpen) {
+            const bits = [
+              s.ref && `réf. ${s.ref}`,
+              s.purchasePrice ? `${s.purchasePrice} € payé` : s.listPrice ? `${s.listPrice} € catalogue` : '',
+            ].filter(Boolean);
+            return (
+              <div
+                key={i}
+                className="row"
+                style={{ justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '4px 10px' }}
               >
-                ✕
-              </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ flex: 1, justifyContent: 'flex-start' }}
+                  onClick={() => toggle(i)}
+                >
+                  <span className="small">
+                    <strong>{s.name}</strong>
+                    {bits.length ? ` · ${bits.join(' · ')}` : ''}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => remove(i)}
+                  aria-label="Retirer ce fournisseur"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          }
+          return (
+            <div key={i} className="card card-body" style={{ padding: 10 }}>
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  placeholder="Fournisseur (ex. Cipac)"
+                  value={s.name}
+                  onChange={(e) => patch(i, { name: e.target.value })}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+                <input
+                  placeholder="Référence fournisseur"
+                  value={s.ref}
+                  onChange={(e) => patch(i, { ref: e.target.value })}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+                {s.name && (
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => toggle(i)}>
+                    Réduire
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => remove(i)}
+                  aria-label="Retirer ce fournisseur"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="row" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                <input
+                  placeholder="Lien fiche fournisseur"
+                  value={s.url}
+                  onChange={(e) => patch(i, { url: e.target.value })}
+                  style={{ flex: 2, minWidth: 180 }}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Prix catalogue (HTVA)"
+                  value={s.listPrice}
+                  onChange={(e) => patch(i, { listPrice: e.target.value })}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Prix payé (HTVA)"
+                  value={s.purchasePrice}
+                  onChange={(e) => patch(i, { purchasePrice: e.target.value })}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+              </div>
             </div>
-            <div className="row" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-              <input
-                placeholder="Lien fiche fournisseur"
-                value={s.url}
-                onChange={(e) => patch(i, { url: e.target.value })}
-                style={{ flex: 2, minWidth: 180 }}
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Prix catalogue (HTVA)"
-                value={s.listPrice}
-                onChange={(e) => patch(i, { listPrice: e.target.value })}
-                style={{ flex: 1, minWidth: 140 }}
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Prix payé (HTVA)"
-                value={s.purchasePrice}
-                onChange={(e) => patch(i, { purchasePrice: e.target.value })}
-                style={{ flex: 1, minWidth: 140 }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      <button
-        type="button"
-        className="btn btn-ghost btn-sm"
-        style={{ marginTop: 8 }}
-        onClick={() => onChange([...value, { ...EMPTY_SUPPLIER }])}
-      >
+      <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={add}>
         + Ajouter un fournisseur
       </button>
     </div>
@@ -1326,9 +1420,17 @@ function PartnerList({
   value: PartnerRow[];
   onChange: (v: PartnerRow[]) => void;
 }) {
+  const { open, toggle, openOne, reindexAfterRemove } = useRowToggle();
   const patch = (i: number, p: Partial<PartnerRow>) =>
     onChange(value.map((s, idx) => (idx === i ? { ...s, ...p } : s)));
-  const remove = (i: number) => onChange(value.filter((_, idx) => idx !== i));
+  const remove = (i: number) => {
+    onChange(value.filter((_, idx) => idx !== i));
+    reindexAfterRemove(i);
+  };
+  const add = () => {
+    openOne(value.length);
+    onChange([...value, { ...EMPTY_PARTNER }]);
+  };
 
   return (
     <div className="field">
@@ -1338,10 +1440,41 @@ function PartnerList({
           Aucun partenaire renseigné pour l&apos;instant.
         </p>
       )}
-      <div className="stack" style={{ gap: 10 }}>
+      <div className="stack" style={{ gap: 8 }}>
         {value.map((s, i) => {
           const cost = Number(s.costPerDay);
           const realCost = cost > 0 ? cost * (1 + (Number(s.insurancePct) || 0) / 100) : null;
+          const isOpen = open.has(i) || !s.name;
+          if (!isOpen) {
+            return (
+              <div
+                key={i}
+                className="row"
+                style={{ justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '4px 10px' }}
+              >
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ flex: 1, justifyContent: 'flex-start' }}
+                  onClick={() => toggle(i)}
+                >
+                  <span className="small">
+                    <strong>{s.name}</strong>
+                    {s.availabilityMode === 'ON_REQUEST' ? ' · sur demande' : ' · toujours dispo'}
+                    {realCost != null ? ` · ${realCost.toFixed(2)} €/j réel` : ''}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => remove(i)}
+                  aria-label="Retirer ce partenaire"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          }
           return (
             <div key={i} className="card card-body" style={{ padding: 10 }}>
               <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -1359,6 +1492,11 @@ function PartnerList({
                   <option value="ON_REQUEST">Sur demande (à confirmer)</option>
                   <option value="INSTANT">Toujours disponible</option>
                 </select>
+                {s.name && (
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => toggle(i)}>
+                    Réduire
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
@@ -1409,12 +1547,7 @@ function PartnerList({
           );
         })}
       </div>
-      <button
-        type="button"
-        className="btn btn-ghost btn-sm"
-        style={{ marginTop: 8 }}
-        onClick={() => onChange([...value, { ...EMPTY_PARTNER }])}
-      >
+      <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={add}>
         + Ajouter un partenaire
       </button>
       <p className="small muted" style={{ margin: '6px 0 0' }}>
