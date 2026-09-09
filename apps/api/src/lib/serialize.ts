@@ -161,6 +161,10 @@ export function serializeProductDetail(
           supplierListPrice: p.supplierListPrice,
           purchasePrice: p.purchasePrice,
           internalRef: p.internalRef,
+          // Machine externe (louée chez un partenaire) : supplier != "BRICOLOC".
+          supplier: p.supplier,
+          availabilityMode: p.availabilityMode,
+          partnerCostPerDay: p.partnerCostPerDay,
           suppliers:
             (p.suppliers as
               | { name?: string; ref?: string; url?: string; listPrice?: number | null; purchasePrice?: number | null }[]
@@ -178,6 +182,8 @@ export function serializeProductDetail(
             brand: v.brand,
             model: v.model,
             internalRef: v.internalRef,
+            supplier: v.supplier,
+            availabilityMode: v.availabilityMode,
             published: v.published,
             image: (v.images as string[])?.[0] ?? null,
             unitsCount: v.units.length,

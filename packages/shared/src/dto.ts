@@ -191,6 +191,12 @@ export const upsertProductSchema = z.object({
       }),
     )
     .optional(),
+  // Machine externe (louée chez un partenaire — Loiselet ou un autre loueur,
+  // pour dépanner une fiche produit quand le stock interne est à sec) :
+  // supplier = nom du partenaire ("BRICOLOC" = machine interne, par défaut).
+  supplier: z.string().optional(),
+  availabilityMode: z.enum(['INSTANT', 'ON_REQUEST']).optional(),
+  partnerCostPerDay: z.number().min(0).nullable().optional(),
   recommendedAccessoryIds: z.array(z.string()).default([]),
   consumableIds: z.array(z.string()).default([]),
   ppeIds: z.array(z.string()).default([]),

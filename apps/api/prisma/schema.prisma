@@ -263,14 +263,23 @@ model Product {
   /// Revendeur conseillé pour un consommable / accessoire (Cipac, Lecot, Sanimat Wavre, BMK…).
   partSupplier String?
 
-  /// Provenance : parc Bricoloc ou partenaire (Loiselet).
-  supplier            String    @default("BRICOLOC") // BRICOLOC | LOISELET
+  /// Provenance : parc Bricoloc, ou nom d'un partenaire loueur (Loiselet, ou
+  /// un autre loueur chez qui on peut se dépanner). "BRICOLOC" = interne.
+  /// Sur une machine (fiche technique) rattachée à une fiche produit, permet
+  /// d'avoir à la fois des machines internes (les nôtres, avec exemplaires)
+  /// et externes (chez un partenaire, sans exemplaires) sous la même fiche
+  /// produit — le client ne voit jamais cette distinction, c'est un repère
+  /// interne pour dépanner une commande quand le stock interne est à sec.
+  supplier            String    @default("BRICOLOC")
   supplierId          String?
   supplierRel         Supplier? @relation(fields: [supplierId], references: [id])
   supplierRef         String?
   supplierUrl         String?
   supplierListPrice   Float? // prix affiche partenaire (= prix client)
   supplierDiscountPct Float? // remise Bricoloc sur ce prix (ex 0.25)
+  /// Coût de location facturé par le partenaire (jour, HTVA) — machine
+  /// externe uniquement (supplier != "BRICOLOC").
+  partnerCostPerDay   Float?
   /// STANDARD = livraison tarif geo normal ; QUOTE_ONLY = volumineux, sur devis.
   deliveryPolicy      String    @default("STANDARD")
   /// INSTANT = reservable en direct ; ON_REQUEST = confirmation partenaire sous 1 h.

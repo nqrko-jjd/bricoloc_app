@@ -65,6 +65,11 @@ export interface ProductDetail extends ProductSummary {
     listPrice?: number | null;
     purchasePrice?: number | null;
   }[];
+  // Machine externe (louée chez un partenaire, ex. Loiselet, pour dépanner
+  // une fiche produit à sec de stock interne) : supplier != "BRICOLOC".
+  supplier?: string;
+  availabilityMode?: string;
+  partnerCostPerDay?: number | null;
   // Fiches techniques (marque/modèle rattaché à une fiche vitrine) — interne.
   technical?: boolean;
   parentProductId?: string | null;
@@ -76,6 +81,8 @@ export interface ProductDetail extends ProductSummary {
     brand: string | null;
     model: string | null;
     internalRef: string | null;
+    supplier: string;
+    availabilityMode: string;
     published: boolean;
     image: string | null;
     unitsCount: number;

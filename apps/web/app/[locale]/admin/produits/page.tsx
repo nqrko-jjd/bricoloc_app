@@ -75,6 +75,10 @@ const EMPTY = {
   // Machine : notre réf. + fournisseurs possibles (plusieurs sources d'achat).
   internalRef: '',
   suppliers: [] as SupplierRow[],
+  // Machine externe (louée chez un partenaire) : 'BRICOLOC' = interne (défaut).
+  supplier: 'BRICOLOC',
+  availabilityMode: 'INSTANT',
+  partnerCostPerDay: '',
 };
 
 type SupplierRow = {
@@ -205,6 +209,9 @@ export default function AdminProduits() {
         listPrice: s.listPrice != null ? String(s.listPrice) : '',
         purchasePrice: s.purchasePrice != null ? String(s.purchasePrice) : '',
       })),
+      supplier: p.supplier ?? 'BRICOLOC',
+      availabilityMode: p.availabilityMode ?? 'INSTANT',
+      partnerCostPerDay: p.partnerCostPerDay != null ? String(p.partnerCostPerDay) : '',
     });
     setAttachPick('');
     requestAnimationFrame(() =>
@@ -219,6 +226,7 @@ export default function AdminProduits() {
     const isTechnical = mode === 'TECHNICAL';
     const isConsumable = mode === 'CONSUMABLE';
     const isMachine = mode === 'MACHINE';
+    const isExternal = isTechnical && form.supplier !== 'BRICOLOC';
     try {
       const body = {
         id: form.id || undefined,
@@ -255,18 +263,22 @@ export default function AdminProduits() {
         supplierUrl: form.supplierUrl || null,
         supplierListPrice: form.supplierListPrice ? Number(form.supplierListPrice) : null,
         purchasePrice: form.purchasePrice ? Number(form.purchasePrice) : null,
-        internalRef: isTechnical ? form.internalRef || null : null,
-        suppliers: isTechnical
-          ? form.suppliers
-              .filter((s) => s.name || s.ref || s.url || s.listPrice || s.purchasePrice)
-              .map((s) => ({
-                name: s.name || undefined,
-                ref: s.ref || undefined,
-                url: s.url || undefined,
-                listPrice: s.listPrice ? Number(s.listPrice) : null,
-                purchasePrice: s.purchasePrice ? Number(s.purchasePrice) : null,
-              }))
-          : [],
+        internalRef: isTechnical && !isExternal ? form.internalRef || null : null,
+        suppliers:
+          isTechnical && !isExternal
+            ? form.suppliers
+                .filter((s) => s.name || s.ref || s.url || s.listPrice || s.purchasePrice)
+                .map((s) => ({
+                  name: s.name || undefined,
+                  ref: s.ref || undefined,
+                  url: s.url || undefined,
+                  listPrice: s.listPrice ? Number(s.listPrice) : null,
+                  purchasePrice: s.purchasePrice ? Number(s.purchasePrice) : null,
+                }))
+            : [],
+        supplier: isTechnical ? form.supplier : 'BRICOLOC',
+        availabilityMode: isTechnical ? form.availabilityMode : 'INSTANT',
+        partnerCostPerDay: isExternal && form.partnerCostPerDay ? Number(form.partnerCostPerDay) : null,
       };
       await staffApi('/api/admin/products', { method: 'POST', body });
       setMsg(editingId ? 'Fiche mise à jour.' : 'Fiche créée.');
@@ -403,6 +415,7 @@ export default function AdminProduits() {
   const isTechnical = mode === 'TECHNICAL';
   const isMachine = mode === 'MACHINE';
   const isConsumableMode = mode === 'CONSUMABLE';
+  const isExternalForm = isTechnical && form.supplier !== 'BRICOLOC';
   const showRentalPricing = mode === 'MACHINE' || mode === 'ACCESSORY' || mode === 'PPE';
   const showStockFields = mode === 'ACCESSORY' || mode === 'CONSUMABLE' || mode === 'PPE';
   const current = editingId ? products.find((p) => p.id === editingId) : undefined;
@@ -720,35 +733,87 @@ export default function AdminProduits() {
           {isTechnical ? (
             <fieldset className="card card-body" style={{ margin: 0 }}>
               <legend className="small" style={{ fontWeight: 700 }}>
-                Interne — référence &amp; fournisseurs (jamais affiché au client)
+                Interne — provenance (jamais affiché au client)
               </legend>
               <div className="field">
-                <label>Référence interne (Bricoloc)</label>
-                <input
-                  value={form.internalRef}
-                  onChange={(e) => set('internalRef', e.target.value)}
-                  placeholder="ex. O-0001"
-                />
+                <label>Provenance</label>
+                <select
+                  value={isExternalForm ? '__EXTERNAL__' : 'BRICOLOC'}
+                  onChange={(e) => set('supplier', e.target.value === '__EXTERNAL__' ? '' : 'BRICOLOC')}
+                >
+                  <option value="BRICOLOC">Interne — machine à nous</option>
+                  <option value="__EXTERNAL__">Externe — louée chez un partenaire</option>
+                </select>
+                <span className="small muted">
+                  Externe : pour dépanner une commande quand le stock interne de la fiche produit est à
+                  sec (Loiselet ou un autre loueur). Jamais montré au client — juste un repère interne.
+                </span>
               </div>
-              <SupplierList value={form.suppliers} onChange={(v) => set('suppliers', v)} />
-              <p className="small muted" style={{ margin: '10px 0 0' }}>
-                {editingId ? (
-                  <>
-                    {current?.totalStock ?? 0} exemplaire{(current?.totalStock ?? 0) > 1 ? 's' : ''}{' '}
-                    physique{(current?.totalStock ?? 0) > 1 ? 's' : ''} (n° de série, étiquette QR — une
-                    même machine peut en avoir plusieurs, un par exemplaire).{' '}
-                    <a
-                      href={`/admin/exemplaires?q=${encodeURIComponent(form.name)}`}
-                      target="_blank"
-                      rel="noreferrer"
+
+              {isExternalForm ? (
+                <>
+                  <div className="field-2">
+                    <div className="field">
+                      <label>Partenaire</label>
+                      <input
+                        value={form.supplier === 'BRICOLOC' ? '' : form.supplier}
+                        onChange={(e) => set('supplier', e.target.value)}
+                        placeholder="ex. Loiselet"
+                        required
+                      />
+                    </div>
+                    <div className="field">
+                      <label>Coût partenaire / jour (HTVA)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={form.partnerCostPerDay}
+                        onChange={(e) => set('partnerCostPerDay', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="field">
+                    <label>Disponibilité chez le partenaire</label>
+                    <select
+                      value={form.availabilityMode}
+                      onChange={(e) => set('availabilityMode', e.target.value)}
                     >
-                      Gérer les exemplaires →
-                    </a>
-                  </>
-                ) : (
-                  'Les exemplaires physiques (n° de série, étiquette QR — une même machine peut en avoir plusieurs) se gèrent dans Admin → Exemplaires une fois la fiche enregistrée.'
-                )}
-              </p>
+                      <option value="ON_REQUEST">Sur demande (à confirmer avec le partenaire)</option>
+                      <option value="INSTANT">Toujours disponible chez le partenaire</option>
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="field">
+                    <label>Référence interne (Bricoloc)</label>
+                    <input
+                      value={form.internalRef}
+                      onChange={(e) => set('internalRef', e.target.value)}
+                      placeholder="ex. O-0001"
+                    />
+                  </div>
+                  <SupplierList value={form.suppliers} onChange={(v) => set('suppliers', v)} />
+                  <p className="small muted" style={{ margin: '10px 0 0' }}>
+                    {editingId ? (
+                      <>
+                        {current?.totalStock ?? 0} exemplaire{(current?.totalStock ?? 0) > 1 ? 's' : ''}{' '}
+                        physique{(current?.totalStock ?? 0) > 1 ? 's' : ''} (n° de série, étiquette QR —
+                        une même machine peut en avoir plusieurs, un par exemplaire).{' '}
+                        <a
+                          href={`/admin/exemplaires?q=${encodeURIComponent(form.name)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Gérer les exemplaires →
+                        </a>
+                      </>
+                    ) : (
+                      'Les exemplaires physiques (n° de série, étiquette QR — une même machine peut en avoir plusieurs) se gèrent dans Admin → Exemplaires une fois la fiche enregistrée.'
+                    )}
+                  </p>
+                </>
+              )}
             </fieldset>
           ) : isMachine ? null : (
             <fieldset className="card card-body" style={{ margin: 0 }}>
@@ -849,8 +914,15 @@ export default function AdminProduits() {
                           <span className="small">
                             {v.brand && <strong>{v.brand} </strong>}
                             {v.model ?? v.name}
-                            {v.internalRef ? ` · ${v.internalRef}` : ''} — {v.availableCount}/
-                            {v.unitsCount} dispo
+                            {v.internalRef ? ` · ${v.internalRef}` : ''} —{' '}
+                            {v.supplier !== 'BRICOLOC' ? (
+                              <span className="badge" title="Machine externe, louée chez ce partenaire">
+                                externe · {v.supplier}
+                                {v.availabilityMode === 'ON_REQUEST' ? ' (sur demande)' : ''}
+                              </span>
+                            ) : (
+                              `${v.availableCount}/${v.unitsCount} dispo`
+                            )}
                           </span>
                           <button
                             type="button"
@@ -1033,9 +1105,8 @@ export default function AdminProduits() {
                     <td>
                       <span className="badge">
                         {p.technical
-                          ? p.parentProductId
-                            ? 'MACHINE'
-                            : 'MACHINE (libre)'
+                          ? (p.parentProductId ? 'MACHINE' : 'MACHINE (libre)') +
+                            (p.supplier && p.supplier !== 'BRICOLOC' ? ` · ${p.supplier}` : '')
                           : p.kind === 'MACHINE'
                             ? 'FICHE PRODUIT'
                             : p.kind}
