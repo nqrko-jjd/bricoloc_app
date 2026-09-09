@@ -291,11 +291,19 @@ adminRouter.post(
         ? suggestDegressivePricing(data.dailyPrice)
         : null;
 
+    // Marque/modèle précis : réservés aux fiches techniques MACHINE
+    // (rattachée ou pas encore). Une vitrine machine générique (« Agrafeuse
+    // pour grillage ») ne porte pas de marque — sinon le nom d'une marque
+    // précise ressort sur la vitrine publique alors qu'une autre marque de la
+    // même fiche technique pourrait très bien être livrée au client. Sans
+    // effet sur accessoires/consommables/EPI, où la marque est un attribut
+    // normal (ex. un disque diamant Bosch).
+    const isVitrineMachine = data.kind === 'MACHINE' && !data.parentProductId && !data.technical;
     const base = {
       name: data.name,
       kind: data.kind,
-      brand: data.brand ?? null,
-      model: data.model ?? null,
+      brand: isVitrineMachine ? null : (data.brand ?? null),
+      model: isVitrineMachine ? null : (data.model ?? null),
       categoryId: category?.id ?? null,
       shortDescription: data.shortDescription ?? null,
       description: data.description ?? null,

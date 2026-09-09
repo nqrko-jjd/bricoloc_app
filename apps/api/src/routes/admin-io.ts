@@ -258,12 +258,19 @@ const IMPORTERS: Record<string, Importer> = {
           results.push({ line, action: 'error', key: slug, message: 'name et dailyPrice requis pour créer' });
           continue;
         }
+        // Marque/modèle précis : réservés aux fiches techniques MACHINE
+        // (existantes, rattachées ou pas) — le CSV « products » ne sait pas
+        // créer/changer ce statut, donc on l'ignore silencieusement sur une
+        // vitrine machine générique pour éviter qu'une marque s'y colle par
+        // erreur (copier-coller Excel). Sans effet sur les autres types, où
+        // la marque est un attribut normal.
+        const isVitrineMachine = kind === 'MACHINE' && !existing?.technical && !existing?.parentProductId;
         const data: Record<string, unknown> = {
           name: name ?? undefined,
           kind,
           categoryId: catSlug ? cats.get(catSlug) : r.categorySlug === '' ? undefined : undefined,
-          brand: 'brand' in r ? csv.str(r.brand) : undefined,
-          model: 'model' in r ? csv.str(r.model) : undefined,
+          brand: !isVitrineMachine && 'brand' in r ? csv.str(r.brand) : undefined,
+          model: !isVitrineMachine && 'model' in r ? csv.str(r.model) : undefined,
           shortDescription: 'shortDescription' in r ? csv.str(r.shortDescription) : undefined,
           dailyPrice: dailyPrice ?? undefined,
           weekendPrice: 'weekendPrice' in r ? csv.num(r.weekendPrice) : undefined,
