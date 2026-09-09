@@ -442,6 +442,15 @@ export default function AdminProduits() {
     }
   }
 
+  /** Réf. interne à afficher pour une fiche : la sienne si elle n'est pas
+   * encore scindée en machine(s), sinon celle(s) de sa/ses machine(s)
+   * rattachée(s) — la réf. vit sur la machine dès qu'il y en a une. */
+  function refOf(p: ProductDetail): string {
+    if (p.internalRef) return p.internalRef;
+    const refs = (p.variants ?? []).map((v) => v.internalRef).filter((r): r is string => !!r);
+    return refs.join(', ');
+  }
+
   const shown = products
     .filter((p) => p.kind !== 'PACK')
     .filter((p) => {
@@ -452,8 +461,8 @@ export default function AdminProduits() {
     .filter((p) => !filter || p.name.toLowerCase().includes(filter.toLowerCase()))
     .sort((a, b) => {
       if (!sortBy) return 0;
-      const av = (sortBy === 'internalRef' ? a.internalRef : a.name) ?? '';
-      const bv = (sortBy === 'internalRef' ? b.internalRef : b.name) ?? '';
+      const av = sortBy === 'internalRef' ? refOf(a) : a.name;
+      const bv = sortBy === 'internalRef' ? refOf(b) : b.name;
       // Tri "naturel" : O-2 avant O-10 (pas un tri alphabétique pur).
       const cmp = av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
       return sortDir === 'asc' ? cmp : -cmp;
@@ -1153,7 +1162,7 @@ export default function AdminProduits() {
                         </span>
                       )}
                     </td>
-                    <td>{p.internalRef ?? '—'}</td>
+                    <td>{refOf(p) || '—'}</td>
                     <td style={{ textAlign: 'center' }}>
                       {p.kind === 'MACHINE' && !p.technical ? (
                         <button
