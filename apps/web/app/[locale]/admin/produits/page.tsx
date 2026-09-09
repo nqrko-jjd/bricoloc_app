@@ -60,6 +60,8 @@ const EMPTY = {
   published: true,
   isNew: false,
   images: [] as string[],
+  // Caractéristiques affichées au client (poids, dimensions, puissance…).
+  specs: [] as SpecRow[],
   // Complétez votre location (fiche produit + borne) : liens vers d'autres produits.
   recommendedAccessoryIds: [] as string[],
   consumableIds: [] as string[],
@@ -78,6 +80,20 @@ const EMPTY = {
   // Machine : partenaires de secours possibles (plusieurs — Loiselet, Loxam…).
   partners: [] as PartnerRow[],
 };
+
+type SpecRow = { key: string; value: string };
+const SPEC_SUGGESTIONS = [
+  'Poids',
+  'Dimensions',
+  'Puissance',
+  'Débit',
+  'Pression',
+  'Capacité',
+  'Diamètre',
+  'Longueur',
+  'Niveau sonore',
+  'Vitesse',
+];
 
 type SupplierRow = {
   name: string;
@@ -206,6 +222,7 @@ export default function AdminProduits() {
       published: p.published ?? true,
       isNew: p.isNew ?? false,
       images: p.images,
+      specs: Object.entries(p.specs ?? {}).map(([key, value]) => ({ key, value })),
       recommendedAccessoryIds: p.recommendedAccessories.map((x) => x.id),
       consumableIds: p.consumables.map((x) => x.id),
       ppeIds: p.ppe.map((x) => x.id),
@@ -270,6 +287,11 @@ export default function AdminProduits() {
         published: isTechnical ? false : form.published,
         isNew: isTechnical ? false : form.isNew,
         images: form.images,
+        specs: !isTechnical
+          ? Object.fromEntries(
+              form.specs.filter((s) => s.key.trim() && s.value.trim()).map((s) => [s.key.trim(), s.value.trim()]),
+            )
+          : {},
         recommendedAccessoryIds: isMachine ? form.recommendedAccessoryIds : [],
         consumableIds: isMachine ? form.consumableIds : [],
         ppeIds: isMachine ? form.ppeIds : [],
@@ -739,6 +761,8 @@ export default function AdminProduits() {
             <label>Images (glisser-déposer, la 1re est la principale)</label>
             <ImageDropzone value={form.images} onChange={(v) => set('images', v)} />
           </div>
+
+          {!isTechnical && <SpecsEditor value={form.specs} onChange={(v) => set('specs', v)} />}
 
           {isMachine && (
             <fieldset className="card card-body" style={{ margin: 0 }}>
@@ -1555,6 +1579,83 @@ function PartnerList({
         ~11 % chez Loxam sur des exemples récents — ça varie). Sans ce %, le prix jour seul
         n&apos;est pas le coût réel. Référence et lien facilitent la réservation par mail.
       </p>
+    </div>
+  );
+}
+
+/** Caractéristiques affichées au client (poids, dimensions, puissance…) —
+ * liste clé/valeur libre, avec des suggestions de noms courants pour garder
+ * les libellés cohérents d'une fiche à l'autre. */
+function SpecsEditor({
+  value,
+  onChange,
+}: {
+  value: SpecRow[];
+  onChange: (v: SpecRow[]) => void;
+}) {
+  const patch = (i: number, p: Partial<SpecRow>) =>
+    onChange(value.map((s, idx) => (idx === i ? { ...s, ...p } : s)));
+  const remove = (i: number) => onChange(value.filter((_, idx) => idx !== i));
+  const usedKeys = new Set(value.map((s) => s.key));
+  const suggestions = SPEC_SUGGESTIONS.filter((k) => !usedKeys.has(k));
+
+  return (
+    <div className="field">
+      <label>Caractéristiques (affichées au client — poids, dimensions, puissance…)</label>
+      {value.length === 0 && (
+        <p className="small muted" style={{ margin: '0 0 6px' }}>
+          Aucune caractéristique renseignée pour l&apos;instant.
+        </p>
+      )}
+      {value.length > 0 && (
+        <div className="stack" style={{ gap: 6, marginBottom: 8 }}>
+          {value.map((s, i) => (
+            <div key={i} className="row" style={{ gap: 8, alignItems: 'center' }}>
+              <input
+                placeholder="Nom (ex. Poids)"
+                value={s.key}
+                onChange={(e) => patch(i, { key: e.target.value })}
+                style={{ flex: 1, minWidth: 120 }}
+              />
+              <input
+                placeholder="Valeur (ex. 12 kg)"
+                value={s.value}
+                onChange={(e) => patch(i, { value: e.target.value })}
+                style={{ flex: 1, minWidth: 120 }}
+              />
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => remove(i)}
+                aria-label="Retirer cette caractéristique"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {suggestions.length > 0 && (
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+          {suggestions.map((k) => (
+            <button
+              key={k}
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => onChange([...value, { key: k, value: '' }])}
+            >
+              + {k}
+            </button>
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm"
+        onClick={() => onChange([...value, { key: '', value: '' }])}
+      >
+        + Autre caractéristique
+      </button>
     </div>
   );
 }
