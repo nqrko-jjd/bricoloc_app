@@ -55,14 +55,18 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         proDiscountPct: p.proDiscountPct ?? '',
         stockQty: p.stockQty ?? '',
         published: p.published ? 1 : 0,
+        isNew: p.isNew ? 1 : 0,
         supplier: p.supplier,
         partSupplier: p.partSupplier ?? '',
         supplierRef: p.supplierRef ?? '',
         supplierUrl: p.supplierUrl ?? '',
+        supplierListPrice: p.supplierListPrice ?? '',
+        purchasePrice: p.purchasePrice ?? '',
       })),
       ['slug', 'name', 'kind', 'categorySlug', 'brand', 'model', 'shortDescription', 'dailyPrice',
         'weekendPrice', 'weekPrice', 'monthPrice', 'deposit', 'proDiscountPct', 'stockQty',
-        'published', 'supplier', 'partSupplier', 'supplierRef', 'supplierUrl'],
+        'published', 'isNew', 'supplier', 'partSupplier', 'supplierRef', 'supplierUrl',
+        'supplierListPrice', 'purchasePrice'],
     );
   },
 
@@ -269,9 +273,12 @@ const IMPORTERS: Record<string, Importer> = {
           proDiscountPct: 'proDiscountPct' in r ? csv.num(r.proDiscountPct) : undefined,
           stockQty: 'stockQty' in r ? csv.int(r.stockQty) : undefined,
           published: 'published' in r ? csv.bool(r.published) ?? undefined : undefined,
+          isNew: 'isNew' in r ? csv.bool(r.isNew) ?? undefined : undefined,
           partSupplier: 'partSupplier' in r ? csv.str(r.partSupplier) : undefined,
           supplierRef: 'supplierRef' in r ? csv.str(r.supplierRef) : undefined,
           supplierUrl: 'supplierUrl' in r ? csv.str(r.supplierUrl) : undefined,
+          supplierListPrice: 'supplierListPrice' in r ? csv.num(r.supplierListPrice) : undefined,
+          purchasePrice: 'purchasePrice' in r ? csv.num(r.purchasePrice) : undefined,
           isConsumable: kind === 'CONSUMABLE',
         };
         if (catSlug) data.categoryId = cats.get(catSlug);

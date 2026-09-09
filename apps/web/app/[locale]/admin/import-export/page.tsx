@@ -6,7 +6,7 @@ import { staffApi, useStaff } from '@/lib/staff';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const ENTITIES = [
-  { key: 'products', label: 'Produits (machines, accessoires, EPI, packs)', canImport: true, cols: 'slug, name, kind, categorySlug, dailyPrice, deposit, stockQty, published…' },
+  { key: 'products', label: 'Produits (machines, accessoires, EPI, packs)', canImport: true, cols: 'slug, name, kind, categorySlug, brand, model, dailyPrice, weekendPrice, weekPrice, monthPrice, deposit, stockQty, published, isNew, supplierRef, supplierUrl, supplierListPrice, purchasePrice…' },
   { key: 'consumables', label: 'Consommables', canImport: true, cols: 'slug, name, categorySlug, unitPrice, stockQty, partSupplier, supplierRef…' },
   { key: 'units', label: 'Inventaire — exemplaires', canImport: true, cols: 'assetTag, productSlug, state, serialNumber, sku, barcode, notes' },
   { key: 'clients', label: 'Clients', canImport: true, cols: 'email, firstName, lastName, phone, customerType, companyName, vatNumber' },
