@@ -750,7 +750,7 @@ export default function AdminProduits() {
                 )}
               </p>
             </fieldset>
-          ) : (
+          ) : isMachine ? null : (
             <fieldset className="card card-body" style={{ margin: 0 }}>
               <legend className="small" style={{ fontWeight: 700 }}>
                 Interne — approvisionnement (jamais affiché au client)
