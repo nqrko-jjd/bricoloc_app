@@ -547,7 +547,10 @@ adminRouter.get(
     const [products, units, activeRU, maint] = await Promise.all([
       prisma.product.findMany({
         where: { kind: { in: ['MACHINE', 'ACCESSORY', 'PPE'] } },
-        include: { category: { select: { name: true, slug: true } } },
+        include: {
+          category: { select: { name: true, slug: true } },
+          variants: { select: { id: true } },
+        },
         orderBy: [{ category: { position: 'asc' } }, { name: 'asc' }],
       }),
       prisma.productUnit.groupBy({ by: ['productId', 'state'], _count: { _all: true } }),
@@ -589,6 +592,10 @@ adminRouter.get(
       if (m.unit) maintNow.set(m.unit.productId, (maintNow.get(m.unit.productId) ?? 0) + 1);
 
     const rows = products
+      // Une fiche produit rattachée à des machines n'a pas son propre stock —
+      // ce sont ses machines qui en ont un (chacune listée à part ici). Ne
+      // l'affiche pas comme une ligne de plus dans la gestion des exemplaires.
+      .filter((p) => !(p.kind === 'MACHINE' && !p.technical && p.variants.length > 0))
       .map((p) => {
         const s = stateMap.get(p.id) ?? {};
         const total = Object.values(s).reduce((a, b) => a + b, 0);
