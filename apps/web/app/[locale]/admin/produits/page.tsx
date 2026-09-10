@@ -332,7 +332,17 @@ export default function AdminProduits() {
           : [],
       };
       await staffApi('/api/admin/products', { method: 'POST', body });
-      setMsg(editingId ? 'Fiche mise à jour.' : 'Fiche créée.');
+      // Une machine choisie dans « Machines rattachées » mais pas encore
+      // confirmée avec son propre bouton « Rattacher » ne doit pas se perdre
+      // silencieusement si l'utilisateur clique Enregistrer à la place.
+      if (isMachine && editingId && attachPick) {
+        const pick = attachPick;
+        setAttachPick('');
+        await attachVariant(pick, form.id);
+        setMsg('Fiche mise à jour et machine rattachée.');
+      } else {
+        setMsg(editingId ? 'Fiche mise à jour.' : 'Fiche créée.');
+      }
       closeForm();
       await load();
     } catch (e) {
@@ -1034,6 +1044,12 @@ export default function AdminProduits() {
                       Rattacher
                     </button>
                   </div>
+                  {attachPick && (
+                    <p className="small muted" style={{ margin: '4px 0 0' }}>
+                      Choisi mais pas encore rattaché — cliquez « Rattacher » ci-dessus ou
+                      « Enregistrer » en bas du formulaire, les deux fonctionnent.
+                    </p>
+                  )}
                 </fieldset>
               );
             })()}
