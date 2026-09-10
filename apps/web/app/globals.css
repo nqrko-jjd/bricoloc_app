@@ -647,6 +647,13 @@ button { font-family: inherit; }
 /* Colonne miniature épinglée : reste visible en scrollant horizontalement
    (tableaux larges — catalogue, stock — sinon l'image sort de l'écran sans
    indice pour la retrouver). */
+.table--pin-first {
+  /* position: sticky sur une cellule ne fonctionne pas avec border-collapse
+     (bug connu, silencieux sur Chrome/Edge) — la colonne épinglée exige
+     border-collapse: separate. */
+  border-collapse: separate;
+  border-spacing: 0;
+}
 .table--pin-first th:first-child,
 .table--pin-first td:first-child {
   position: sticky;

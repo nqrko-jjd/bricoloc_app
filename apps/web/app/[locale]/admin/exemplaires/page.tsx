@@ -276,7 +276,7 @@ function MachineRow({
           <img
             src={r.image || PLACEHOLDER_IMG}
             alt=""
-            style={{ width: 44, height: 44, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+            style={{ width: 60, height: 60, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
           />
         </td>
         <td>
@@ -631,7 +631,7 @@ function ConsumableStockRow({
         <img
           src={c.image || PLACEHOLDER_IMG}
           alt=""
-          style={{ width: 44, height: 44, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+          style={{ width: 60, height: 60, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
         />
       </td>
       <td>

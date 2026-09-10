@@ -1124,7 +1124,7 @@ export default function AdminProduits() {
                       <img
                         src={p.image || PLACEHOLDER_IMG}
                         alt=""
-                        style={{ width: 44, height: 44, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+                        style={{ width: 60, height: 60, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
                       />
                     </td>
                     <td>
@@ -1205,46 +1205,44 @@ export default function AdminProduits() {
                     <td>{p.technical ? '—' : formatEUR(p.dailyPrice)}</td>
                     <td>{p.technical ? '—' : formatEUR(p.deposit)}</td>
                     <td>{p.totalStock}</td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => edit(p)}>
-                        Modifier
-                      </button>
-                      {p.kind === 'MACHINE' && !p.technical && (p.variants?.length ?? 0) === 0 && (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          title="Transformer en machine, avec ou sans fiche produit choisie tout de suite"
-                          onClick={() => {
-                            setConvertingSlug(convertingSlug === p.slug ? null : p.slug);
-                            setConvertTarget('');
-                          }}
-                        >
-                          → Machine
-                        </button>
-                      )}
-                      {p.technical && !p.parentProductId && (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          title="Rattacher cette machine à une fiche produit"
-                          onClick={() => {
-                            setConvertingSlug(convertingSlug === p.slug ? null : p.slug);
-                            setConvertTarget('');
-                          }}
-                        >
-                          Rattacher
-                        </button>
-                      )}
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => {
-                          setMergingSlug(mergingSlug === p.slug ? null : p.slug);
-                          setMergeTarget('');
-                        }}
-                      >
-                        Fusionner
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => remove(p)}>
-                        Supprimer
-                      </button>
+                    <td>
+                      <RowMenu
+                        items={[
+                          { label: 'Modifier', onClick: () => edit(p) },
+                          ...(p.kind === 'MACHINE' && !p.technical && (p.variants?.length ?? 0) === 0
+                            ? [
+                                {
+                                  label: '→ Machine',
+                                  title: 'Transformer en machine, avec ou sans fiche produit choisie tout de suite',
+                                  onClick: () => {
+                                    setConvertingSlug(convertingSlug === p.slug ? null : p.slug);
+                                    setConvertTarget('');
+                                  },
+                                },
+                              ]
+                            : []),
+                          ...(p.technical && !p.parentProductId
+                            ? [
+                                {
+                                  label: 'Rattacher',
+                                  title: 'Rattacher cette machine à une fiche produit',
+                                  onClick: () => {
+                                    setConvertingSlug(convertingSlug === p.slug ? null : p.slug);
+                                    setConvertTarget('');
+                                  },
+                                },
+                              ]
+                            : []),
+                          {
+                            label: 'Fusionner',
+                            onClick: () => {
+                              setMergingSlug(mergingSlug === p.slug ? null : p.slug);
+                              setMergeTarget('');
+                            },
+                          },
+                          { label: 'Supprimer', onClick: () => remove(p) },
+                        ]}
+                      />
                     </td>
                   </tr>
                   {convertingSlug === p.slug && (
@@ -1703,6 +1701,70 @@ function SpecsEditor({
 }
 
 /** Recherche + ajoute des produits liés (accessoires/consommables/EPI/machines). */
+/** Menu d'actions compact (⋮) pour une ligne de tableau — évite d'aligner
+ * plusieurs boutons et de forcer la ligne à s'étaler en largeur. */
+function RowMenu({
+  items,
+}: {
+  items: { label: string; title?: string; onClick: () => void }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Actions"
+        aria-expanded={open}
+      >
+        ⋮
+      </button>
+      {open && (
+        <div
+          className="card"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: '100%',
+            zIndex: 20,
+            minWidth: 170,
+            padding: 4,
+            boxShadow: '0 4px 16px rgba(0,0,0,.18)',
+          }}
+        >
+          {items.map((it, i) => (
+            <button
+              key={i}
+              type="button"
+              className="btn btn-ghost btn-sm"
+              title={it.title}
+              style={{ display: 'block', width: '100%', textAlign: 'left' }}
+              onClick={() => {
+                setOpen(false);
+                it.onClick();
+              }}
+            >
+              {it.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LinkPicker({
   label,
   hint,
