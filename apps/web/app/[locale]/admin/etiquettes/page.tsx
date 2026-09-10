@@ -90,7 +90,6 @@ function MachineLabels() {
   const [labels, setLabels] = useState<Label[]>([]);
   const [filter, setFilter] = useState('');
   const [busy, setBusy] = useState(false);
-  const [dense, setDense] = useState(false);
 
   useEffect(() => {
     staffApi<{ machines: StockRow[] }>('/api/admin/stock').then((r) =>
@@ -133,7 +132,9 @@ function MachineLabels() {
     <>
       <p className="muted small no-print">
         Une étiquette par exemplaire : QR (scan smartphone / Zebra) + code-barres Code 128 + nom
-        de la machine. Cliquez les vignettes voulues, ou imprimez tout le parc.
+        de la machine. Cliquez les vignettes voulues, ou imprimez tout le parc. Format prévu pour
+        la Brother QL-700 chargée en DK-22205 (bande continue 62 mm) — chaque étiquette est
+        imprimée comme sa propre page, le rouleau se découpe automatiquement entre chacune.
       </p>
 
       <div className="card card-body stack no-print">
@@ -195,10 +196,6 @@ function MachineLabels() {
       {labels.length > 0 && (
         <div className="row no-print" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <strong>{labels.length} étiquette(s) prêtes</strong>
-          <label className="row" style={{ gap: 6, alignItems: 'center' }}>
-            <input type="checkbox" checked={dense} onChange={(e) => setDense(e.target.checked)} />
-            <span className="small">Petit format (4 / rangée)</span>
-          </label>
           <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
             🖨 Imprimer
           </button>
@@ -206,12 +203,13 @@ function MachineLabels() {
             Effacer
           </button>
           <span className="small muted">
-            À l&apos;impression : marges « par défaut », décocher en-têtes/pieds de page.
+            Choisissez « Brother QL-700 » comme imprimante, échelle 100 % (pas d&apos;ajustement à la
+            page), sans marges.
           </span>
         </div>
       )}
 
-      <div className={`label-sheet${dense ? ' label-sheet--dense' : ''}`}>
+      <div className="label-sheet">
         {labels.map((l) => (
           <div key={l.unitId} className="label">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -441,8 +439,10 @@ function ZoneLabels() {
           <div key={l.code} className="zlabel">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={l.qrDataUrl} alt="" />
-            <span className="zlabel__code">{l.code}</span>
-            <span className="zlabel__brand">BRICOLOC · EMPLACEMENT</span>
+            <div className="zlabel__text">
+              <span className="zlabel__code">{l.code}</span>
+              <span className="zlabel__brand">BRICOLOC · EMPLACEMENT</span>
+            </div>
           </div>
         ))}
       </div>
