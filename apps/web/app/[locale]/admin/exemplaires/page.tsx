@@ -4,12 +4,14 @@ import { useSearchParams } from 'next/navigation';
 import { formatDateBE } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { ScanField } from '@/components/admin/ScanField';
+import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 
 interface StockRow {
   id: string;
   slug: string;
   name: string;
   kind: string;
+  image: string | null;
   category: string | null;
   published: boolean;
   total: number;
@@ -24,6 +26,7 @@ interface ConsumableRow {
   id: string;
   slug: string;
   name: string;
+  image: string | null;
   stockQty: number | null;
   dailyPrice: number;
   partSupplier: string | null;
@@ -269,6 +272,14 @@ function MachineRow({
     <>
       <tr className="stock-row" onClick={() => setOpen((v) => !v)}>
         <td>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={r.image || PLACEHOLDER_IMG}
+            alt=""
+            style={{ width: 32, height: 32, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+          />
+        </td>
+        <td>
           <span className="stock-row__caret">{open ? '▾' : '▸'}</span> {r.name}
           {!r.published && <span className="badge" style={{ marginLeft: 6 }}>hors ligne</span>}
         </td>
@@ -302,7 +313,7 @@ function MachineRow({
       </tr>
       {open && (
         <tr className="stock-detail">
-          <td colSpan={5}>
+          <td colSpan={6}>
             {r.total === 0 && (
               <p className="small muted">Aucun exemplaire. Ajoutez-en ci-dessous.</p>
             )}
@@ -551,6 +562,7 @@ export default function AdminExemplaires() {
               <table className="table">
                 <thead>
                   <tr>
+                    <th></th>
                     <th>{tab === 'machines' ? 'Machine' : 'Accessoire'}</th>
                     <th className="num">Dispo</th>
                     <th>Répartition</th>
@@ -581,6 +593,7 @@ export default function AdminExemplaires() {
           <table className="table">
             <thead>
               <tr>
+                <th></th>
                 <th>Consommable</th>
                 <th>Fournisseur</th>
                 <th className="num">Prix unité</th>
@@ -613,6 +626,14 @@ function ConsumableStockRow({
   const dirty = qty !== (c.stockQty != null ? String(c.stockQty) : '');
   return (
     <tr>
+      <td>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={c.image || PLACEHOLDER_IMG}
+          alt=""
+          style={{ width: 32, height: 32, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+        />
+      </td>
       <td>
         {c.name}
         {!c.published && <span className="badge" style={{ marginLeft: 6 }}>hors ligne</span>}
