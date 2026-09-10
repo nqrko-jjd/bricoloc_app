@@ -276,7 +276,7 @@ function MachineRow({
           <img
             src={r.image || PLACEHOLDER_IMG}
             alt=""
-            style={{ width: 32, height: 32, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+            style={{ width: 44, height: 44, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
           />
         </td>
         <td>
@@ -559,7 +559,7 @@ export default function AdminExemplaires() {
           {[...byCat.entries()].map(([cat, rows]) => (
             <div key={cat} className="card card-body table-wrap">
               <h3 style={{ margin: '0 0 8px' }}>{cat}</h3>
-              <table className="table">
+              <table className="table table--pin-first">
                 <thead>
                   <tr>
                     <th></th>
@@ -590,7 +590,7 @@ export default function AdminExemplaires() {
 
       {tab === 'consumables' && (
         <div className="card card-body table-wrap">
-          <table className="table">
+          <table className="table table--pin-first">
             <thead>
               <tr>
                 <th></th>
@@ -631,7 +631,7 @@ function ConsumableStockRow({
         <img
           src={c.image || PLACEHOLDER_IMG}
           alt=""
-          style={{ width: 32, height: 32, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+          style={{ width: 44, height: 44, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
         />
       </td>
       <td>

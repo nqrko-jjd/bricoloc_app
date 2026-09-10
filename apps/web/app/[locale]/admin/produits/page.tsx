@@ -1087,7 +1087,7 @@ export default function AdminProduits() {
           </select>
         </div>
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table--pin-first">
             <thead>
               <tr>
                 <th></th>
@@ -1124,7 +1124,7 @@ export default function AdminProduits() {
                       <img
                         src={p.image || PLACEHOLDER_IMG}
                         alt=""
-                        style={{ width: 36, height: 36, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
+                        style={{ width: 44, height: 44, objectFit: 'contain', background: '#f4f4f8', borderRadius: 6 }}
                       />
                     </td>
                     <td>
