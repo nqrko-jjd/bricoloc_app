@@ -35,7 +35,7 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
   async products() {
     const rows = await prisma.product.findMany({
       where: { kind: { not: 'CONSUMABLE' } },
-      include: { category: { select: { slug: true } } },
+      include: { category: { select: { slug: true } }, parentProduct: { select: { slug: true } } },
       orderBy: { name: 'asc' },
     });
     return toCsv(
@@ -43,6 +43,17 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         slug: p.slug,
         name: p.name,
         kind: p.kind,
+        // Un kind=MACHINE seul ne distingue pas une fiche produit (nom
+        // générique, montrée au client) d'une machine (fiche technique,
+        // jamais montrée seule) — cf. badge du tableau admin.
+        type: p.technical
+          ? p.parentProductId
+            ? 'MACHINE'
+            : 'MACHINE (libre)'
+          : p.kind === 'MACHINE'
+            ? 'FICHE PRODUIT'
+            : p.kind,
+        parentProductSlug: p.parentProduct?.slug ?? '',
         categorySlug: p.category?.slug ?? '',
         brand: p.brand ?? '',
         model: p.model ?? '',
@@ -67,10 +78,10 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         supplierListPrice: p.supplierListPrice ?? '',
         purchasePrice: p.purchasePrice ?? '',
       })),
-      ['slug', 'name', 'kind', 'categorySlug', 'brand', 'model', 'shortDescription', 'dailyPrice',
-        'weekendPrice', 'weekPrice', 'monthPrice', 'deposit', 'proDiscountPct', 'stockQty',
-        'published', 'isNew', 'supplier', 'internalRef', 'partSupplier', 'supplierRef', 'supplierUrl',
-        'supplierListPrice', 'purchasePrice'],
+      ['slug', 'name', 'kind', 'type', 'parentProductSlug', 'categorySlug', 'brand', 'model',
+        'shortDescription', 'dailyPrice', 'weekendPrice', 'weekPrice', 'monthPrice', 'deposit',
+        'proDiscountPct', 'stockQty', 'published', 'isNew', 'supplier', 'internalRef', 'partSupplier',
+        'supplierRef', 'supplierUrl', 'supplierListPrice', 'purchasePrice'],
     );
   },
 
