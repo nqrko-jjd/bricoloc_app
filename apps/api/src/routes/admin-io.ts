@@ -239,6 +239,28 @@ function diffKeys(before: Record<string, unknown>, after: Record<string, unknown
   return out;
 }
 
+/** Filet de sécurité : un tableur (Excel, surtout en locale FR/BE) peut
+ * silencieusement avaler le séparateur décimal en rouvrant/resauvegardant un
+ * CSV (« 55.3719 » → « 553719 », prix ×10000). Un écart de prix >×20 sur une
+ * ligne existante est bloqué en erreur plutôt qu'appliqué tel quel. */
+function implausiblePriceJump(
+  existing: Record<string, unknown> | null,
+  data: Record<string, unknown>,
+  fields: readonly string[],
+): string | null {
+  if (!existing) return null;
+  for (const f of fields) {
+    const next = data[f];
+    const prev = existing[f];
+    if (typeof next !== 'number' || typeof prev !== 'number' || prev <= 0) continue;
+    const ratio = next / prev;
+    if (ratio > 20 || ratio < 1 / 20) {
+      return `${f} passe de ${prev} à ${next} (× ${ratio.toFixed(1)}) — écart trop important, vérifiez (décimale perdue à l'édition ?)`;
+    }
+  }
+  return null;
+}
+
 const IMPORTERS: Record<string, Importer> = {
   /* ---- Produits (machines / accessoires / EPI / packs) ---- */
   products: {
@@ -309,6 +331,18 @@ const IMPORTERS: Record<string, Importer> = {
         };
         if (catSlug) data.categoryId = cats.get(catSlug);
 
+        const priceIssue = implausiblePriceJump(existing as Record<string, unknown> | null, data, [
+          'dailyPrice',
+          'weekendPrice',
+          'weekPrice',
+          'monthPrice',
+          'deposit',
+        ]);
+        if (priceIssue) {
+          results.push({ line, action: 'error', key: slug, message: priceIssue });
+          continue;
+        }
+
         const changes = existing ? diffKeys(existing as Record<string, unknown>, data) : Object.keys(data).filter((k) => data[k] !== undefined);
         if (existing && changes.length === 0) {
           results.push({ line, action: 'skip', key: slug });
@@ -373,6 +407,18 @@ const IMPORTERS: Record<string, Importer> = {
           purchasePrice: 'purchasePrice' in r ? csv.num(r.purchasePrice) : undefined,
         };
         if (catSlug) data.categoryId = cats.get(catSlug);
+
+        const priceIssue = implausiblePriceJump(existing as Record<string, unknown> | null, data, [
+          'dailyPrice',
+          'deposit',
+          'purchasePrice',
+          'supplierListPrice',
+        ]);
+        if (priceIssue) {
+          results.push({ line, action: 'error', key: slug, message: priceIssue });
+          continue;
+        }
+
         const changes = existing ? diffKeys(existing as Record<string, unknown>, data) : Object.keys(data).filter((k) => data[k] !== undefined);
         if (existing && changes.length === 0) {
           results.push({ line, action: 'skip', key: slug });
