@@ -14,6 +14,7 @@ import { requireStaff } from '../lib/auth.js';
 import { hashPassword } from '../lib/auth.js';
 import { newQrToken } from '../lib/qr.js';
 import { toCsv, parseCsv, csv, type CsvRow } from '../lib/csv.js';
+import { getSettings, vatRate } from '../lib/settings.js';
 
 export const adminIoRouter = Router();
 
@@ -31,15 +32,26 @@ function sendCsv(res: import('express').Response, name: string, body: string) {
   res.send(body);
 }
 
+const r2 = (n: number) => Math.round(n * 100) / 100;
+/** 4 décimales : assez de précision pour que HT×(1+TVA) ré-affiche le TTC
+ * rond saisi par David (ex. 5 € → 4,1322 → ×1,21 → 5,00 € pile). */
+const r4 = (n: number) => Math.round(n * 10000) / 10000;
+
 const EXPORTERS: Record<string, () => Promise<string>> = {
   async products() {
+    const vat = vatRate(await getSettings());
     const rows = await prisma.product.findMany({
       where: { kind: { not: 'CONSUMABLE' } },
       include: { category: { select: { slug: true } }, parentProduct: { select: { slug: true } } },
       orderBy: { name: 'asc' },
     });
     return toCsv(
-      rows.map((p) => ({
+      rows.map((p) => {
+        // Tout ce que David saisit est en TTC (prix client) — Loiselet a sa
+        // propre base de prix, jamais reconvertie (cf. fix-prices-ttc-to-ht.ts).
+        const isBricoloc = p.supplier === 'BRICOLOC';
+        const ttc = (ht: number | null) => (ht == null ? '' : isBricoloc ? r2(ht * (1 + vat)) : ht);
+        return {
         slug: p.slug,
         name: p.name,
         kind: p.kind,
@@ -58,10 +70,13 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         brand: p.brand ?? '',
         model: p.model ?? '',
         shortDescription: p.shortDescription ?? '',
-        dailyPrice: p.dailyPrice,
-        weekendPrice: p.weekendPrice ?? '',
-        weekPrice: p.weekPrice ?? '',
-        monthPrice: p.monthPrice ?? '',
+        // Prix TTC (ce que le client paie) — stockés en HTVA, convertis à
+        // l'affichage. Le HTVA se recalcule tout seul pour les comptes pro.
+        dailyPrice: ttc(p.dailyPrice),
+        weekendPrice: ttc(p.weekendPrice),
+        weekPrice: ttc(p.weekPrice),
+        monthPrice: ttc(p.monthPrice),
+        // Caution hors TVA — jamais convertie.
         deposit: p.deposit,
         proDiscountPct: p.proDiscountPct ?? '',
         stockQty: p.stockQty ?? '',
@@ -77,7 +92,8 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         supplierUrl: p.supplierUrl ?? '',
         supplierListPrice: p.supplierListPrice ?? '',
         purchasePrice: p.purchasePrice ?? '',
-      })),
+        };
+      }),
       ['slug', 'name', 'kind', 'type', 'parentProductSlug', 'categorySlug', 'brand', 'model',
         'shortDescription', 'dailyPrice', 'weekendPrice', 'weekPrice', 'monthPrice', 'deposit',
         'proDiscountPct', 'stockQty', 'published', 'isNew', 'supplier', 'internalRef', 'partSupplier',
@@ -86,6 +102,7 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
   },
 
   async consumables() {
+    const vat = vatRate(await getSettings());
     const rows = await prisma.product.findMany({
       where: { kind: 'CONSUMABLE' },
       include: { category: { select: { slug: true } } },
@@ -98,7 +115,9 @@ const EXPORTERS: Record<string, () => Promise<string>> = {
         categorySlug: p.category?.slug ?? '',
         brand: p.brand ?? '',
         shortDescription: p.shortDescription ?? '',
-        unitPrice: p.dailyPrice,
+        // Prix TTC (ce que le client paie) — stocké en HTVA. Caution hors TVA,
+        // jamais convertie. Loiselet a sa propre base, jamais reconvertie.
+        unitPrice: p.supplier === 'BRICOLOC' ? r2(p.dailyPrice * (1 + vat)) : p.dailyPrice,
         deposit: p.deposit,
         stockQty: p.stockQty ?? '',
         published: p.published ? 1 : 0,
@@ -269,6 +288,7 @@ const IMPORTERS: Record<string, Importer> = {
       const cats = new Map(
         (await prisma.category.findMany({ select: { id: true, slug: true } })).map((c) => [c.slug, c.id]),
       );
+      const vat = vatRate(await getSettings());
       const results: RowResult[] = [];
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
@@ -289,8 +309,13 @@ const IMPORTERS: Record<string, Importer> = {
           continue;
         }
         const name = csv.str(r.name);
-        const dailyPrice = csv.num(r.dailyPrice);
         const existing = await prisma.product.findUnique({ where: { slug } });
+        // Tout ce que David saisit est en TTC (prix client) — converti en
+        // HTVA pour le stockage interne. Loiselet a sa propre base de prix,
+        // jamais reconvertie (cf. fix-prices-ttc-to-ht.ts).
+        const isBricoloc = !existing || existing.supplier === 'BRICOLOC';
+        const fromTtc = (v: number | null) => (v == null ? null : isBricoloc ? r4(v / (1 + vat)) : v);
+        const dailyPrice = fromTtc(csv.num(r.dailyPrice));
         if (!existing && (!name || dailyPrice === null)) {
           results.push({ line, action: 'error', key: slug, message: 'name et dailyPrice requis pour créer' });
           continue;
@@ -310,9 +335,10 @@ const IMPORTERS: Record<string, Importer> = {
           model: !isVitrineMachine && 'model' in r ? csv.str(r.model) : undefined,
           shortDescription: 'shortDescription' in r ? csv.str(r.shortDescription) : undefined,
           dailyPrice: dailyPrice ?? undefined,
-          weekendPrice: 'weekendPrice' in r ? csv.num(r.weekendPrice) : undefined,
-          weekPrice: 'weekPrice' in r ? csv.num(r.weekPrice) : undefined,
-          monthPrice: 'monthPrice' in r ? csv.num(r.monthPrice) : undefined,
+          weekendPrice: 'weekendPrice' in r ? fromTtc(csv.num(r.weekendPrice)) : undefined,
+          weekPrice: 'weekPrice' in r ? fromTtc(csv.num(r.weekPrice)) : undefined,
+          monthPrice: 'monthPrice' in r ? fromTtc(csv.num(r.monthPrice)) : undefined,
+          // Caution hors TVA — jamais convertie.
           deposit: 'deposit' in r ? csv.num(r.deposit) ?? undefined : undefined,
           proDiscountPct: 'proDiscountPct' in r ? csv.num(r.proDiscountPct) : undefined,
           stockQty: 'stockQty' in r ? csv.int(r.stockQty) : undefined,
@@ -369,6 +395,7 @@ const IMPORTERS: Record<string, Importer> = {
       const cats = new Map(
         (await prisma.category.findMany({ select: { id: true, slug: true } })).map((c) => [c.slug, c.id]),
       );
+      const vat = vatRate(await getSettings());
       const results: RowResult[] = [];
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
@@ -384,8 +411,12 @@ const IMPORTERS: Record<string, Importer> = {
           continue;
         }
         const name = csv.str(r.name);
-        const unitPrice = 'unitPrice' in r ? csv.num(r.unitPrice) : csv.num(r.dailyPrice);
         const existing = await prisma.product.findUnique({ where: { slug } });
+        // Tout ce que David saisit est en TTC — converti en HTVA pour le
+        // stockage. Loiselet a sa propre base, jamais reconvertie.
+        const isBricoloc = !existing || existing.supplier === 'BRICOLOC';
+        const rawUnitPrice = 'unitPrice' in r ? csv.num(r.unitPrice) : csv.num(r.dailyPrice);
+        const unitPrice = rawUnitPrice == null ? null : isBricoloc ? r4(rawUnitPrice / (1 + vat)) : rawUnitPrice;
         if (!existing && (!name || unitPrice === null)) {
           results.push({ line, action: 'error', key: slug, message: 'name et unitPrice requis pour créer' });
           continue;
@@ -397,6 +428,7 @@ const IMPORTERS: Record<string, Importer> = {
           brand: 'brand' in r ? csv.str(r.brand) : undefined,
           shortDescription: 'shortDescription' in r ? csv.str(r.shortDescription) : undefined,
           dailyPrice: unitPrice ?? undefined,
+          // Caution hors TVA — jamais convertie.
           deposit: 'deposit' in r ? csv.num(r.deposit) ?? undefined : undefined,
           stockQty: 'stockQty' in r ? csv.int(r.stockQty) : undefined,
           published: 'published' in r ? csv.bool(r.published) ?? undefined : undefined,

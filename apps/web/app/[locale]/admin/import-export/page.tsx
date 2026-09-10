@@ -6,8 +6,8 @@ import { staffApi, useStaff } from '@/lib/staff';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const ENTITIES = [
-  { key: 'products', label: 'Produits (fiches produits, machines, accessoires, EPI, packs)', canImport: true, cols: 'slug, name, kind, categorySlug, brand, model, dailyPrice, weekendPrice, weekPrice, monthPrice, deposit, stockQty, published, isNew, supplierRef, supplierUrl, supplierListPrice, purchasePrice… (type et parentProductSlug : export seulement, informatifs)' },
-  { key: 'consumables', label: 'Consommables', canImport: true, cols: 'slug, name, categorySlug, unitPrice, stockQty, partSupplier, supplierRef…' },
+  { key: 'products', label: 'Produits (fiches produits, machines, accessoires, EPI, packs)', canImport: true, cols: 'slug, name, kind, categorySlug, brand, model, dailyPrice, weekendPrice, weekPrice, monthPrice, deposit, stockQty, published, isNew, supplierRef, supplierUrl, supplierListPrice, purchasePrice… (prix en TTC, converti automatiquement ; caution hors TVA ; type et parentProductSlug export seulement, informatifs)' },
+  { key: 'consumables', label: 'Consommables', canImport: true, cols: 'slug, name, categorySlug, unitPrice, stockQty, partSupplier, supplierRef… (unitPrice en TTC, converti automatiquement)' },
   { key: 'units', label: 'Inventaire — exemplaires', canImport: true, cols: 'assetTag, productSlug, state, serialNumber, sku, barcode, notes' },
   { key: 'clients', label: 'Clients', canImport: true, cols: 'email, firstName, lastName, phone, customerType, companyName, vatNumber' },
   { key: 'reservations', label: 'Commandes / réservations', canImport: false, cols: '' },
