@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { catalogQuerySchema, isLocale, type Locale } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { h, notFound } from '../lib/http.js';
+import { ciContains } from '../lib/search.js';
 import {
   productInclude,
   ratingsFor,
@@ -69,9 +70,9 @@ catalogRouter.get(
     if (q.category) where.category = { slug: q.category };
     if (q.q) {
       where.OR = [
-        { name: { contains: q.q } },
-        { shortDescription: { contains: q.q } },
-        { description: { contains: q.q } },
+        { name: ciContains(q.q) },
+        { shortDescription: ciContains(q.q) },
+        { description: ciContains(q.q) },
       ];
     }
 
@@ -176,19 +177,19 @@ catalogRouter.get(
         where: {
           published: true,
           kind: { not: 'PACK' },
-          OR: [{ name: { contains: q } }, { brand: { contains: q } }],
+          OR: [{ name: ciContains(q) }, { brand: ciContains(q) }],
         },
         include: productInclude,
         orderBy: { name: 'asc' },
         take: 7,
       }),
       prisma.product.findMany({
-        where: { published: true, kind: { not: 'PACK' }, shortDescription: { contains: q } },
+        where: { published: true, kind: { not: 'PACK' }, shortDescription: ciContains(q) },
         include: productInclude,
         orderBy: { name: 'asc' },
         take: 7,
       }),
-      prisma.category.findMany({ where: { name: { contains: q } }, take: 3 }),
+      prisma.category.findMany({ where: { name: ciContains(q) }, take: 3 }),
     ]);
     const seen = new Set(byName.map((p) => p.id));
     const products = [...byName, ...byDesc.filter((p) => !seen.has(p.id))].slice(0, 7);

@@ -3,6 +3,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { formatEUR, suggestDegressivePricing } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { ImageDropzone } from '@/components/admin/ImageDropzone';
+import { DocumentUploader } from '@/components/admin/DocumentUploader';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 import type { ProductDetail, Category } from '@/lib/types';
 
@@ -60,6 +61,9 @@ const EMPTY = {
   published: true,
   isNew: false,
   images: [] as string[],
+  // Notice (mode d'emploi) + documents complémentaires, affichés au client.
+  manualUrl: '',
+  documents: [] as { label: string; url: string }[],
   // Caractéristiques affichées au client (poids, dimensions, puissance…).
   specs: [] as SpecRow[],
   // Complétez votre location (fiche produit + borne) : liens vers d'autres produits.
@@ -171,6 +175,19 @@ export default function AdminProduits() {
       await load();
     }
   }
+  async function togglePublished(p: ProductDetail) {
+    const next = !(p.published ?? true);
+    try {
+      await staffApi(`/api/admin/products/${p.id}/published`, {
+        method: 'PATCH',
+        body: { published: next },
+      });
+      setMsg(next ? `« ${p.name} » est en ligne.` : `« ${p.name} » repassé en brouillon.`);
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+    }
+  }
   useEffect(() => {
     load();
   }, []);
@@ -224,6 +241,8 @@ export default function AdminProduits() {
       published: p.published ?? true,
       isNew: p.isNew ?? false,
       images: p.images,
+      manualUrl: p.manualUrl ?? '',
+      documents: p.documents ?? [],
       specs: Object.entries(p.specs ?? {}).map(([key, value]) => ({ key, value })),
       recommendedAccessoryIds: p.recommendedAccessories.map((x) => x.id),
       consumableIds: p.consumables.map((x) => x.id),
@@ -289,6 +308,8 @@ export default function AdminProduits() {
         published: isTechnical ? false : form.published,
         isNew: isTechnical ? false : form.isNew,
         images: form.images,
+        manualUrl: !isTechnical ? form.manualUrl || undefined : undefined,
+        documents: !isTechnical ? form.documents.filter((d) => d.label && d.url) : [],
         specs: !isTechnical
           ? Object.fromEntries(
               form.specs.filter((s) => s.key.trim() && s.value.trim()).map((s) => [s.key.trim(), s.value.trim()]),
@@ -318,7 +339,7 @@ export default function AdminProduits() {
                 purchasePrice: s.purchasePrice ? Number(s.purchasePrice) : null,
               }))
           : [],
-        partners: isTechnical
+        partners: !isTechnical
           ? form.partners
               .filter((pt) => pt.name || pt.ref || pt.url || pt.costPerDay || pt.insurancePct)
               .map((pt) => ({
@@ -504,13 +525,9 @@ export default function AdminProduits() {
   const showRentalPricing = mode === 'MACHINE' || mode === 'ACCESSORY' || mode === 'PPE';
   const showStockFields = mode === 'ACCESSORY' || mode === 'CONSUMABLE' || mode === 'PPE';
   const current = editingId ? products.find((p) => p.id === editingId) : undefined;
-  // Prix pratiqués par les partenaires des machines rattachées à cette fiche
-  // produit (tous les partenaires, toutes machines confondues) — juste pour
-  // comparer visuellement au prix jour qu'on facture, pas une donnée éditée ici.
-  const competitorPrices =
-    isMachine && current?.variants
-      ? current.variants.flatMap((v) => v.partners.map((pt) => ({ machine: v.model ?? v.name, ...pt })))
-      : [];
+  // Rappel visuel des prix partenaires (édités juste au-dessus, fieldset
+  // « Partenaires de secours ») pour comparer sans remonter le formulaire.
+  const competitorPrices = isMachine ? (current?.partners ?? []) : [];
 
   return (
     <div className="stack">
@@ -694,7 +711,6 @@ export default function AdminProduits() {
                           {i > 0 && ' · '}
                           <strong>{c.name}</strong>
                           {real != null ? ` ${real.toFixed(2)} €/j` : ''}
-                          {c.machine ? ` (${c.machine})` : ''}
                         </span>
                       );
                     })}
@@ -799,7 +815,29 @@ export default function AdminProduits() {
             <ImageDropzone value={form.images} onChange={(v) => set('images', v)} />
           </div>
 
+          {!isTechnical && (
+            <DocumentUploader
+              manualUrl={form.manualUrl}
+              onManualUrlChange={(v) => set('manualUrl', v)}
+              documents={form.documents}
+              onDocumentsChange={(v) => set('documents', v)}
+            />
+          )}
+
           {!isTechnical && <SpecsEditor value={form.specs} onChange={(v) => set('specs', v)} />}
+
+          {!isTechnical && (
+            <fieldset className="card card-body" style={{ margin: 0 }}>
+              <legend className="small" style={{ fontWeight: 700 }}>
+                Partenaires de secours (jamais affiché au client)
+              </legend>
+              <p className="small muted" style={{ margin: '0 0 10px' }}>
+                Qui appeler pour dépanner <strong>ce produit</strong> si notre stock est à sec — peu importe
+                la machine précise qu&apos;ils ont en rayon (Loiselet, Loxam, Boels…).
+              </p>
+              <PartnerList value={form.partners} onChange={(v) => set('partners', v)} />
+            </fieldset>
+          )}
 
           {isMachine && (
             <fieldset className="card card-body" style={{ margin: 0 }}>
@@ -873,10 +911,6 @@ export default function AdminProduits() {
                   'Les exemplaires physiques (n° de série, étiquette QR — une même machine peut en avoir plusieurs) se gèrent dans Admin → Exemplaires une fois la fiche enregistrée.'
                 )}
               </p>
-
-              <div style={{ marginTop: 12 }}>
-                <PartnerList value={form.partners} onChange={(v) => set('partners', v)} />
-              </div>
             </fieldset>
           ) : isMachine ? null : (
             <fieldset className="card card-body" style={{ margin: 0 }}>
@@ -1128,6 +1162,7 @@ export default function AdminProduits() {
                 <th>Prix/j</th>
                 <th>Caution</th>
                 <th>Stock</th>
+                <th title="Visible sur le site">En ligne</th>
                 <th></th>
               </tr>
             </thead>
@@ -1221,6 +1256,18 @@ export default function AdminProduits() {
                     <td>{p.technical ? '—' : formatEUR(p.dailyPrice)}</td>
                     <td>{p.technical ? '—' : formatEUR(p.deposit)}</td>
                     <td>{p.totalStock}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      {p.technical ? (
+                        <span className="small muted">—</span>
+                      ) : (
+                        <input
+                          type="checkbox"
+                          checked={p.published ?? true}
+                          onChange={() => togglePublished(p)}
+                          title={p.published ?? true ? 'En ligne — cliquer pour dépublier' : 'Brouillon — cliquer pour publier'}
+                        />
+                      )}
+                    </td>
                     <td>
                       <RowMenu
                         items={[
@@ -1263,7 +1310,7 @@ export default function AdminProduits() {
                   </tr>
                   {convertingSlug === p.slug && (
                     <tr>
-                      <td colSpan={10}>
+                      <td colSpan={11}>
                         <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
                           <span className="small">
                             {p.technical ? `Rattacher « ${p.name} » à :` : `Transformer « ${p.name} » en machine de :`}
@@ -1298,7 +1345,7 @@ export default function AdminProduits() {
                   )}
                   {mergingSlug === p.slug && (
                     <tr>
-                      <td colSpan={10}>
+                      <td colSpan={11}>
                         <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
                           <span className="small">Fusionner « {p.name} » dans :</span>
                           <select value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)}>

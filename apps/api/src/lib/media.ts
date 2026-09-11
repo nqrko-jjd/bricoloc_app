@@ -102,6 +102,79 @@ export async function storeImage(
   };
 }
 
+const ACCEPTED_DOCUMENT_MIMES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+]);
+const DOCUMENT_EXT: Record<string, string> = {
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.ms-excel': '.xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+};
+
+export interface StoredDocument {
+  id: string;
+  url: string;
+  path: string;
+  bytes: number;
+  mime: string;
+  originalName: string;
+}
+
+/**
+ * Stocke une notice / un document (PDF, Word, Excel) tel quel, à côté des
+ * images produits — servi par la même route statique `/uploads`. Pas de
+ * conversion : contrairement à `storeImage`, ce n'est pas une image.
+ */
+export async function storeDocument(
+  file: { buffer: Buffer; mimetype?: string; originalname: string },
+  opts: { createdBy?: string; source?: string } = {},
+): Promise<StoredDocument> {
+  const mime = file.mimetype ?? '';
+  if (!ACCEPTED_DOCUMENT_MIMES.has(mime)) {
+    throw badRequest(`Format non supporté (${mime || 'inconnu'}) — PDF, Word ou Excel uniquement.`);
+  }
+  const now = new Date();
+  const rel = path.posix.join(
+    'documents',
+    String(now.getUTCFullYear()),
+    String(now.getUTCMonth() + 1).padStart(2, '0'),
+  );
+  const dir = path.join(env.uploadsDir, rel);
+  await mkdir(dir, { recursive: true });
+
+  const base = nanoid(12);
+  const fileRel = path.posix.join(rel, `${base}${DOCUMENT_EXT[mime]}`);
+  await writeFile(path.join(env.uploadsDir, fileRel), file.buffer);
+
+  const url = `${env.mediaBaseUrl}/${fileRel}`;
+  const asset = await prisma.mediaAsset.create({
+    data: {
+      path: fileRel,
+      url,
+      kind: 'document',
+      mime,
+      bytes: file.buffer.byteLength,
+      source: opts.source ?? 'upload',
+      createdBy: opts.createdBy ?? null,
+    },
+  });
+
+  return {
+    id: asset.id,
+    url,
+    path: fileRel,
+    bytes: asset.bytes,
+    mime: asset.mime,
+    originalName: file.originalname,
+  };
+}
+
 const ID_DOC_MAX_EDGE = 2200;
 
 /**

@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { prisma } from '../db.js';
 import { badRequest, h, notFound } from '../lib/http.js';
 import { requireStaff } from '../lib/auth.js';
+import { ciContains } from '../lib/search.js';
 
 export const adminBricoPacksRouter = Router();
 
@@ -130,7 +131,7 @@ adminBricoPacksRouter.get(
     const rows = await prisma.product.findMany({
       where: {
         kind: { in: ['MACHINE', 'ACCESSORY'] },
-        ...(q ? { OR: [{ name: { contains: q } }, { slug: { contains: q } }, { brand: { contains: q } }] } : {}),
+        ...(q ? { OR: [{ name: ciContains(q) }, { slug: ciContains(q) }, { brand: ciContains(q) }] } : {}),
       },
       orderBy: { name: 'asc' },
       take: q ? 40 : 60,
@@ -172,7 +173,7 @@ adminBricoPacksRouter.get(
     const rows = await prisma.product.findMany({
       where: {
         kind: 'CONSUMABLE',
-        ...(q ? { OR: [{ name: { contains: q } }, { brand: { contains: q } }] } : {}),
+        ...(q ? { OR: [{ name: ciContains(q) }, { brand: ciContains(q) }] } : {}),
       },
       orderBy: { name: 'asc' },
       take: q ? 40 : 60,

@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { env } from '../env.js';
 import { badRequest, h, notFound } from '../lib/http.js';
+import { ciContains } from '../lib/search.js';
 import {
   createLoan,
   logConsumption,
@@ -115,7 +116,7 @@ partnerRouter.get(
       where: {
         kind: { in: ['MACHINE', 'ACCESSORY'] },
         published: true,
-        ...(q ? { name: { contains: q } } : {}),
+        ...(q ? { name: ciContains(q) } : {}),
       },
       orderBy: { name: 'asc' },
       select: {

@@ -343,9 +343,11 @@ adminRouter.post(
       // Côté interne (nos exemplaires) : notre réf. + fournisseurs d'achat.
       internalRef: isTechnicalRow ? (data.internalRef ?? null) : null,
       suppliers: isTechnicalRow ? ((data.suppliers ?? []) as never) : [],
-      // Côté partenaires de secours/comparaison (plusieurs possibles) : peut
-      // coexister avec le côté interne ci-dessus.
-      partners: isTechnicalRow ? ((data.partners ?? []) as never) : [],
+      // Côté partenaires de secours (plusieurs possibles, ex. Loiselet) : porté
+      // par la fiche produit elle-même, pas par une machine précise — le
+      // dépannage se fait "pour ce produit", indépendamment de la marque/du
+      // modèle de la machine qui a du stock ce jour-là.
+      partners: isTechnicalRow ? [] : ((data.partners ?? []) as never),
       parentProductId: data.parentProductId ?? null,
       technical: data.technical ?? false,
       // Les machines LOISELET portent leur réf. partenaire à part (import) ;
@@ -448,6 +450,29 @@ adminRouter.patch(
     const product = await prisma.product.update({
       where: { id },
       data: { parentProductId, technical: true, published: false },
+      include: productInclude,
+    });
+    res.json({ product: serializeProductDetail(product, undefined, undefined, { internal: true }) });
+  }),
+);
+
+/** Bascule publié/brouillon (action rapide depuis le tableau catalogue) —
+ * ne touche à aucun autre champ, contrairement à POST /products qui réécrit
+ * toute la fiche. Une fiche technique n'est jamais publiée seule. */
+adminRouter.patch(
+  '/products/:id/published',
+  requireStaff('RESPONSABLE'),
+  h(async (req, res) => {
+    const id = req.params.id!;
+    const published = !!req.body?.published;
+    const self = await prisma.product.findUnique({ where: { id }, select: { id: true, technical: true } });
+    if (!self) throw notFound('Produit introuvable.');
+    if (self.technical && published) {
+      throw badRequest('Une machine n’est jamais publiée seule : rattachez-la à une fiche produit.');
+    }
+    const product = await prisma.product.update({
+      where: { id },
+      data: { published },
       include: productInclude,
     });
     res.json({ product: serializeProductDetail(product, undefined, undefined, { internal: true }) });

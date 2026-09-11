@@ -6,7 +6,7 @@ import { prisma } from '../db.js';
 import { env } from '../env.js';
 import { badRequest, h, notFound } from '../lib/http.js';
 import { attachPrincipal, requireStaff } from '../lib/auth.js';
-import { storeImage } from '../lib/media.js';
+import { storeDocument, storeImage } from '../lib/media.js';
 
 export const uploadsRouter = Router();
 uploadsRouter.use(attachPrincipal, requireStaff());
@@ -34,6 +34,27 @@ uploadsRouter.post(
       );
     }
     res.status(201).json({ media: results });
+  }),
+);
+
+/** Téléverse une ou plusieurs notices/documents (PDF, Word, Excel). */
+uploadsRouter.post(
+  '/documents',
+  upload.array('files', 20),
+  h(async (req, res) => {
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    if (files.length === 0) throw badRequest('Aucun fichier');
+    const staffId = req.principal?.id;
+    const results = [];
+    for (const f of files) {
+      results.push(
+        await storeDocument(
+          { buffer: f.buffer, mimetype: f.mimetype, originalname: f.originalname },
+          { createdBy: staffId },
+        ),
+      );
+    }
+    res.status(201).json({ documents: results });
   }),
 );
 
