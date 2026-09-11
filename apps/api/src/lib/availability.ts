@@ -77,27 +77,35 @@ export interface CapacityInfo {
   capacity: number;
   isConsumable: boolean;
   kind: string;
+  /** Un partenaire de secours (ex. Loiselet) marqué "INSTANT" comble le manque
+   * de stock propre — on ne bloque pas la réservation pour autant, quitte à
+   * dépanner par ce partenaire. Un partenaire "ON_REQUEST" (comparaison,
+   * Boels, Loxam…) ne compte jamais comme dispo : juste une référence interne. */
+  instantPartnerBacked: boolean;
 }
 
 async function capacityOf(productId: string): Promise<CapacityInfo> {
   const product = await prisma.product.findUnique({
     where: { id: productId },
-    select: { id: true, stockQty: true, isConsumable: true, kind: true },
+    select: { id: true, stockQty: true, isConsumable: true, kind: true, partners: true },
   });
-  if (!product) return { productId, capacity: 0, isConsumable: false, kind: 'MACHINE' };
+  if (!product) return { productId, capacity: 0, isConsumable: false, kind: 'MACHINE', instantPartnerBacked: false };
+  const partners = (product.partners as { availabilityMode?: string }[] | null) ?? [];
+  const instantPartnerBacked = partners.some((p) => p?.availabilityMode === 'INSTANT');
   if (product.stockQty !== null && product.stockQty !== undefined) {
     return {
       productId,
       capacity: product.stockQty,
       isConsumable: product.isConsumable,
       kind: product.kind,
+      instantPartnerBacked,
     };
   }
   const productIds = await resolveUnitProductIds(productId);
   const units = await prisma.productUnit.count({
     where: { productId: { in: productIds }, state: { in: ['AVAILABLE', 'RENTED'] } },
   });
-  return { productId, capacity: units, isConsumable: product.isConsumable, kind: product.kind };
+  return { productId, capacity: units, isConsumable: product.isConsumable, kind: product.kind, instantPartnerBacked };
 }
 
 /** Quantite deja reservee pour un produit sur une periode donnee. */
@@ -234,7 +242,12 @@ export async function availabilityFor(
     reservedQty(productId, start, end, opts.excludeReservationId),
     maintenanceBlockedQty(productId, start, end),
   ]);
-  const available = Math.max(0, cap.capacity - reserved - inMaintenance);
+  const ownAvailable = Math.max(0, cap.capacity - reserved - inMaintenance);
+  // Un partenaire de secours "INSTANT" (Loiselet) comble le manque de stock
+  // propre pour la quantité demandée — jamais indisponible pour ça, quitte à
+  // dépanner par ce partenaire.
+  const available = cap.instantPartnerBacked ? Math.max(ownAvailable, requestedQty) : ownAvailable;
+  const totalUnits = cap.instantPartnerBacked ? Math.max(cap.capacity, requestedQty) : cap.capacity;
   let status: AvailabilityStatus = statusFor(requestedQty, available);
 
   let nearbyPeriod: { start: string; end: string } | null = null;
@@ -252,7 +265,7 @@ export async function availabilityFor(
     productId,
     requestedQty,
     availableQty: available,
-    totalUnits: cap.capacity,
+    totalUnits,
     status,
     nearbyPeriod,
     alternativeProductIds,

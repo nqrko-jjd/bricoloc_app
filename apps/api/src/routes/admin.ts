@@ -14,7 +14,7 @@ import {
   upsertUnitSchema,
 } from '@bricoloc/shared';
 import { prisma } from '../db.js';
-import { badRequest, h, notFound } from '../lib/http.js';
+import { badRequest, forbidden, h, notFound } from '../lib/http.js';
 import { attachPrincipal, hashPassword, requireStaff } from '../lib/auth.js';
 import { setSetting, getSettings } from '../lib/settings.js';
 import { newQrToken, qrDataUrl } from '../lib/qr.js';
@@ -741,11 +741,16 @@ adminRouter.post(
   '/units/bulk',
   requireStaff('RESPONSABLE', 'TECHNICIEN'),
   h(async (req, res) => {
-    const { productId, count, storageLocation } = req.body ?? {};
+    const { productId, count, storageLocation, serialNumbers } = req.body ?? {};
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) throw notFound('Produit introuvable');
     const n = Math.min(50, Math.max(1, Number(count ?? 1)));
     const loc = (storageLocation || '').trim() || null;
+    // N° de série optionnel, saisi une fois à la création (un par ligne) —
+    // au-delà du nombre d'exemplaires créés, les lignes en trop sont ignorées.
+    const serials: (string | null)[] = Array.isArray(serialNumbers)
+      ? serialNumbers.map((s: unknown) => (typeof s === 'string' && s.trim() ? s.trim() : null))
+      : [];
     const prefix = product.slug.slice(0, 10).toUpperCase().replace(/[^A-Z0-9]/g, '');
     const start = await prisma.productUnit.count({ where: { productId } });
     const created = [];
@@ -758,6 +763,7 @@ adminRouter.post(
             qrToken: newQrToken('U'),
             state: 'AVAILABLE',
             storageLocation: loc,
+            serialNumber: serials[i] ?? null,
           },
         }),
       );
@@ -880,6 +886,13 @@ adminRouter.patch(
   h(async (req, res) => {
     const { state, notes, serialNumber, sku, barcode, immobilisedUntil, storageLocation, assetTag } =
       req.body ?? {};
+    // Le n° de série s'enregistre à la création de l'exemplaire (POST
+    // /units/bulk) et ne bouge plus ensuite dans les opérations quotidiennes
+    // du magasinier — seuls RESPONSABLE/TECHNICIEN peuvent le corriger.
+    const staffRole = req.principal?.kind === 'staff' ? req.principal.role : null;
+    if (serialNumber !== undefined && !(staffRole && ['RESPONSABLE', 'TECHNICIEN', 'ADMIN'].includes(staffRole))) {
+      throw forbidden('Rôle insuffisant pour modifier le n° de série.');
+    }
     let unit;
     try {
       unit = await prisma.productUnit.update({

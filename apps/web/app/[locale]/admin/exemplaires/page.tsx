@@ -197,15 +197,18 @@ function MachineRow({
   const [scanFor, setScanFor] = useState<string | null>(null);
   const [addN, setAddN] = useState('2');
   const [addLoc, setAddLoc] = useState('');
+  const [addSerials, setAddSerials] = useState('');
   const mine = units.filter((u) => u.product.id === r.id);
   const locs = [...new Set(mine.map((u) => u.storageLocation).filter(Boolean))] as string[];
 
   async function bulkAdd() {
     const n = Math.max(1, Math.min(50, Number(addN) || 1));
+    const serialNumbers = addSerials.split('\n').map((s) => s.trim());
     await staffApi('/api/admin/units/bulk', {
       method: 'POST',
-      body: { productId: r.id, count: n, storageLocation: addLoc || undefined },
+      body: { productId: r.id, count: n, storageLocation: addLoc || undefined, serialNumbers },
     });
+    setAddSerials('');
     setMsg(`${n} exemplaire(s) ajouté(s) à « ${r.name} » — QR générés.`);
     await onReload();
   }
@@ -222,20 +225,16 @@ function MachineRow({
     setMsg(`Emplacement « ${storageLocation || '—'} » appliqué à tous les exemplaires de « ${r.name} ».`);
     await onReload();
   }
-  async function renameTag(unitId: string, assetTag: string) {
+  async function renameTag(unitId: string, assetTag: string, previous: string) {
+    if (
+      previous.trim() &&
+      !confirm(`Remplacer l'identifiant « ${previous} » par « ${assetTag} » ?\n\nSi une étiquette a déjà été imprimée avec « ${previous} », elle ne correspondra plus.`)
+    ) {
+      return;
+    }
     try {
       await staffApi(`/api/admin/units/${unitId}`, { method: 'PATCH', body: { assetTag } });
       setMsg(`Identifiant → ${assetTag}`);
-      await onReload();
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : 'Erreur');
-      await onReload();
-    }
-  }
-  async function setSerial(unitId: string, serialNumber: string) {
-    try {
-      await staffApi(`/api/admin/units/${unitId}`, { method: 'PATCH', body: { serialNumber: serialNumber || null } });
-      setMsg(`N° de série → ${serialNumber || '—'}`);
       await onReload();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
@@ -331,20 +330,17 @@ function MachineRow({
                               style={{ width: 90, fontWeight: 700 }}
                               onBlur={(e) => {
                                 if (e.target.value.trim() && e.target.value !== u.assetTag)
-                                  renameTag(u.id, e.target.value.trim());
+                                  renameTag(u.id, e.target.value.trim(), u.assetTag);
                               }}
                             />
                             <span className="small muted">SN</span>
-                            <input
-                              key={u.serialNumber ?? ''}
-                              defaultValue={u.serialNumber ?? ''}
-                              placeholder="n° de série"
-                              style={{ width: 110 }}
-                              onBlur={(e) => {
-                                if (e.target.value.trim() !== (u.serialNumber ?? ''))
-                                  setSerial(u.id, e.target.value.trim());
-                              }}
-                            />
+                            <span
+                              className="small"
+                              title="Saisi à la création de l'exemplaire — non modifiable ici (distingue 2 exemplaires de la même référence, ex. 2 Makita DBO)"
+                              style={{ width: 110, color: u.serialNumber ? 'inherit' : 'var(--muted)' }}
+                            >
+                              {u.serialNumber || '—'}
+                            </span>
                           </div>
                         </td>
                         <td>
@@ -353,6 +349,7 @@ function MachineRow({
                               key={u.storageLocation ?? ''}
                               defaultValue={u.storageLocation ?? ''}
                               placeholder="R-01-A"
+                              list="storage-locations"
                               style={{ width: 80 }}
                               onBlur={(e) => {
                                 if (e.target.value !== (u.storageLocation ?? '')) setLocation(u.id, e.target.value);
@@ -463,11 +460,24 @@ function MachineRow({
                 placeholder="emplacement (opt.)"
                 value={addLoc}
                 onChange={(e) => setAddLoc(e.target.value)}
+                list="storage-locations"
                 style={{ width: 130 }}
               />
               <button className="btn btn-outline btn-sm" onClick={bulkAdd}>
                 + exemplaires (QR auto)
               </button>
+            </div>
+            <div className="row" style={{ marginTop: 6, gap: 8, alignItems: 'start' }}>
+              <span className="small muted" style={{ paddingTop: 4 }}>
+                N° de série (opt., un par ligne)
+              </span>
+              <textarea
+                value={addSerials}
+                onChange={(e) => setAddSerials(e.target.value)}
+                placeholder={'ex. 4G123456\n4G123457'}
+                rows={2}
+                style={{ width: 160, fontSize: 12 }}
+              />
             </div>
           </td>
         </tr>
@@ -511,11 +521,20 @@ export default function AdminExemplaires() {
 
   const totAvail = machines.reduce((a, m) => a + m.availableNow, 0);
   const totUnits = machines.reduce((a, m) => a + m.total, 0);
+  // Zones déjà utilisées, tous produits confondus — autocomplétion partagée
+  // par tous les champs "emplacement" pour éviter les zones fantômes créées
+  // par une faute de frappe (O au lieu de 0, zéro manquant…).
+  const allStorageLocations = [...new Set(units.map((u) => u.storageLocation).filter(Boolean))] as string[];
 
   return (
     <div className="stack">
       <h1>Stock &amp; exemplaires</h1>
       {msg && <div className="alert alert-info">{msg}</div>}
+      <datalist id="storage-locations">
+        {allStorageLocations.map((loc) => (
+          <option key={loc} value={loc} />
+        ))}
+      </datalist>
 
       <div className="chips">
         <button
