@@ -58,8 +58,6 @@ export interface ProductDetail extends ProductSummary {
   purchasePrice?: number | null;
   // Machine : référence interne Bricoloc + fournisseurs possibles (plusieurs).
   internalRef?: string | null;
-  // Machine : n° de série des exemplaires physiques (ex. 2 Makita DBO180ZJ = 2 n°).
-  serialNumbers?: string[];
   suppliers?: {
     name?: string;
     ref?: string;
@@ -88,7 +86,6 @@ export interface ProductDetail extends ProductSummary {
     brand: string | null;
     model: string | null;
     internalRef: string | null;
-    serialNumbers: string[];
     partners: {
       name?: string;
       ref?: string;

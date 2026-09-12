@@ -14,7 +14,6 @@ interface StockRow {
   image: string | null;
   category: string | null;
   published: boolean;
-  serialNumbers: string[];
   total: number;
   availableNow: number;
   reserved: number;
@@ -202,15 +201,18 @@ function MachineRow({
   const [scanFor, setScanFor] = useState<string | null>(null);
   const [addN, setAddN] = useState('2');
   const [addLoc, setAddLoc] = useState('');
+  const [addSerials, setAddSerials] = useState('');
   const mine = units.filter((u) => u.product.id === r.id);
   const locs = [...new Set(mine.map((u) => u.storageLocation).filter(Boolean))] as string[];
 
   async function bulkAdd() {
     const n = Math.max(1, Math.min(50, Number(addN) || 1));
+    const serialNumbers = addSerials.split('\n').map((s) => s.trim());
     await staffApi('/api/admin/units/bulk', {
       method: 'POST',
-      body: { productId: r.id, count: n, storageLocation: addLoc || undefined },
+      body: { productId: r.id, count: n, storageLocation: addLoc || undefined, serialNumbers },
     });
+    setAddSerials('');
     setMsg(`${n} exemplaire(s) ajouté(s) à « ${r.name} » — QR générés.`);
     await onReload();
   }
@@ -237,6 +239,23 @@ function MachineRow({
     try {
       await staffApi(`/api/admin/units/${unitId}`, { method: 'PATCH', body: { assetTag } });
       setMsg(`Identifiant → ${assetTag}`);
+      await onReload();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+      await onReload();
+    }
+  }
+  async function setSerial(unitId: string, serialNumber: string, previous: string) {
+    if (
+      previous.trim() &&
+      serialNumber.trim() &&
+      !confirm(`Remplacer le n° de série « ${previous} » par « ${serialNumber} » ?`)
+    ) {
+      return;
+    }
+    try {
+      await staffApi(`/api/admin/units/${unitId}`, { method: 'PATCH', body: { serialNumber: serialNumber || null } });
+      setMsg(`N° de série → ${serialNumber || '—'}`);
       await onReload();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
@@ -283,15 +302,6 @@ function MachineRow({
         <td>
           <span className="stock-row__caret">{open ? '▾' : '▸'}</span> {r.name}
           {!r.published && <span className="badge" style={{ marginLeft: 6 }}>hors ligne</span>}
-          {r.serialNumbers.length > 0 && (
-            <span
-              className="small muted"
-              style={{ marginLeft: 6 }}
-              title="N° de série — modifiable uniquement depuis la fiche machine (Catalogue & produits)"
-            >
-              SN {r.serialNumbers.join(', ')}
-            </span>
-          )}
         </td>
         <td className="num">
           <strong>{r.availableNow}</strong>
@@ -352,6 +362,28 @@ function MachineRow({
                                 title="Identifiant imprimé sur l'étiquette — modifiable uniquement par un responsable"
                               >
                                 {u.assetTag}
+                              </span>
+                            )}
+                            <span className="small muted">SN</span>
+                            {canManage ? (
+                              <input
+                                key={u.serialNumber ?? ''}
+                                defaultValue={u.serialNumber ?? ''}
+                                placeholder="n° de série"
+                                title="Distingue 2 exemplaires de la même référence (ex. 2 Makita DBO)"
+                                style={{ width: 110 }}
+                                onBlur={(e) => {
+                                  if (e.target.value.trim() !== (u.serialNumber ?? ''))
+                                    setSerial(u.id, e.target.value.trim(), u.serialNumber ?? '');
+                                }}
+                              />
+                            ) : (
+                              <span
+                                className="small"
+                                title="N° de série — modifiable uniquement par un responsable"
+                                style={{ width: 110, color: u.serialNumber ? 'inherit' : 'var(--muted)' }}
+                              >
+                                {u.serialNumber || '—'}
                               </span>
                             )}
                           </div>
@@ -480,6 +512,20 @@ function MachineRow({
               <button className="btn btn-outline btn-sm" onClick={bulkAdd}>
                 + exemplaires (QR auto)
               </button>
+            </div>
+            )}
+            {canManage && (
+            <div className="row" style={{ marginTop: 6, gap: 8, alignItems: 'start' }}>
+              <span className="small muted" style={{ paddingTop: 4 }}>
+                N° de série (opt., un par ligne)
+              </span>
+              <textarea
+                value={addSerials}
+                onChange={(e) => setAddSerials(e.target.value)}
+                placeholder={'ex. 4G123456\n4G123457'}
+                rows={2}
+                style={{ width: 160, fontSize: 12 }}
+              />
             </div>
             )}
           </td>

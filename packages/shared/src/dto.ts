@@ -180,7 +180,6 @@ export const upsertProductSchema = z.object({
   // Machine : référence interne Bricoloc (distincte de celle de chaque
   // fournisseur) + liste de fournisseurs possibles (plusieurs sources d'achat).
   internalRef: z.string().nullable().optional(),
-  serialNumbers: z.array(z.string()).optional(),
   suppliers: z
     .array(
       z.object({

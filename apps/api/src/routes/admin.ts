@@ -342,7 +342,6 @@ adminRouter.post(
       supplierRef: data.kind === 'MACHINE' ? null : (data.supplierRef ?? null),
       // Côté interne (nos exemplaires) : notre réf. + fournisseurs d'achat.
       internalRef: isTechnicalRow ? (data.internalRef ?? null) : null,
-      serialNumbers: isTechnicalRow ? ((data.serialNumbers ?? []) as never) : [],
       suppliers: isTechnicalRow ? ((data.suppliers ?? []) as never) : [],
       // Côté partenaires de secours (plusieurs possibles, ex. Loiselet) : porté
       // par la fiche produit elle-même, pas par une machine précise — le
@@ -651,7 +650,6 @@ adminRouter.get(
           category: p.category?.name ?? null,
           categorySlug: p.category?.slug ?? null,
           published: p.published,
-          serialNumbers: (p.serialNumbers as string[] | null) ?? [],
           total,
           availableNow,
           reserved,
