@@ -2,7 +2,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { formatDateBE } from '@bricoloc/shared';
-import { staffApi } from '@/lib/staff';
+import { staffApi, useStaff } from '@/lib/staff';
 import { ScanField } from '@/components/admin/ScanField';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 
@@ -186,12 +186,16 @@ function MachineRow({
   onReload,
   setMsg,
   autoOpen,
+  canManage,
 }: {
   r: StockRow;
   units: Unit[];
   onReload: () => Promise<void>;
   setMsg: (s: string) => void;
   autoOpen?: boolean;
+  /** RESPONSABLE/TECHNICIEN/ADMIN : peut créer des exemplaires et corriger
+   * l'identifiant. Le magasinier (COMPTOIR) gère juste état/emplacement. */
+  canManage: boolean;
 }) {
   const [open, setOpen] = useState(!!autoOpen);
   const [maintFor, setMaintFor] = useState<string | null>(null);
@@ -331,15 +335,25 @@ function MachineRow({
                       <tr>
                         <td>
                           <div className="row" style={{ gap: 4, alignItems: 'center' }}>
-                            <input
-                              key={u.assetTag}
-                              defaultValue={u.assetTag}
-                              style={{ width: 90, fontWeight: 700 }}
-                              onBlur={(e) => {
-                                if (e.target.value.trim() && e.target.value !== u.assetTag)
-                                  renameTag(u.id, e.target.value.trim(), u.assetTag);
-                              }}
-                            />
+                            {canManage ? (
+                              <input
+                                key={u.assetTag}
+                                defaultValue={u.assetTag}
+                                style={{ width: 90, fontWeight: 700 }}
+                                onBlur={(e) => {
+                                  if (e.target.value.trim() && e.target.value !== u.assetTag)
+                                    renameTag(u.id, e.target.value.trim(), u.assetTag);
+                                }}
+                              />
+                            ) : (
+                              <span
+                                className="small"
+                                style={{ width: 90, fontWeight: 700 }}
+                                title="Identifiant imprimé sur l'étiquette — modifiable uniquement par un responsable"
+                              >
+                                {u.assetTag}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td>
@@ -447,6 +461,7 @@ function MachineRow({
                 <span className="small muted">(Entrée pour appliquer)</span>
               </div>
             )}
+            {canManage && (
             <div className="row" style={{ marginTop: 10, gap: 8, alignItems: 'center' }}>
               <span className="small">Ajouter</span>
               <input
@@ -466,6 +481,7 @@ function MachineRow({
                 + exemplaires (QR auto)
               </button>
             </div>
+            )}
           </td>
         </tr>
       )}
@@ -474,6 +490,8 @@ function MachineRow({
 }
 
 export default function AdminExemplaires() {
+  const { staff } = useStaff();
+  const canManage = !!staff && ['RESPONSABLE', 'TECHNICIEN', 'ADMIN'].includes(staff.role);
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') ?? '';
   const [tab, setTab] = useState<'machines' | 'accessories' | 'consumables'>('machines');
@@ -585,6 +603,7 @@ export default function AdminExemplaires() {
                       onReload={load}
                       setMsg={setMsg}
                       autoOpen={!!initialQuery && r.name.toLowerCase() === initialQuery.toLowerCase()}
+                      canManage={canManage}
                     />
                   ))}
                 </tbody>

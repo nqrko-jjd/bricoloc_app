@@ -888,12 +888,18 @@ adminRouter.patch(
   h(async (req, res) => {
     const { state, notes, serialNumber, sku, barcode, immobilisedUntil, storageLocation, assetTag } =
       req.body ?? {};
-    // Le n° de série s'enregistre à la création de l'exemplaire (POST
-    // /units/bulk) et ne bouge plus ensuite dans les opérations quotidiennes
-    // du magasinier — seuls RESPONSABLE/TECHNICIEN peuvent le corriger.
+    // Le magasinier (COMPTOIR) gère le quotidien d'un exemplaire (état,
+    // emplacement, entretien) mais ne crée rien (déjà bloqué sur /units/bulk)
+    // et ne touche pas à l'identifiant (imprimé sur l'étiquette QR — le
+    // changer désynchronise l'étiquette déjà collée) ni au n° de série
+    // (déplacé sur la fiche machine). Réservé à RESPONSABLE/TECHNICIEN.
     const staffRole = req.principal?.kind === 'staff' ? req.principal.role : null;
-    if (serialNumber !== undefined && !(staffRole && ['RESPONSABLE', 'TECHNICIEN', 'ADMIN'].includes(staffRole))) {
+    const canEditRestricted = !!staffRole && ['RESPONSABLE', 'TECHNICIEN', 'ADMIN'].includes(staffRole);
+    if (serialNumber !== undefined && !canEditRestricted) {
       throw forbidden('Rôle insuffisant pour modifier le n° de série.');
+    }
+    if (assetTag !== undefined && !canEditRestricted) {
+      throw forbidden('Rôle insuffisant pour modifier l’identifiant (étiquette déjà imprimée).');
     }
     let unit;
     try {
