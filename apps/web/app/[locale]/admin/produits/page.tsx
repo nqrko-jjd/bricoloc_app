@@ -80,6 +80,9 @@ const EMPTY = {
   purchasePrice: '',
   // Machine : notre réf. + fournisseurs possibles (plusieurs sources d'achat).
   internalRef: '',
+  // N° de série des exemplaires physiques (un par ligne) — ex. 2 Makita
+  // DBO180ZJ = 2 lignes. Lecture seule ensuite dans Stock & exemplaires.
+  serialNumbers: '',
   suppliers: [] as SupplierRow[],
   // Machine : partenaires de secours possibles (plusieurs — Loiselet, Loxam…).
   partners: [] as PartnerRow[],
@@ -255,6 +258,7 @@ export default function AdminProduits() {
       supplierListPrice: p.supplierListPrice != null ? String(p.supplierListPrice) : '',
       purchasePrice: p.purchasePrice != null ? String(p.purchasePrice) : '',
       internalRef: p.internalRef ?? '',
+      serialNumbers: (p.serialNumbers ?? []).join('\n'),
       suppliers: (p.suppliers ?? []).map((s) => ({
         name: s.name ?? '',
         ref: s.ref ?? '',
@@ -328,6 +332,12 @@ export default function AdminProduits() {
         supplierListPrice: form.supplierListPrice ? Number(form.supplierListPrice) : null,
         purchasePrice: form.purchasePrice ? Number(form.purchasePrice) : null,
         internalRef: isTechnical ? form.internalRef || null : null,
+        serialNumbers: isTechnical
+          ? form.serialNumbers
+              .split('\n')
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [],
         suppliers: isTechnical
           ? form.suppliers
               .filter((s) => s.name || s.ref || s.url || s.listPrice || s.purchasePrice)
@@ -891,6 +901,18 @@ export default function AdminProduits() {
                   onChange={(e) => set('internalRef', e.target.value)}
                   placeholder="ex. O-0001"
                 />
+              </div>
+              <div className="field">
+                <label>N° de série (un par ligne — un par exemplaire physique)</label>
+                <textarea
+                  value={form.serialNumbers}
+                  onChange={(e) => set('serialNumbers', e.target.value)}
+                  placeholder={'ex. 4G123456\n4G123457'}
+                  rows={3}
+                />
+                <p className="small muted" style={{ margin: '4px 0 0' }}>
+                  Affiché en lecture seule dans Stock &amp; exemplaires — pas modifiable depuis cette page-là.
+                </p>
               </div>
               <SupplierList value={form.suppliers} onChange={(v) => set('suppliers', v)} />
               <p className="small muted" style={{ margin: '10px 0 0' }}>

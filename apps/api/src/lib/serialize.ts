@@ -161,6 +161,7 @@ export function serializeProductDetail(
           supplierListPrice: p.supplierListPrice,
           purchasePrice: p.purchasePrice,
           internalRef: p.internalRef,
+          serialNumbers: (p.serialNumbers as string[] | null) ?? [],
           suppliers:
             (p.suppliers as
               | { name?: string; ref?: string; url?: string; listPrice?: number | null; purchasePrice?: number | null }[]
@@ -190,6 +191,7 @@ export function serializeProductDetail(
             brand: v.brand,
             model: v.model,
             internalRef: v.internalRef,
+            serialNumbers: (v.serialNumbers as string[] | null) ?? [],
             partners:
               (v.partners as
                 | {

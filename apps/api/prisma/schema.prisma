@@ -296,6 +296,11 @@ model Product {
   /// (cf. `suppliers` ci-dessous : une même machine peut être achetée chez
   /// plusieurs fournisseurs, chacun avec sa propre référence).
   internalRef String?
+  /// N° de série des exemplaires physiques de cette machine (ex. 2 Makita
+  /// DBO180ZJ = 2 n° de série) — string[], saisis ici une fois pour toutes.
+  /// Affichés en lecture seule dans Stock & exemplaires (identification), la
+  /// gestion quotidienne du stock (état, emplacement) n'y touche pas.
+  serialNumbers Json?
   /// Fournisseurs possibles pour cette machine : [{ name, ref, url, listPrice,
   /// purchasePrice }]. Remplace, pour les machines, les anciens champs
   /// partSupplier/supplierRef/supplierUrl/supplierListPrice/purchasePrice
