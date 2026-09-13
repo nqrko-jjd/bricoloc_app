@@ -27,7 +27,17 @@ opsRouter.get(
       where: { OR: [{ qrToken: token }, { number: token }] },
       include: {
         user: true,
-        items: { include: { product: { include: { units: true } }, units: { include: { unit: true } } } },
+        items: {
+          include: {
+            // Le stock physique d'une ligne « fiche produit » vit soit sur la
+            // fiche elle-même (anciens articles sans fiche technique), soit
+            // sur ses machines rattachées (variants) — jamais les deux à la
+            // fois. On fusionne les deux sources ici pour que le comptoir
+            // puisse scanner n'importe quel exemplaire réel de la ligne.
+            product: { include: { units: true, variants: { include: { units: true } } } },
+            units: { include: { unit: true } },
+          },
+        },
         payments: true,
         deposit: true,
         deliveries: true,
@@ -36,8 +46,21 @@ opsRouter.get(
       },
     });
     if (!reservation) throw notFound('Aucune reservation pour ce code');
+    const reservationForScan = {
+      ...reservation,
+      items: reservation.items.map((item) => {
+        const { variants, ...product } = item.product;
+        const scannableUnits = [
+          ...product.units,
+          // Ré-étiquetées avec le productId de la fiche : le comptoir compte
+          // et valide par ligne de réservation, pas par machine précise.
+          ...variants.flatMap((v) => v.units.map((u) => ({ ...u, productId: item.productId }))),
+        ];
+        return { ...item, product: { ...product, units: scannableUnits } };
+      }),
+    };
     res.json({
-      reservation,
+      reservation: reservationForScan,
       paid: reservation.payments.some((p) => p.kind === 'RENTAL' && p.status === 'PAID'),
       depositHeld: reservation.deposit?.status === 'HELD',
     });
@@ -266,11 +289,18 @@ opsRouter.post(
     const paid = reservation.payments.some((p) => p.kind === 'RENTAL' && p.status === 'PAID');
     if (!paid) throw badRequest('Le paiement de la location n\'est pas confirme');
 
-    // Affectation des exemplaires physiques scannes aux lignes machine.
-    const units = await prisma.productUnit.findMany({ where: { id: { in: data.unitIds } } });
+    // Affectation des exemplaires physiques scannes aux lignes machine. Un
+    // exemplaire appartient soit directement à la fiche réservée, soit à une
+    // de ses machines rattachées (son parentProductId pointe alors vers la
+    // fiche) — on doit accepter les deux pour retrouver la bonne ligne.
+    const units = await prisma.productUnit.findMany({
+      where: { id: { in: data.unitIds } },
+      include: { product: { select: { parentProductId: true } } },
+    });
     const machineItems = reservation.items.filter((i) => i.kind === 'MACHINE');
     for (const unit of units) {
-      const item = machineItems.find((i) => i.productId === unit.productId);
+      const ficheProductId = unit.product.parentProductId ?? unit.productId;
+      const item = machineItems.find((i) => i.productId === ficheProductId);
       if (!item) throw badRequest(`L'exemplaire ${unit.assetTag} ne correspond a aucune ligne`);
       await prisma.reservationUnit.upsert({
         where: { reservationItemId_unitId: { reservationItemId: item.id, unitId: unit.id } },

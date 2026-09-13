@@ -650,6 +650,11 @@ adminRouter.get(
           category: p.category?.name ?? null,
           categorySlug: p.category?.slug ?? null,
           published: p.published,
+          // Une machine (fiche technique) n'est jamais publiée seule — son
+          // `published` est toujours faux par construction, ça ne veut donc
+          // rien dire de l'afficher "hors ligne" pour elle. Seule une fiche
+          // sans machine rattachée (technical=false) a un statut pertinent.
+          technical: p.technical,
           total,
           availableNow,
           reserved,

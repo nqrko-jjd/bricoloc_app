@@ -14,6 +14,7 @@ interface StockRow {
   image: string | null;
   category: string | null;
   published: boolean;
+  technical: boolean;
   total: number;
   availableNow: number;
   reserved: number;
@@ -301,7 +302,9 @@ function MachineRow({
         </td>
         <td>
           <span className="stock-row__caret">{open ? '▾' : '▸'}</span> {r.name}
-          {!r.published && <span className="badge" style={{ marginLeft: 6 }}>hors ligne</span>}
+          {!r.published && !r.technical && (
+            <span className="badge" style={{ marginLeft: 6 }}>hors ligne</span>
+          )}
         </td>
         <td className="num">
           <strong>{r.availableNow}</strong>
