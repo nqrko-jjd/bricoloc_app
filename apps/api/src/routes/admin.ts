@@ -813,6 +813,7 @@ adminRouter.post(
         assetTag: u.assetTag,
         barcode: u.barcode ?? u.assetTag,
         productName: u.product.name,
+        serialNumber: u.serialNumber ?? null,
         storageLocation: u.storageLocation ?? null,
         qrToken: u.qrToken,
         qrDataUrl: await qrDataUrl(u.qrToken),

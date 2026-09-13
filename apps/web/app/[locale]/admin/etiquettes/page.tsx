@@ -9,6 +9,7 @@ interface Label {
   assetTag: string;
   barcode: string;
   productName: string;
+  serialNumber: string | null;
   storageLocation: string | null;
   qrDataUrl: string;
 }
@@ -216,6 +217,7 @@ function MachineLabels() {
             <img src={l.qrDataUrl} alt="" className="label__qr" />
             <div className="label__body">
               <strong className="label__tag">{l.assetTag}</strong>
+              {l.serialNumber && <span className="label__serial">SN {l.serialNumber}</span>}
               <span className="label__name">
                 {l.productName}
                 {l.storageLocation ? ` · 📍 ${l.storageLocation}` : ''}
