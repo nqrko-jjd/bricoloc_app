@@ -51,6 +51,19 @@ function unitStock(p: ProductWithRels): number {
   return own + fromVariants;
 }
 
+/**
+ * Photos d'une fiche vitrine : les siennes si elle en a, sinon celles de la
+ * première fiche technique rattachée qui en a (cf. Product.parentProductId)
+ * — une fiche fraîchement créée par rapprochement machine→fiche n'a souvent
+ * pas encore ses propres photos, alors que la machine, elle, en a déjà.
+ */
+function productImages(p: ProductWithRels): string[] {
+  const own = (p.images as string[]) ?? [];
+  if (own.length) return own;
+  const fromVariant = p.variants.find((v) => ((v.images as string[]) ?? []).length);
+  return (fromVariant?.images as string[]) ?? [];
+}
+
 export function serializeProductSummary(p: ProductWithRels, locale: Locale = SOURCE_LOCALE) {
   return {
     id: p.id,
@@ -60,8 +73,8 @@ export function serializeProductSummary(p: ProductWithRels, locale: Locale = SOU
     brand: p.brand,
     supplier: p.supplier,
     shortDescription: loc(p.shortDescription, p.i18n, 'shortDescription', locale),
-    images: (p.images as string[]) ?? [],
-    image: (p.images as string[])?.[0] ?? null,
+    images: productImages(p),
+    image: productImages(p)[0] ?? null,
     category: p.category
       ? {
           slug: p.category.slug,
