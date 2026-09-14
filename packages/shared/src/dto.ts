@@ -165,6 +165,8 @@ export const upsertProductSchema = z.object({
     .array(z.object({ minDays: z.number().int().min(1), perDay: z.number().min(0) }))
     .default([]),
   proDiscountPct: z.number().min(0).max(1).nullable().optional(),
+  // Étiquetage léger, purement informatif (badge catalogue, aucune restriction d'accès).
+  audience: z.enum(['TOUS', 'PRO', 'PARTICULIER']).default('TOUS'),
   deposit: z.number().min(0).default(0),
   isDemo: z.boolean().default(true),
   published: z.boolean().default(true),

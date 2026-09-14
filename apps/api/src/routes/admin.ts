@@ -326,6 +326,7 @@ adminRouter.post(
       monthPrice: data.monthPrice ?? auto?.monthPrice ?? null,
       tiers: (hasTiers ? data.tiers : auto?.tiers ?? data.tiers) as never,
       proDiscountPct: data.proDiscountPct ?? null,
+      audience: data.audience ?? 'TOUS',
       deposit: data.deposit,
       isConsumable: data.kind === 'CONSUMABLE',
       isDemo: data.isDemo,

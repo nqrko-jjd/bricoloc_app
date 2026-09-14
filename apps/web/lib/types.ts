@@ -30,6 +30,8 @@ export interface ProductSummary {
   inPack?: boolean;
   availabilityMode?: string;
   deliveryPolicy?: string;
+  /** Étiquetage léger informatif : TOUS | PRO | PARTICULIER. */
+  audience?: string;
   totalStock: number;
   rating?: { avg: number; count: number } | null;
   availability?: Availability | null;

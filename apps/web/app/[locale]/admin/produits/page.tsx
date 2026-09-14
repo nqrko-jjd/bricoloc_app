@@ -60,6 +60,7 @@ const EMPTY = {
   stockQty: '',
   published: true,
   isNew: false,
+  audience: 'TOUS',
   images: [] as string[],
   // Notice (mode d'emploi) + documents complémentaires, affichés au client.
   manualUrl: '',
@@ -240,6 +241,7 @@ export default function AdminProduits() {
       stockQty: p.stockQty != null ? String(p.stockQty) : '',
       published: p.published ?? true,
       isNew: p.isNew ?? false,
+      audience: p.audience ?? 'TOUS',
       images: p.images,
       manualUrl: p.manualUrl ?? '',
       documents: p.documents ?? [],
@@ -307,6 +309,7 @@ export default function AdminProduits() {
         deposit: isTechnical ? 0 : Number(form.deposit),
         published: isTechnical ? false : form.published,
         isNew: isTechnical ? false : form.isNew,
+        audience: isTechnical ? 'TOUS' : form.audience,
         images: form.images,
         manualUrl: !isTechnical ? form.manualUrl || undefined : undefined,
         documents: !isTechnical ? form.documents.filter((d) => d.label && d.url) : [],
@@ -1106,6 +1109,19 @@ export default function AdminProduits() {
                 onChange={(e) => set('isNew', e.target.checked)}
               />
               <span className="small">Badge « Nouveauté » (accueil, catalogue)</span>
+            </label>
+          )}
+          {!isTechnical && (
+            <label className="row" style={{ gap: 8 }}>
+              <span className="small" style={{ fontWeight: 600 }}>Public visé</span>
+              <select value={form.audience} onChange={(e) => set('audience', e.target.value)}>
+                <option value="TOUS">Tous (par défaut)</option>
+                <option value="PRO">Plutôt professionnels</option>
+                <option value="PARTICULIER">Plutôt particuliers</option>
+              </select>
+              <span className="small muted">
+                Étiquette informative seule (badge catalogue) — ne bloque aucune réservation.
+              </span>
             </label>
           )}
           <button className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>

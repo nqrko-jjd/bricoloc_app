@@ -286,6 +286,11 @@ model Product {
   deliveryPolicy      String    @default("STANDARD")
   /// INSTANT = reservable en direct ; ON_REQUEST = confirmation partenaire sous 1 h.
   availabilityMode    String    @default("INSTANT")
+  /// Étiquetage léger, purement informatif (aucune restriction d'accès ni
+  /// impact sur la réservation) : TOUS = grand public + pro ; PRO = plutôt
+  /// pensé pour un usage professionnel ; PARTICULIER = plutôt pensé pour un
+  /// usage occasionnel.
+  audience            String    @default("TOUS")
 
   /// Interne (non affiche) : prix d'achat + benchmark concurrents (repris de la liste machines).
   purchasePrice  Float?

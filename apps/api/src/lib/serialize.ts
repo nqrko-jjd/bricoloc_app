@@ -91,6 +91,7 @@ export function serializeProductSummary(p: ProductWithRels, locale: Locale = SOU
     isNew: p.isNew,
     availabilityMode: p.availabilityMode,
     deliveryPolicy: p.deliveryPolicy,
+    audience: p.audience,
     totalStock: unitStock(p),
   };
 }
