@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL, TOKEN_KEY } from '@/lib/api';
@@ -38,12 +38,19 @@ export function IdStep({
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       const fd = new FormData();
-      fd.append('file', {
-        uri: res.assets[0].uri,
-        name: 'carte-identite.jpg',
-        type: 'image/jpeg',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      if (Platform.OS === 'web') {
+        // Sur web, l'URI est un blob:/data: — FormData veut un vrai Blob/File,
+        // pas le descripteur {uri,name,type} que React Native accepte en natif.
+        const blob = await fetch(res.assets[0].uri).then((r) => r.blob());
+        fd.append('file', blob, 'carte-identite.jpg');
+      } else {
+        fd.append('file', {
+          uri: res.assets[0].uri,
+          name: 'carte-identite.jpg',
+          type: 'image/jpeg',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+      }
       const up = await fetch(`${API_URL}/api/account/id-document`, {
         method: 'POST',
         headers: { authorization: `Bearer ${token}` },

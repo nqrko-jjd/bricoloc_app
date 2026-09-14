@@ -9,7 +9,7 @@ import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
 import { formatEUR } from '@/lib/format';
 import type { ProductSummary } from '@/lib/types';
-import { Logo, ProductMiniCard } from '@/components/ui';
+import { Logo, ProductListRow } from '@/components/ui';
 
 interface Category {
   slug: string;
@@ -33,6 +33,8 @@ function CAT_ICON(slug: string): IoniconName {
   return 'construct-outline';
 }
 
+const ACTIVE_STATUSES = ['CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDING'];
+
 export default function HomeScreen() {
   const { user } = useStore();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -40,6 +42,8 @@ export default function HomeScreen() {
   const [packs, setPacks] = useState<
     { slug: string; name: string; dailyPrice: number; image: string | null; toolCount?: number; popular?: boolean }[]
   >([]);
+  const [productsAvailable, setProductsAvailable] = useState<number | null>(null);
+  const [activeRentals, setActiveRentals] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -47,21 +51,31 @@ export default function HomeScreen() {
     try {
       const [cat, pop, bp] = await Promise.all([
         api<{ categories: Category[] }>('/api/catalog/categories'),
-        api<{ products: ProductSummary[] }>('/api/catalog/products?pageSize=6&sort=name'),
+        api<{ products: ProductSummary[]; total?: number }>('/api/catalog/products?pageSize=6&sort=name'),
         api<{ packs: typeof packs }>('/api/public/bricopacks').catch(() => ({ packs: [] as typeof packs })),
       ]);
       setCategories(cat.categories);
       setPopular((pop.products ?? []).filter((p) => p.image).slice(0, 4));
+      setProductsAvailable(pop.total ?? null);
       setPacks(
         [...(bp.packs ?? [])].sort((a, b) => Number(!!b.popular) - Number(!!a.popular)).slice(0, 10),
       );
+      if (user) {
+        const res = await api<{ reservations: { status: string }[] }>('/api/reservations').catch(
+          () => ({ reservations: [] }),
+        );
+        setActiveRentals(res.reservations.filter((r) => ACTIVE_STATUSES.includes(r.status)).length);
+      } else {
+        setActiveRentals(null);
+      }
     } finally {
       setLoading(false);
     }
   }
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const firstName = user?.firstName;
 
@@ -115,6 +129,54 @@ export default function HomeScreen() {
           <Ionicons name="search" size={18} color={C.muted} />
           <Text style={{ color: C.muted }}>{t('home.searchShort')}</Text>
         </Pressable>
+
+        {/* Actions rapides */}
+        <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 20, marginTop: 16 }}>
+          <Pressable
+            onPress={() => router.push('/(tabs)/catalogue')}
+            style={{
+              flex: 1,
+              backgroundColor: C.brico,
+              borderRadius: R.md,
+              padding: 16,
+              gap: 22,
+            }}
+          >
+            <Ionicons name="cube-outline" size={22} color={C.white} />
+            <View>
+              <Text style={{ color: C.white, fontWeight: '900', fontSize: 14.5 }}>Louer un outil</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 11.5, marginTop: 2, fontWeight: '600' }}>
+                {productsAvailable != null ? `${productsAvailable} disponibles` : 'Voir le catalogue'}
+              </Text>
+            </View>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/(tabs)/reservations')}
+            style={{
+              flex: 1,
+              backgroundColor: C.surface2,
+              borderRadius: R.md,
+              padding: 16,
+              gap: 22,
+              borderWidth: 1,
+              borderColor: C.border,
+            }}
+          >
+            <Ionicons name="calendar-outline" size={22} color={C.brico} />
+            <View>
+              <Text style={{ color: C.ink, fontWeight: '900', fontSize: 14.5 }}>Mes locations</Text>
+              <Text style={{ color: C.muted, fontSize: 11.5, marginTop: 2, fontWeight: '600' }}>
+                {user
+                  ? activeRentals != null
+                    ? activeRentals > 0
+                      ? `${activeRentals} en cours`
+                      : 'Aucune en cours'
+                    : '—'
+                  : 'Se connecter'}
+              </Text>
+            </View>
+          </Pressable>
+        </View>
 
         {/* Categories */}
         <SectionHead title={t('home.categories')} onSeeAll={() => router.push('/(tabs)/catalogue')} />
@@ -232,16 +294,9 @@ export default function HomeScreen() {
 
         {/* Populaires */}
         <SectionHead title={t('home.popular')} onSeeAll={() => router.push('/(tabs)/catalogue')} />
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            paddingHorizontal: 20,
-            gap: 14,
-          }}
-        >
+        <View style={{ paddingHorizontal: 20, gap: 10 }}>
           {popular.map((p) => (
-            <ProductMiniCard key={p.id} p={p} />
+            <ProductListRow key={p.id} p={p} />
           ))}
         </View>
       </ScrollView>

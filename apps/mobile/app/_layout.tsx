@@ -66,6 +66,11 @@ export default function RootLayout() {
             <Stack.Screen name="bricopack/[slug]" options={{ headerShown: false }} />
             <Stack.Screen name="commande" options={{ title: 'Commande' }} />
             <Stack.Screen name="reservation/[id]" options={{ title: 'Réservation' }} />
+            <Stack.Screen name="compte/coordonnees" options={{ title: 'Coordonnées' }} />
+            <Stack.Screen name="compte/identite" options={{ title: "Pièce d'identité" }} />
+            <Stack.Screen name="compte/notifications" options={{ title: 'Notifications' }} />
+            <Stack.Screen name="compte/langue" options={{ title: 'Langue' }} />
+            <Stack.Screen name="compte/aide" options={{ title: 'Aide & assistance' }} />
             <Stack.Screen name="scan" options={{ title: 'Scanner', presentation: 'fullScreenModal', headerShown: false }} />
             <Stack.Screen name="staff" options={{ headerShown: false }} />
           </Stack>

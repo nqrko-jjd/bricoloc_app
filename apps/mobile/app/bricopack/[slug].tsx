@@ -131,7 +131,12 @@ export default function BricoPackDetail() {
         </Text>
         <Text style={{ fontSize: 15, color: C.muted, lineHeight: 22, marginTop: 12 }}>{pack.intro}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
-          {[`${pack.items.length} outils inclus`, pack.level && `Niveau ${pack.level}`, 'Assistance incluse']
+          {[
+            `${pack.items.length} outils inclus`,
+            pack.level && `Niveau ${pack.level}`,
+            pack.teamSize,
+            'Assistance incluse',
+          ]
             .filter(Boolean)
             .map((b) => (
               <Text

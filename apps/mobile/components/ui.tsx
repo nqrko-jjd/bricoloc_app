@@ -24,7 +24,21 @@ export interface ProductMini {
   image?: string | null;
   dailyPrice: number;
   rating?: { avg: number; count: number } | null;
+  availability?: { status: 'AVAILABLE' | 'PARTIAL' | 'UNAVAILABLE' | 'NEARBY' } | null;
 }
+
+const AVAILABILITY_LABEL: Record<'AVAILABLE' | 'PARTIAL' | 'UNAVAILABLE' | 'NEARBY', string> = {
+  AVAILABLE: 'Disponible',
+  PARTIAL: 'Stock limité',
+  UNAVAILABLE: 'Indisponible',
+  NEARBY: 'À proximité',
+};
+const AVAILABILITY_COLOR: Record<'AVAILABLE' | 'PARTIAL' | 'UNAVAILABLE' | 'NEARBY', string> = {
+  AVAILABLE: C.ok,
+  PARTIAL: C.warn,
+  UNAVAILABLE: C.err,
+  NEARBY: C.warn,
+};
 
 export function Screen({
   children,
@@ -205,6 +219,34 @@ export function ProductMiniCard({
             style={{ width: '86%', height: '86%' }}
             resizeMode="contain"
           />
+          {p.availability ? (
+            <View
+              style={{
+                position: 'absolute',
+                top: 8,
+                left: 8,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                backgroundColor: C.white,
+                borderRadius: 999,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+              }}
+            >
+              <View
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: AVAILABILITY_COLOR[p.availability.status],
+                }}
+              />
+              <Text style={{ fontSize: 9.5, fontWeight: '800', color: C.ink }}>
+                {AVAILABILITY_LABEL[p.availability.status]}
+              </Text>
+            </View>
+          ) : null}
           <View
             style={{
               position: 'absolute',
@@ -236,6 +278,76 @@ export function ProductMiniCard({
           ) : null}
         </View>
       </Pressable>
+  );
+}
+
+/** Ligne produit compacte (catalogue en liste) — façon exemple « Disponible près de vous ». */
+export function ProductListRow({ p }: { p: ProductMini }) {
+  const qv = useQuickView();
+  return (
+    <Pressable
+      onPress={() => qv.open(p.slug)}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: C.white,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: C.border,
+        padding: 10,
+        opacity: pressed ? 0.9 : 1,
+      })}
+    >
+      <View
+        style={{
+          width: 60,
+          height: 60,
+          borderRadius: 12,
+          backgroundColor: C.surface2,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Image
+          source={{ uri: mediaUrl(p.image) ?? 'https://placehold.co/120x120/eeeef7/08065d/png?text=BRICOLOC' }}
+          style={{ width: '78%', height: '78%' }}
+          resizeMode="contain"
+        />
+      </View>
+      <View style={{ flex: 1 }}>
+        {p.availability ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: AVAILABILITY_COLOR[p.availability.status],
+              }}
+            />
+            <Text style={{ fontSize: 10, fontWeight: '800', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+              {AVAILABILITY_LABEL[p.availability.status]}
+            </Text>
+          </View>
+        ) : null}
+        <Text style={{ fontWeight: '800', color: C.ink, fontSize: 14.5 }} numberOfLines={1}>
+          {p.name}
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
+          <Text style={{ fontWeight: '900', color: C.ink, fontSize: 14 }}>
+            {formatEUR(p.dailyPrice)}
+            <Text style={{ fontWeight: '600', color: C.muted, fontSize: 11 }}> / jour</Text>
+          </Text>
+          {p.rating && p.rating.count > 0 ? (
+            <Text style={{ color: C.muted, fontSize: 11 }}>
+              ★ {p.rating.avg.toFixed(1)} ({p.rating.count})
+            </Text>
+          ) : null}
+        </View>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={C.muted} />
+    </Pressable>
   );
 }
 

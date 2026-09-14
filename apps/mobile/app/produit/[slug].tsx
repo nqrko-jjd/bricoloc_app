@@ -92,14 +92,36 @@ export default function ProductScreen() {
         />
 
         <View style={{ padding: 20 }}>
+          {p.category ? (
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: '900',
+                letterSpacing: 1.2,
+                textTransform: 'uppercase',
+                color: C.brico,
+                marginBottom: 6,
+              }}
+            >
+              {p.category.name}
+            </Text>
+          ) : null}
           <Text style={{ fontSize: 24, fontWeight: '900', color: C.locDeep, letterSpacing: -0.6 }}>
             {p.name}
           </Text>
-          {rating && rating.count > 0 ? (
-            <Text style={{ color: C.muted, marginTop: 6, fontWeight: '600' }}>
-              ★ {rating.avg.toFixed(1)} ({rating.count} {ti('prod.reviews')})
-            </Text>
-          ) : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 }}>
+            {rating && rating.count > 0 ? (
+              <Text style={{ color: C.muted, fontWeight: '600' }}>
+                ★ {rating.avg.toFixed(1)} ({rating.count} {ti('prod.reviews')})
+              </Text>
+            ) : null}
+            {a === 'AVAILABLE' ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.ok }} />
+                <Text style={{ color: C.ok, fontWeight: '700', fontSize: 12.5 }}>Disponible</Text>
+              </View>
+            ) : null}
+          </View>
 
           {/* Tarifs */}
           <Text style={{ fontWeight: '800', color: C.ink, marginTop: 20, marginBottom: 10 }}>

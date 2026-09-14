@@ -1,13 +1,25 @@
-import { Text, View, Pressable } from 'react-native';
+import { useState } from 'react';
+import { Image, Text, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useStore } from '@/lib/store';
-import { C } from '@/lib/theme';
+import { C, R } from '@/lib/theme';
+import { mediaUrl } from '@/lib/api';
 import { formatEUR } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button } from '@/components/ui';
+import { DateRangePicker } from '@/components/DateRangePicker';
+
+function formatPeriod(start: string, end: string): string {
+  const s = new Date(start);
+  const e = new Date(end);
+  const days = Math.max(1, Math.round((e.getTime() - s.getTime()) / 86400000));
+  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
+  return `${s.toLocaleDateString('fr-BE', opts)} → ${e.toLocaleDateString('fr-BE', opts)} · ${days} jour${days > 1 ? 's' : ''}`;
+}
 
 export default function PanierScreen() {
-  const { cart, setQty, removeItem, addItem } = useStore();
+  const { cart, setQty, removeItem, addItem, setPeriod } = useStore();
   const router = useRouter();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   if (!cart || cart.items.length === 0)
     return (
@@ -43,12 +55,34 @@ export default function PanierScreen() {
 
       {cart.items.map((it) => (
         <Card key={it.id}>
-          <Text style={{ fontWeight: '700', color: C.loc }}>{it.name}</Text>
-          <Text style={{ color: C.lightGray, fontSize: 12 }}>
-            {formatEUR(it.dailyPrice)} / {it.isConsumable ? 'unité' : 'jour'}
-            {!it.isConsumable && ` · caution ${formatEUR(it.deposit)}`}
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {it.image ? (
+              <Image
+                source={{ uri: mediaUrl(it.image) }}
+                style={{ width: 52, height: 52, borderRadius: 10, backgroundColor: C.surface2 }}
+                resizeMode="contain"
+              />
+            ) : null}
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: '900',
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  color: C.brico,
+                }}
+              >
+                {it.isConsumable ? 'Consommable' : 'Machine'}
+              </Text>
+              <Text style={{ fontWeight: '800', color: C.ink, fontSize: 14.5, marginTop: 2 }}>{it.name}</Text>
+              <Text style={{ color: C.muted, fontSize: 12, marginTop: 1 }}>
+                {formatEUR(it.dailyPrice)} / {it.isConsumable ? 'unité' : 'jour'}
+                {!it.isConsumable && ` · caution ${formatEUR(it.deposit)}`}
+              </Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 10 }}>
             <Pressable
               onPress={() => setQty(it.productId, Math.max(1, it.quantity - 1))}
               style={step}
@@ -90,6 +124,28 @@ export default function PanierScreen() {
       ))}
 
       <Card>
+        <Pressable
+          onPress={() => setPickerOpen(true)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: 4,
+          }}
+        >
+          <View>
+            <Text style={{ color: C.muted, fontSize: 11, fontWeight: '700' }}>DATES DE LOCATION</Text>
+            <Text style={{ color: C.locDeep, fontWeight: '800', fontSize: 14.5, marginTop: 2 }}>
+              {cart.period ? formatPeriod(cart.period.start, cart.period.end) : 'Choisir mes dates'}
+            </Text>
+          </View>
+          <Text style={{ color: C.brico, fontWeight: '800', fontSize: 13 }}>
+            {cart.period ? 'Modifier' : 'Choisir →'}
+          </Text>
+        </Pressable>
+      </Card>
+
+      <Card>
         {cart.quote ? (
           <>
             <Row label="Location HTVA" value={formatEUR(cart.quote.totals.rentalHT)} />
@@ -128,18 +184,32 @@ export default function PanierScreen() {
             <Row label="À régler" value={formatEUR(cart.quote.totals.amountDue)} bold />
           </>
         ) : (
-          <P muted>Indiquez vos dates (onglet Catalogue) pour calculer le prix et la TVA.</P>
+          <P muted>Choisissez vos dates ci-dessus pour calculer le prix et la TVA.</P>
         )}
       </Card>
 
       <Button
         title="Valider le panier"
         onPress={() => router.push('/commande')}
-        disabled={cart.hasBlockingIssue}
+        disabled={cart.hasBlockingIssue || !cart.period}
       />
+      {!cart.period && (
+        <P muted>Choisissez vos dates de location avant de continuer.</P>
+      )}
       {cart.hasBlockingIssue && (
         <P muted>Corrigez les articles indisponibles avant de continuer.</P>
       )}
+
+      <DateRangePicker
+        visible={pickerOpen}
+        initialStart={cart.period?.start}
+        initialEnd={cart.period?.end}
+        onClose={() => setPickerOpen(false)}
+        onConfirm={async (range) => {
+          await setPeriod(range);
+          setPickerOpen(false);
+        }}
+      />
     </Screen>
   );
 }

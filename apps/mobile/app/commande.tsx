@@ -9,8 +9,26 @@ import { Screen, H1, H2, P, Card, Button, Field, Badge } from '@/components/ui';
 import { PeriodPicker } from '@/components/PeriodPicker';
 import { AddressField } from '@/components/AddressField';
 import { IdStep } from '@/components/IdStep';
+import { Stepper, type Step } from '@/components/Stepper';
 
 type Phase = 'dates' | 'fulfil' | 'account' | 'identity' | 'review' | 'done';
+
+const STEPS: Step[] = [
+  { key: 'produit', label: 'Produit' },
+  { key: 'dates', label: 'Dates' },
+  { key: 'fulfil', label: 'Retrait' },
+  { key: 'identity', label: 'Identité' },
+  { key: 'review', label: 'Paiement' },
+];
+/** Le compte (si besoin) fait partie visuellement de l'étape « Identité ». */
+const PHASE_STEP_INDEX: Record<Phase, number> = {
+  dates: 1,
+  fulfil: 2,
+  account: 3,
+  identity: 3,
+  review: 4,
+  done: 4,
+};
 
 const idOk = (s?: string) => s === 'PENDING' || s === 'VERIFIED';
 
@@ -123,6 +141,8 @@ export default function CommandeScreen() {
 
   return (
     <Screen>
+      <Stepper steps={STEPS} currentIndex={PHASE_STEP_INDEX[phase]} />
+
       {err ? (
         <Card style={{ backgroundColor: C.errBg, borderColor: '#f0bcbc' }}>
           <Text style={{ color: C.err }}>{err}</Text>

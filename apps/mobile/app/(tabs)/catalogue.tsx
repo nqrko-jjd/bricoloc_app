@@ -8,7 +8,7 @@ import { t } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
 import type { ProductSummary } from '@/lib/types';
-import { Logo, ProductMiniCard } from '@/components/ui';
+import { Logo, ProductListRow } from '@/components/ui';
 
 interface Category {
   slug: string;
@@ -177,24 +177,18 @@ export default function CatalogueScreen() {
         })}
       </ScrollView>
 
-      {/* Grid */}
+      {/* Liste */}
       <FlatList
         data={products}
         keyExtractor={(p) => p.id}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 14, paddingHorizontal: 20 }}
-        contentContainerStyle={{ paddingTop: 16, paddingBottom: 120, gap: 14 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 120, gap: 10 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
         ListEmptyComponent={
           !loading ? (
             <Text style={{ color: C.muted, textAlign: 'center', marginTop: 40 }}>{t('cat.empty')}</Text>
           ) : null
         }
-        renderItem={({ item }) => (
-          <View style={{ flex: 1 }}>
-            <ProductMiniCard p={item} width="100%" />
-          </View>
-        )}
+        renderItem={({ item }) => <ProductListRow p={item} />}
       />
     </SafeAreaView>
   );
