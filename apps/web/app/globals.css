@@ -1514,6 +1514,16 @@ button { font-family: inherit; }
 .guide-card[data-tone='red'] { background: var(--primary); color: #fff; }
 .guide-card[data-tone='navy'] { background: var(--navy); color: #fff; }
 .guide-card[data-tone='light'] { background: var(--surface); color: var(--navy-deep); border: 1px solid var(--border); }
+/* Image à la une : fond photo + dégradé, plutôt que le bloc de couleur. */
+.guide-card.has-image {
+  position: relative; background-size: cover; background-position: center;
+  color: #fff; border: none;
+}
+.guide-card.has-image::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(180deg, rgba(8,6,40,0.1) 0%, rgba(8,6,40,0.82) 100%);
+}
+.guide-card.has-image > * { position: relative; z-index: 1; }
 .guide-card__meta {
   display: flex; justify-content: space-between; gap: 10px;
   font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
@@ -1531,11 +1541,19 @@ button { font-family: inherit; }
 .guide-article__head[data-tone='red'] { background: var(--primary); color: #fff; }
 .guide-article__head[data-tone='navy'] { background: var(--navy); color: #fff; }
 .guide-article__head[data-tone='light'] { background: var(--surface-2); }
+.guide-article__head.has-image {
+  position: relative; background-size: cover; background-position: center; color: #fff;
+}
+.guide-article__head.has-image::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(8,6,40,0.25) 0%, rgba(8,6,40,0.88) 100%);
+}
+.guide-article__head.has-image > .container { position: relative; z-index: 1; }
 .guide-article__head h1 { margin: 12px 0 14px; max-width: 20ch; }
-.guide-article__head[data-tone='red'] h1, .guide-article__head[data-tone='navy'] h1 { color: #fff; }
+.guide-article__head[data-tone='red'] h1, .guide-article__head[data-tone='navy'] h1, .guide-article__head.has-image h1 { color: #fff; }
 .guide-article__back { font-weight: 700; font-size: 0.9rem; opacity: 0.9; }
 .guide-article__back:hover { text-decoration: none; opacity: 1; }
-.guide-article__head[data-tone='red'] a, .guide-article__head[data-tone='navy'] a { color: #fff; }
+.guide-article__head[data-tone='red'] a, .guide-article__head[data-tone='navy'] a, .guide-article__head.has-image a { color: #fff; }
 .guide-article__meta {
   display: block; margin-top: 18px; font-size: var(--fs-xs); font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.8;
@@ -1935,6 +1953,9 @@ button { font-family: inherit; }
 .cdiff { padding: clamp(60px, 8vw, 110px) 6vw; }
 .cdiff__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 34px; }
 @media (max-width: 900px) { .cdiff__grid { grid-template-columns: 1fr; } }
+/* Livraison seule (BricoPacks a sa propre section dédiée) : une carte, pas étirée pleine largeur. */
+.cdiff__grid--single { grid-template-columns: 1fr; }
+.cdiff__grid--single .cdiff__card { max-width: 620px; }
 .cdiff__card {
   border-radius: 28px; padding: clamp(28px, 4vw, 46px);
   display: flex; flex-direction: column; gap: 14px; align-items: flex-start;

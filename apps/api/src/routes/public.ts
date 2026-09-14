@@ -474,6 +474,7 @@ publicRouter.get(
         excerpt: guideField(g, 'excerpt', locale),
         readMinutes: g.readMinutes,
         tone: g.tone,
+        image: g.image,
         featured: g.featured,
       })),
       categories: [...new Set(rows.map((g) => g.category))],
@@ -538,6 +539,7 @@ publicRouter.get(
         body: guideField(g, 'body', locale),
         readMinutes: g.readMinutes,
         tone: g.tone,
+        image: g.image,
         updatedAt: g.updatedAt,
         seo: {
           title: pickText(seo.title, locale, SOURCE_LOCALE) || null,

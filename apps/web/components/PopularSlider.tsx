@@ -17,10 +17,13 @@ export function PopularSlider({
   products,
   showBrand,
   showBadges,
+  tag,
 }: {
   products: ProductSummary[];
   showBrand: boolean;
   showBadges: boolean;
+  /** Étiquette fixe pour toutes les cartes (sinon : 1re = « LE + LOUÉ », suivantes = « DISPONIBLE »). */
+  tag?: string;
 }) {
   const t = useTranslations('home');
   const trackRef = useRef<HTMLDivElement>(null);
@@ -49,7 +52,7 @@ export function PopularSlider({
         {products.map((p, i) => (
           <Link key={p.id} href={productHref(p)} className="ctool">
             <div className="ctool__top">
-              <span className="ctool__tag">{i === 0 ? t('popularTag') : t('availableTag')}</span>
+              <span className="ctool__tag">{tag ?? (i === 0 ? t('popularTag') : t('availableTag'))}</span>
               <IHeart />
             </div>
             {showBadges && (p.isNew || p.inPack) && (

@@ -135,6 +135,7 @@ export interface GuideSummary {
   excerpt: string;
   readMinutes: number;
   tone: 'red' | 'navy' | 'light';
+  image?: string | null;
   featured: boolean;
 }
 

@@ -74,7 +74,12 @@ export function GuideFilter({
         <ul className="guide-grid">
           {filtered.map((g) => (
             <li key={g.slug}>
-              <Link href={`/conseils/${g.slug}`} className="guide-card" data-tone={g.tone}>
+              <Link
+                href={`/conseils/${g.slug}`}
+                className={`guide-card${g.image ? ' has-image' : ''}`}
+                data-tone={g.tone}
+                style={g.image ? { backgroundImage: `url(${g.image})` } : undefined}
+              >
                 <span className="guide-card__meta">
                   <span>{catLabel(g.category)}</span>
                   <span>

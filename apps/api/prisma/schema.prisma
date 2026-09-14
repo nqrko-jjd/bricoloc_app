@@ -53,7 +53,8 @@ model Guide {
   excerpt     String
   body        String // paragraphes séparés par \n, sous-titres en "## "
   readMinutes Int      @default(5)
-  tone        String   @default("navy") // red | navy | light — couleur du bloc de couverture
+  tone        String   @default("navy") // red | navy | light — couleur du bloc de couverture (repli si pas d'image)
+  image       String?  // image à la une (URL /uploads/...), affichée à la place du bloc de couleur
   /// slugs de produits Bricoloc à mettre en avant dans l'article
   relatedSlugs Json?
   /// repli automatique : si renseigné, complète (ou remplace) relatedSlugs avec les

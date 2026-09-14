@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { staffApi } from '@/lib/staff';
 import { api } from '@/lib/api';
 import { formatEUR } from '@bricoloc/shared';
+import { ImageDropzone } from '@/components/admin/ImageDropzone';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -17,6 +18,7 @@ const EMPTY = {
   body: '',
   readMinutes: 5,
   tone: 'navy',
+  image: null as string | null,
   relatedSlugs: [] as string[],
   relatedCategorySlug: '',
   featured: false,
@@ -184,13 +186,21 @@ export default function AdminConseils() {
             <input type="number" {...F('readMinutes')} />
           </div>
           <div className="field">
-            <label>Couleur de carte</label>
+            <label>Couleur de carte (repli si pas d'image)</label>
             <select {...F('tone')}>
               {TONES.map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>
           </div>
+        </div>
+        <div className="field">
+          <label>Image à la une</label>
+          <ImageDropzone
+            value={draft.image ? [draft.image] : []}
+            onChange={(urls) => setDraft({ ...draft, image: urls[0] ?? null })}
+            max={1}
+          />
         </div>
         <div className="field">
           <label>Titre</label>

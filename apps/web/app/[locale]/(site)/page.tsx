@@ -1,5 +1,4 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { formatEUR } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { loadContent } from '@/lib/content';
@@ -58,7 +57,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const popular = featuredRes.products.slice(0, 3);
   const showBrand = config?.homeShowBrand === true;
   const showBadges = config?.homeShowBadges !== false;
-  const packs = (packsRes.products ?? []).slice(0, 1);
+  const packs = (packsRes.products ?? []).slice(0, 3);
   const toolCount = Math.max(10, Math.floor((machineCountRes.total ?? 80) / 10) * 10);
   const guides = (guidesRes.guides ?? []).slice(0, 3);
   // BricoPacks a déjà sa propre mise en avant plus bas — pas la peine de la
@@ -167,7 +166,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </section>
       )}
 
-      {/* ─────────────── NOTRE DIFFÉRENCE : LIVRAISON + BRICOPACKS ─────────────── */}
+      {/* ─────────────── LES BRICOPACKS ─────────────── */}
+      {packs.length > 0 && (
+        <section className="csection" style={{ paddingTop: 0 }}>
+          <div className="csection__head">
+            <div>
+              <span className="kicker">— {t('diffEyebrow')}</span>
+              <h2>{t('diffPackTitle')}</h2>
+              <p style={{ marginTop: 10, color: '#4a4d6b', lineHeight: 1.62, maxWidth: '52ch' }}>
+                {t('diffPackText')}
+              </p>
+            </div>
+            <Link href="/bricopacks" className="csection__link">
+              {t('diffPackCta')} <IArrowUpRight />
+            </Link>
+          </div>
+          <PopularSlider products={packs} showBrand={false} showBadges={false} tag={t('packTag')} />
+          <p className="cdiff__compose" style={{ marginTop: 24, borderTop: 'none', paddingTop: 0 }}>
+            {t('diffComposeText')}{' '}
+            <Link href="/bricopacks#composer" className="csection__link" style={{ display: 'inline-flex' }}>
+              {t('diffComposeCta')} <IArrowUpRight />
+            </Link>
+          </p>
+        </section>
+      )}
+
+      {/* ─────────────── LIVRAISON ─────────────── */}
       <section className="cdiff">
         <div className="csection__head">
           <div>
@@ -177,7 +201,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </h2>
           </div>
         </div>
-        <div className="cdiff__grid reveal">
+        <div className="cdiff__grid cdiff__grid--single reveal">
           <div className="cdiff__card cdiff__card--delivery">
             <h3>{t('diffDeliveryTitle')}</h3>
             <p>{t('diffDeliveryText')}</p>
@@ -188,31 +212,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <Link href="/livraison" className="csection__link">
               {t('trustDelivery')} <IArrowUpRight />
             </Link>
-          </div>
-          <div className="cdiff__card cdiff__card--pack">
-            <h3>{t('diffPackTitle')}</h3>
-            <p>{t('diffPackText')}</p>
-            {packs.length > 0 && (
-              <div className="cdiff__packs">
-                {packs.map((p) => (
-                  <Link key={p.id} href={`/bricopacks/${p.slug}`} className="cdiff__pack">
-                    <span>{p.name.replace(/^BricoPack\s*/i, '')}</span>
-                    <b>
-                      {t('diffFrom')} {formatEUR(p.dailyPrice)}
-                    </b>
-                  </Link>
-                ))}
-              </div>
-            )}
-            <p className="cdiff__compose">{t('diffComposeText')}</p>
-            <div className="cdiff__composeLinks">
-              <Link href="/bricopacks" className="csection__link">
-                {t('diffPackCta')} <IArrowUpRight />
-              </Link>
-              <Link href="/bricopacks#composer" className="csection__link">
-                {t('diffComposeCta')} <IArrowUpRight />
-              </Link>
-            </div>
           </div>
         </div>
       </section>
@@ -303,7 +302,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
           <div className="guide-grid reveal">
             {guides.map((g) => (
-              <Link key={g.slug} href={`/conseils/${g.slug}`} className="guide-card" data-tone={g.tone}>
+              <Link
+                key={g.slug}
+                href={`/conseils/${g.slug}`}
+                className={`guide-card${g.image ? ' has-image' : ''}`}
+                data-tone={g.tone}
+                style={g.image ? { backgroundImage: `url(${g.image})` } : undefined}
+              >
                 <span className="guide-card__meta">
                   <span>{catLabel(g.category)}</span>
                   <span>◷ {g.readMinutes} min</span>

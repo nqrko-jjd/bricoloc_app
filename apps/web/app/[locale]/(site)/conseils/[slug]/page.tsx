@@ -94,7 +94,11 @@ export default async function GuidePage({
 
   return (
     <article className="guide-article">
-      <header className="guide-article__head" data-tone={guide.tone}>
+      <header
+        className={`guide-article__head${guide.image ? ' has-image' : ''}`}
+        data-tone={guide.tone}
+        style={guide.image ? { backgroundImage: `url(${guide.image})` } : undefined}
+      >
         <div className="container">
           <Link href="/conseils" className="guide-article__back">
             ← {t('allGuides')}
