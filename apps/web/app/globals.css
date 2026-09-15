@@ -2005,9 +2005,16 @@ button { font-family: inherit; }
 .cdiff { padding: clamp(60px, 8vw, 110px) 6vw; }
 .cdiff__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 34px; }
 @media (max-width: 900px) { .cdiff__grid { grid-template-columns: 1fr; } }
-/* Livraison seule (BricoPacks a sa propre section dédiée) : une carte, pas étirée pleine largeur. */
+/* Livraison seule (BricoPacks a sa propre section dédiée) : bandeau pleine
+   largeur plutôt qu'une carte étroite qui laisse un vide à côté. */
 .cdiff__grid--single { grid-template-columns: 1fr; }
-.cdiff__grid--single .cdiff__card { max-width: 620px; }
+.cdiff__card--wide {
+  flex-direction: row; align-items: center; flex-wrap: wrap; gap: 28px 40px;
+}
+.cdiff__card--wide .cdiff__card-body { flex: 1 1 380px; display: flex; flex-direction: column; gap: 14px; }
+.cdiff__card--wide .cdiff__card-body p { max-width: 60ch; }
+.cdiff__card--wide .cdiff__card-cta { flex: none; }
+@media (max-width: 640px) { .cdiff__card--wide { flex-direction: column; align-items: flex-start; } }
 .cdiff__card {
   border-radius: 28px; padding: clamp(28px, 4vw, 46px);
   display: flex; flex-direction: column; gap: 14px; align-items: flex-start;

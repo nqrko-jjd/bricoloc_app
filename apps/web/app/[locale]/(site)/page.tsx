@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { formatEUR } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { loadContent } from '@/lib/content';
@@ -181,7 +182,26 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('diffPackCta')} <IArrowUpRight />
             </Link>
           </div>
-          <PopularSlider products={packs} showBrand={false} showBadges={false} tag={t('packTag')} />
+          <div className="bp-grid">
+            {packs.map((p) => (
+              <Link key={p.id} href={`/bricopacks/${p.slug}`} className="bp-card">
+                {p.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="bp-card__img" src={p.image} alt="" loading="lazy" />
+                ) : (
+                  <span className="bp-card__img bp-card__img--ph" aria-hidden />
+                )}
+                <span className="bp-card__tag">{t('packTag')}</span>
+                <span className="bp-card__name">{p.name.replace(/^BricoPack\s*/i, '')}</span>
+                <span className="bp-card__foot">
+                  <span className="bp-card__meta">
+                    {t('diffFrom')} {formatEUR(p.dailyPrice)}/j
+                  </span>
+                  <span className="bp-card__cta">Voir le contenu →</span>
+                </span>
+              </Link>
+            ))}
+          </div>
           <p className="cdiff__compose" style={{ marginTop: 24, borderTop: 'none', paddingTop: 0 }}>
             {t('diffComposeText')}{' '}
             <Link href="/bricopacks#composer" className="csection__link" style={{ display: 'inline-flex' }}>
@@ -202,14 +222,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </div>
         <div className="cdiff__grid cdiff__grid--single reveal">
-          <div className="cdiff__card cdiff__card--delivery">
-            <h3>{t('diffDeliveryTitle')}</h3>
-            <p>{t('diffDeliveryText')}</p>
-            <ul className="cdiff__points">
-              <li>{t('diffDeliveryPoint1')}</li>
-              <li>{t('diffDeliveryPoint2')}</li>
-            </ul>
-            <Link href="/livraison" className="csection__link">
+          <div className="cdiff__card cdiff__card--delivery cdiff__card--wide">
+            <ITruck />
+            <div className="cdiff__card-body">
+              <h3>{t('diffDeliveryTitle')}</h3>
+              <p>{t('diffDeliveryText')}</p>
+              <ul className="cdiff__points">
+                <li>{t('diffDeliveryPoint1')}</li>
+                <li>{t('diffDeliveryPoint2')}</li>
+              </ul>
+            </div>
+            <Link href="/livraison" className="csection__link cdiff__card-cta">
               {t('trustDelivery')} <IArrowUpRight />
             </Link>
           </div>
