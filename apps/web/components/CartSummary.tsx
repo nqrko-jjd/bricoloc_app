@@ -5,7 +5,7 @@ import type { Quote } from '@/lib/types';
 export function CartSummary({ quote, title = 'Récapitulatif' }: { quote: Quote | null; title?: string }) {
   if (!quote) {
     return (
-      <div className="card card-pad summary">
+      <div className="card card-pad summary card--flat">
         <h3>{title}</h3>
         <p className="small muted">
           Indiquez vos dates pour calculer le prix de location, les réductions longue durée et
@@ -16,7 +16,7 @@ export function CartSummary({ quote, title = 'Récapitulatif' }: { quote: Quote 
   }
   const t = quote.totals;
   return (
-    <div className="card card-pad summary">
+    <div className="card card-pad summary card--flat">
       <h3>{title}</h3>
       <div className="line">
         <span>Location HTVA</span>

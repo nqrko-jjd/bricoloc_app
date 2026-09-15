@@ -575,13 +575,19 @@ button { font-family: inherit; }
 /* =========================================================================
    Étapes
    ========================================================================= */
-.steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.steps { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
 .step {
-  flex: 1; min-width: 90px; text-align: center; font-size: 0.78rem; font-weight: 700;
-  padding: 8px 4px; border-radius: var(--r-xs); background: var(--surface-2); color: var(--muted-fg);
+  display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px;
+  border-radius: var(--r-pill); font-size: 0.78rem; font-weight: 700; color: var(--muted-fg);
 }
-.step.active { background: var(--navy); color: #fff; }
-.step.done { background: var(--ok-bg); color: var(--ok); }
+.step::before {
+  content: attr(data-n); display: grid; place-items: center; flex: none; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--surface-2); color: var(--muted-fg); font-size: 0.7rem; font-weight: 800;
+}
+.step.done { color: var(--ink); }
+.step.done::before { content: '✓'; background: var(--ink); color: #fff; }
+.step.active { color: var(--ink); }
+.step.active::before { background: var(--primary); color: #fff; }
 
 /* =========================================================================
    Alertes
@@ -1319,10 +1325,15 @@ button { font-family: inherit; }
 
 /* Galerie */
 .pgallery__main {
-  border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden;
-  background: var(--surface); aspect-ratio: 4 / 3;
+  border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden;
+  background: var(--surface); aspect-ratio: 4 / 3; position: relative;
+  box-shadow: var(--shadow-md);
 }
 .pgallery__main img { width: 100%; height: 100%; object-fit: cover; }
+.pgallery__tag {
+  position: absolute; top: 16px; left: 16px; background: var(--surface-2); color: var(--muted-fg);
+  font-size: var(--fs-xs); font-weight: 700; padding: 6px 14px; border-radius: var(--r-pill);
+}
 .pgallery__thumbs { list-style: none; margin: 10px 0 0; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
 .pgallery__thumbs button {
   width: 66px; height: 66px; padding: 0; border: 1px solid var(--border); border-radius: var(--r-xs);
@@ -1331,16 +1342,17 @@ button { font-family: inherit; }
 .pgallery__thumbs button.is-active { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent); }
 .pgallery__thumbs img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Paliers de prix */
-.ptiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+/* Paliers de prix — carte « meilleur tarif » mise en avant (pas forcément la 1re). */
+.ptiers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+@media (max-width: 560px) { .ptiers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 380px) { .ptier__price { font-size: 1.15rem; } }
 .ptier {
   border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 14px 12px; text-align: center;
   background: var(--surface2); display: grid; gap: 3px;
 }
-.ptier:first-child { border-color: var(--navy); background: var(--navy); }
-.ptier:first-child .ptier__label, .ptier:first-child .ptier__vat { color: rgba(255,255,255,0.7); }
-.ptier:first-child .ptier__price { color: #fff; }
+.ptier.is-best { border-color: var(--navy); background: var(--navy); }
+.ptier.is-best .ptier__label, .ptier.is-best .ptier__vat { color: rgba(255,255,255,0.7); }
+.ptier.is-best .ptier__price { color: #fff; }
 .ptier__label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; color: var(--muted-fg); }
 .ptier__price { font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; letter-spacing: -0.03em; color: var(--navy-deep); }
 
@@ -1385,6 +1397,36 @@ button { font-family: inherit; }
 .complete__img { grid-area: img; width: 56px; height: 56px; object-fit: cover; border-radius: var(--r-xs); background: var(--surface-2); }
 .complete__grid li > div { grid-area: txt; }
 .complete__grid li > .btn, .complete__grid li button { grid-area: btn; }
+
+/* =========================================================================
+   Parcours réservation (panier → checkout) — cartes sans bordure + ombre
+   douce, bascules pleine largeur, puces d'heure, dépôt de pièce d'identité.
+   Partagé par /panier, /commande et le panneau d'achat produit.
+   ========================================================================= */
+.card--flat { border-color: transparent; box-shadow: var(--shadow-md); }
+
+.summary { border-color: transparent; box-shadow: var(--shadow-md); }
+.summary .line.total { font-size: 1.25rem; }
+
+.toggle2 { display: flex; gap: 10px; }
+.toggle2__btn {
+  flex: 1; text-align: center; padding: 14px; border-radius: var(--r-xs); border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--ink); font-weight: 700; font-size: 0.94rem; cursor: pointer;
+}
+.toggle2__btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.slotpicker { display: flex; gap: 8px; flex-wrap: wrap; }
+.slotpill {
+  border-radius: var(--r-xs); padding: 9px 16px; font-size: 0.86rem; font-weight: 600;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); cursor: pointer;
+}
+.slotpill.active { background: var(--ink); border-color: var(--ink); color: #fff; font-weight: 700; }
+
+.idbox {
+  border: 1.5px dashed var(--border); border-radius: var(--r-md); padding: 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+}
+.idbox p { margin: 0; }
 
 /* Consommables / accessoires adaptés (pièces à acheter chez un fournisseur) */
 .parts-list { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }

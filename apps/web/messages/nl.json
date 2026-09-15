@@ -207,6 +207,7 @@
   "product": {
     "breadcrumbCatalogue": "Catalogus",
     "priceDay": "Dag",
+    "priceFromDays": "Vanaf {days} d",
     "priceWeek": "Week",
     "priceMonth": "Maand",
     "perDay": "/ per dag",

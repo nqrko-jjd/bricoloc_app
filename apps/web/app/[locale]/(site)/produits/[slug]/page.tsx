@@ -116,7 +116,7 @@ export default async function ProductPage({
 
       <div className="pdetail">
         <div className="pdetail__media">
-          <ProductGallery images={product.images} alt={product.name} />
+          <ProductGallery images={product.images} alt={product.name} tag={product.category?.name} />
         </div>
 
         <div className="pdetail__head">
@@ -228,7 +228,7 @@ export default async function ProductPage({
           <p className="muted">{t('completeHint')}</p>
           <ul className="complete__grid">
             {accessories.map((a) => (
-              <li key={a.id} className="card card-body">
+              <li key={a.id} className="card card-body card--flat">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {a.image && <img src={a.image} alt="" className="complete__img" loading="lazy" />}
                 <div>
@@ -251,7 +251,7 @@ export default async function ProductPage({
           <p className="muted">{t('consumablesHint')}</p>
           <ul className="complete__grid">
             {consumables.map((c) => (
-              <li key={c.id} className="card card-body">
+              <li key={c.id} className="card card-body card--flat">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {c.image && <img src={c.image} alt="" className="complete__img" loading="lazy" />}
                 <div>

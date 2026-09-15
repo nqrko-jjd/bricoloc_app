@@ -118,11 +118,16 @@ export function IdDocument({
           une nouvelle, nette et entièrement visible.
         </p>
       )}
-      {status === 'NONE' && (
-        <p className="small muted" style={{ margin: 0 }}>
-          Pour louer du matériel, une photo du <strong>recto</strong> de la carte d’identité de la
-          personne qui commande est nécessaire (caution &amp; contrat de location).
-        </p>
+      {status === 'NONE' && !imgUrl && (
+        <div className="idbox" onClick={() => inputRef.current?.click()} role="button" tabIndex={0}>
+          <p className="small muted">
+            Glissez recto/verso, ou photographiez-la directement
+          </p>
+          <p className="small muted" style={{ margin: 0 }}>
+            Photo du <strong>recto</strong> de la carte d’identité de la personne qui commande
+            (caution &amp; contrat de location).
+          </p>
+        </div>
       )}
 
       {imgUrl && (

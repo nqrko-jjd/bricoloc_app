@@ -85,7 +85,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
   }
 
   return (
-    <div className="card card-pad summary">
+    <div className="card card-pad summary card--flat">
       <div className="price" style={{ fontSize: '1.6rem' }}>
         {formatEUR(display(currentPerDay))}{' '}
         <small>/ {product.isConsumable ? 'unité' : 'jour'}</small>

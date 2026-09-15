@@ -14,8 +14,9 @@ export function Steps({ current }: { current: number }) {
         <div
           key={l}
           className={`step${i === current ? ' active' : ''}${i < current ? ' done' : ''}`}
+          data-n={i + 1}
         >
-          {i + 1}. {l}
+          {l}
         </div>
       ))}
     </div>

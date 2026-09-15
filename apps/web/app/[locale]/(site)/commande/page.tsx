@@ -205,7 +205,7 @@ export default function CommandePage() {
       <div className="section container">
         <h1>Commande</h1>
         <Steps current={5} />
-        <div className="card card-pad stack center" style={{ alignItems: 'center', maxWidth: 520, margin: '0 auto' }}>
+        <div className="card card-pad stack center card--flat" style={{ alignItems: 'center', maxWidth: 520, margin: '0 auto' }}>
           <h2>Réservation confirmée 🎉</h2>
           <p className="price">{result.number}</p>
           <div className="qr-box">
@@ -487,7 +487,7 @@ export default function CommandePage() {
       <div className="two-col">
         <div className="stack">
           {phase === 'dates' && (
-            <div className="card card-pad stack">
+            <div className="card card-pad stack card--flat">
               <h2>1. Confirmez vos dates</h2>
               <p className="muted small">
                 Une seule période pour toute la commande. Les disponibilités de tous les articles
@@ -519,17 +519,17 @@ export default function CommandePage() {
           )}
 
           {phase === 'fulfil' && (
-            <div className="card card-pad stack">
-              <h2>2. Retrait ou livraison</h2>
-              <div className="pill-row">
+            <div className="card card-pad stack card--flat">
+              <h2>3. Retrait ou livraison</h2>
+              <div className="toggle2">
                 <button
-                  className={`chip${mode === 'PICKUP' ? ' active' : ''}`}
+                  className={`toggle2__btn${mode === 'PICKUP' ? ' active' : ''}`}
                   onClick={() => setMode('PICKUP')}
                 >
                   Click &amp; Collect (gratuit)
                 </button>
                 <button
-                  className={`chip${mode === 'DELIVERY' ? ' active' : ''}`}
+                  className={`toggle2__btn${mode === 'DELIVERY' ? ' active' : ''}`}
                   onClick={() => setMode('DELIVERY')}
                 >
                   Livraison chantier / domicile
@@ -571,14 +571,18 @@ export default function CommandePage() {
                   <div className="field">
                     <label>Heure d’arrivée au dépôt — le {new Date(start).toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' })}</label>
                     {pickupSlots.length > 0 ? (
-                      <select value={slot} onChange={(e) => setSlot(e.target.value)}>
-                        <option value="">— Choisir une heure —</option>
+                      <div className="slotpicker">
                         {pickupSlots.map((s) => (
-                          <option key={s} value={s}>
-                            J’arrive à {s}
-                          </option>
+                          <button
+                            key={s}
+                            type="button"
+                            className={`slotpill${slot === s ? ' active' : ''}`}
+                            onClick={() => setSlot(s)}
+                          >
+                            {s}
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     ) : (
                       <p className="small alert alert-warn" style={{ margin: 0 }}>
                         {pickupDayClosed
@@ -697,19 +701,19 @@ export default function CommandePage() {
           )}
 
           {phase === 'account' && (
-            <div className="card card-pad stack">
-              <h2>3. Vos coordonnées</h2>
+            <div className="card card-pad stack card--flat">
+              <h2>4. Vos coordonnées</h2>
               {!kiosk && (
                 <>
-                  <div className="pill-row">
+                  <div className="toggle2">
                     <button
-                      className={`chip${authMode === 'create' ? ' active' : ''}`}
+                      className={`toggle2__btn${authMode === 'create' ? ' active' : ''}`}
                       onClick={() => setAuthMode('create')}
                     >
                       Créer un compte
                     </button>
                     <button
-                      className={`chip${authMode === 'login' ? ' active' : ''}`}
+                      className={`toggle2__btn${authMode === 'login' ? ' active' : ''}`}
                       onClick={() => setAuthMode('login')}
                     >
                       J&apos;ai déjà un compte
@@ -796,8 +800,8 @@ export default function CommandePage() {
           )}
 
           {phase === 'identity' && (
-            <div className="card card-pad stack">
-              <h2>3. Pièce d’identité</h2>
+            <div className="card card-pad stack card--flat">
+              <h2>4. Pièce d’identité</h2>
               <IdDocument compact onUploaded={() => setError('')} />
               <div className="row">
                 <button
@@ -818,7 +822,7 @@ export default function CommandePage() {
           )}
 
           {phase === 'review' && (
-            <div className="card card-pad stack">
+            <div className="card card-pad stack card--flat">
               <h2>4. Vérification</h2>
               <p>
                 <strong>Période :</strong> {formatDateTimeBE(fromLocalInput(start))} →{' '}
@@ -878,7 +882,7 @@ export default function CommandePage() {
           )}
 
           {phase === 'pay' && (
-            <div className="card card-pad stack">
+            <div className="card card-pad stack card--flat">
               <h2>5. Paiement</h2>
               {kiosk ? (
                 <div className="alert alert-info">

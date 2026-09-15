@@ -207,6 +207,7 @@
   "product": {
     "breadcrumbCatalogue": "Catalogue",
     "priceDay": "Day",
+    "priceFromDays": "From {days}d",
     "priceWeek": "Week",
     "priceMonth": "Month",
     "perDay": "/ day",

@@ -4,13 +4,22 @@ import { useState } from 'react';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 
 /** Galerie photo produit : image principale + vignettes cliquables. */
-export function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
+export function ProductGallery({
+  images,
+  alt,
+  tag,
+}: {
+  images: string[];
+  alt: string;
+  tag?: string | null;
+}) {
   const list = images.length ? images : [PLACEHOLDER_IMG];
   const [active, setActive] = useState(0);
 
   return (
     <div className="pgallery">
       <div className="pgallery__main">
+        {tag && <span className="pgallery__tag">{tag}</span>}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={list[active]}
