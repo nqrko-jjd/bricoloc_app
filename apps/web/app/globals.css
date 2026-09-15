@@ -522,12 +522,12 @@ button { font-family: inherit; }
   font-weight: 700; font-size: var(--fs-xs); color: var(--navy);
   text-transform: uppercase; letter-spacing: 0.08em;
 }
-.field input, .field select, .field textarea {
+.field input:not([type='radio']):not([type='checkbox']), .field select, .field textarea {
   width: 100%; box-sizing: border-box;
   padding: 11px 12px; border: 1px solid var(--border); border-radius: var(--r-xs);
   font-family: inherit; font-size: 0.98rem; background: var(--surface); color: var(--ink);
 }
-.field input:focus, .field select:focus, .field textarea:focus {
+.field input:focus:not([type='radio']):not([type='checkbox']), .field select:focus, .field textarea:focus {
   outline: 2px solid var(--ring); outline-offset: 1px; border-color: var(--ring);
 }
 .field-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
@@ -1427,6 +1427,16 @@ button { font-family: inherit; }
   display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
 }
 .idbox p { margin: 0; }
+
+.daterange-trigger {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  border: 1px solid var(--border); border-radius: var(--r-xs); padding: 13px 16px;
+  background: var(--surface-2); cursor: pointer;
+}
+.daterange-trigger:hover { border-color: var(--navy); }
+.daterange-trigger__field { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.daterange-trigger__field strong { font-size: 0.98rem; color: var(--ink); }
+.daterange-trigger__arrow { color: var(--muted-fg); flex: none; }
 
 /* Consommables / accessoires adaptés (pièces à acheter chez un fournisseur) */
 .parts-list { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }

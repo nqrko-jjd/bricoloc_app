@@ -1,7 +1,7 @@
 'use client';
 import { Link } from '@/i18n/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { formatEUR, formatDateTimeBE, icsDataUri } from '@bricoloc/shared';
+import { formatEUR, formatDateBE, formatDateTimeBE, icsDataUri } from '@bricoloc/shared';
 import { api, clientApi, ApiError } from '@/lib/api';
 import { useCart, useSession } from '@/lib/providers';
 import { useKiosk } from '@/lib/kiosk';
@@ -10,6 +10,7 @@ import { IdDocument } from '@/components/IdDocument';
 import { Steps } from '@/components/Steps';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { WeekendOfferNote } from '@/components/WeekendOfferNote';
+import { DateRangePicker } from '@/components/DateRangePicker';
 import { fromLocalInput, toLocalInput, defaultPeriod } from '@/lib/dates';
 
 type Phase = 'dates' | 'fulfil' | 'account' | 'identity' | 'review' | 'pay' | 'done';
@@ -40,6 +41,7 @@ export default function CommandePage() {
   const d = defaultPeriod();
   const [start, setStart] = useState(toLocalInput(cart?.period?.start ?? d.start));
   const [end, setEnd] = useState(toLocalInput(cart?.period?.end ?? d.end));
+  const [datesPickerOpen, setDatesPickerOpen] = useState(false);
 
   const [mode, setMode] = useState<'PICKUP' | 'DELIVERY'>(
     (cart?.fulfilmentMode as 'PICKUP' | 'DELIVERY') ?? 'PICKUP',
@@ -493,24 +495,33 @@ export default function CommandePage() {
                 Une seule période pour toute la commande. Les disponibilités de tous les articles
                 seront vérifiées ensemble.
               </p>
-              <div className="field-2">
-                <div className="field">
-                  <label>Début</label>
-                  <input
-                    type="date"
-                    value={start.slice(0, 10)}
-                    onChange={(e) => setStart(`${e.target.value}T08:00`)}
-                  />
-                </div>
-                <div className="field">
-                  <label>Retour</label>
-                  <input
-                    type="date"
-                    value={end.slice(0, 10)}
-                    onChange={(e) => setEnd(`${e.target.value}T18:00`)}
-                  />
-                </div>
-              </div>
+              <button
+                type="button"
+                className="daterange-trigger"
+                onClick={() => setDatesPickerOpen(true)}
+              >
+                <span className="daterange-trigger__field">
+                  <span className="small muted">Début</span>
+                  <strong>{formatDateBE(fromLocalInput(start))}</strong>
+                </span>
+                <span className="daterange-trigger__arrow">→</span>
+                <span className="daterange-trigger__field">
+                  <span className="small muted">Retour</span>
+                  <strong>{formatDateBE(fromLocalInput(end))}</strong>
+                </span>
+              </button>
+              {datesPickerOpen && (
+                <DateRangePicker
+                  initialStart={new Date(fromLocalInput(start))}
+                  initialEnd={new Date(fromLocalInput(end))}
+                  onClose={() => setDatesPickerOpen(false)}
+                  onApply={(s, e) => {
+                    setStart(toLocalInput(s.toISOString()));
+                    setEnd(toLocalInput(e.toISOString()));
+                    setDatesPickerOpen(false);
+                  }}
+                />
+              )}
               <p className="small muted" style={{ margin: 0 }}>
                 L’heure précise d’arrivée se choisit à l’étape suivante (retrait ou livraison).
               </p>
