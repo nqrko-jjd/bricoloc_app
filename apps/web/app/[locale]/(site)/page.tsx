@@ -7,6 +7,7 @@ import type { Category, GuideSummary, ProductSummary, PublicConfig } from '@/lib
 import { SearchAutocomplete } from '@/components/SearchAutocomplete';
 import { DegressivePricing } from '@/components/DegressivePricing';
 import { PopularSlider } from '@/components/PopularSlider';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
 import {
   CATEGORY_ICON,
   ArrowUpRight,
@@ -95,7 +96,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           />
         </div>
         <div className="chero__stat">
-          <strong>{toolCount}+</strong>
+          <strong><AnimatedCounter value={toolCount} suffix="+" /></strong>
           <span>{t('statToolsSub')}</span>
         </div>
       </section>
@@ -103,7 +104,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* ─────────────── CONFIANCE ─────────────── */}
       <div className="ctrust reveal">
         <div>
-          <IClock /> {t('trustDispo')}
+          <span className="live-dot" /> <IClock /> {t('trustDispo')}
         </div>
         <div>
           <ITruck /> {t('trustDelivery')}
@@ -129,11 +130,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {t('exploreCta', { count: toolCount })} <IArrowUpRight />
           </Link>
         </div>
-        <div className="ccats reveal">
+        <div className="ccats">
           {cats.map((c, i) => {
             const Icon = CATEGORY_ICON[c.slug] ?? Sparkles;
             return (
-              <Link key={c.slug} href={`/catalogue?category=${c.slug}`}>
+              <Link
+                key={c.slug}
+                href={`/catalogue?category=${c.slug}`}
+                className="reveal"
+                data-reveal-delay={Math.min(i, 6) * 55}
+              >
                 <span className="ccats__num">{String(i + 1).padStart(2, '0')}</span>
                 <span className="ccats__go" aria-hidden>
                   →
@@ -183,8 +189,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </Link>
           </div>
           <div className="bp-grid">
-            {packs.map((p) => (
-              <Link key={p.id} href={`/bricopacks/${p.slug}`} className="bp-card">
+            {packs.map((p, i) => (
+              <Link
+                key={p.id}
+                href={`/bricopacks/${p.slug}`}
+                className="bp-card reveal"
+                data-reveal-delay={i * 70}
+              >
                 {p.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img className="bp-card__img" src={p.image} alt="" loading="lazy" />
@@ -263,13 +274,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </h2>
           </div>
         </div>
-        <div className="csteps reveal">
+        <div className="csteps">
           {[
             { Icon: ISearch, key: '1' },
             { Icon: CalendarClock, key: '2' },
             { Icon: PackageIcon, key: '3' },
-          ].map(({ Icon, key }) => (
-            <article key={key} className="cstep">
+          ].map(({ Icon, key }, i) => (
+            <article key={key} className="cstep reveal" data-reveal-delay={i * 90}>
               <span className="cstep__n">0{key}</span>
               <Icon />
               <h3>{t(`step${key}Title` as never)}</h3>
@@ -323,13 +334,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('adviceSeeAll')} <IArrowUpRight />
             </Link>
           </div>
-          <div className="guide-grid reveal">
-            {guides.map((g) => (
+          <div className="guide-grid">
+            {guides.map((g, i) => (
               <Link
                 key={g.slug}
                 href={`/conseils/${g.slug}`}
-                className={`guide-card${g.image ? ' has-image' : ''}`}
+                className={`guide-card reveal${g.image ? ' has-image' : ''}`}
                 data-tone={g.tone}
+                data-reveal-delay={i * 70}
                 style={g.image ? { backgroundImage: `url(${g.image})` } : undefined}
               >
                 <span className="guide-card__meta">

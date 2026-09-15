@@ -48,9 +48,14 @@ export function PopularSlider({
 
   return (
     <>
-      <div className="ctools reveal" ref={trackRef}>
+      <div className="ctools" ref={trackRef}>
         {products.map((p, i) => (
-          <Link key={p.id} href={productHref(p)} className="ctool">
+          <Link
+            key={p.id}
+            href={productHref(p)}
+            className="ctool reveal"
+            data-reveal-delay={i * 80}
+          >
             <div className="ctool__top">
               <span className="ctool__tag">{tag ?? (i === 0 ? t('popularTag') : t('availableTag'))}</span>
               <IHeart />
