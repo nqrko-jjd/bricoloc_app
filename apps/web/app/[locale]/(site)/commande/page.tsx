@@ -497,20 +497,23 @@ export default function CommandePage() {
                 <div className="field">
                   <label>Début</label>
                   <input
-                    type="datetime-local"
-                    value={start}
-                    onChange={(e) => setStart(e.target.value)}
+                    type="date"
+                    value={start.slice(0, 10)}
+                    onChange={(e) => setStart(`${e.target.value}T08:00`)}
                   />
                 </div>
                 <div className="field">
                   <label>Retour</label>
                   <input
-                    type="datetime-local"
-                    value={end}
-                    onChange={(e) => setEnd(e.target.value)}
+                    type="date"
+                    value={end.slice(0, 10)}
+                    onChange={(e) => setEnd(`${e.target.value}T18:00`)}
                   />
                 </div>
               </div>
+              <p className="small muted" style={{ margin: 0 }}>
+                L’heure précise d’arrivée se choisit à l’étape suivante (retrait ou livraison).
+              </p>
               <WeekendOfferNote start={start} end={end} />
               <button className="btn btn-primary" onClick={saveDates} disabled={busy}>
                 Continuer
