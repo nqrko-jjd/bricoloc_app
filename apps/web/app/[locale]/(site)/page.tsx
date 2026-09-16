@@ -196,19 +196,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 className="bp-card reveal"
                 data-reveal-delay={i * 70}
               >
-                {p.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="bp-card__img" src={p.image} alt="" loading="lazy" />
-                ) : (
-                  <span className="bp-card__img bp-card__img--ph" aria-hidden />
-                )}
-                <span className="bp-card__tag">{t('packTag')}</span>
-                <span className="bp-card__name">{p.name.replace(/^BricoPack\s*/i, '')}</span>
-                <span className="bp-card__foot">
-                  <span className="bp-card__meta">
-                    {t('diffFrom')} {formatEUR(p.dailyPrice)}/j
+                <span className="bp-card__media">
+                  {p.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="bp-card__img" src={p.image} alt="" loading="lazy" />
+                  ) : (
+                    <span className="bp-card__img bp-card__img--ph" aria-hidden />
+                  )}
+                  <span className="bp-card__tag">{t('packTag')}</span>
+                </span>
+                <span className="bp-card__body">
+                  <span className="bp-card__name">{p.name.replace(/^BricoPack\s*/i, '')}</span>
+                  <span className="bp-card__foot">
+                    <span className="bp-card__meta">
+                      {t('diffFrom')} {formatEUR(p.dailyPrice)}/j
+                    </span>
+                    <span className="bp-card__cta">Voir le contenu →</span>
                   </span>
-                  <span className="bp-card__cta">Voir le contenu →</span>
                 </span>
               </Link>
             ))}
@@ -222,7 +226,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </section>
       )}
 
-      {/* ─────────────── LIVRAISON ─────────────── */}
+      {/* ─────────────── LIVRAISON & CLICK & COLLECT ─────────────── */}
       <section className="cdiff">
         <div className="csection__head">
           <div>
@@ -232,20 +236,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </h2>
           </div>
         </div>
-        <div className="cdiff__grid cdiff__grid--single reveal">
-          <div className="cdiff__card cdiff__card--delivery cdiff__card--wide">
-            <ITruck />
-            <div className="cdiff__card-body">
-              <h3>{t('diffDeliveryTitle')}</h3>
-              <p>{t('diffDeliveryText')}</p>
-              <ul className="cdiff__points">
-                <li>{t('diffDeliveryPoint1')}</li>
-                <li>{t('diffDeliveryPoint2')}</li>
-              </ul>
-            </div>
-            <Link href="/livraison" className="csection__link cdiff__card-cta">
-              {t('trustDelivery')} <IArrowUpRight />
+        <div className="cdiff__grid reveal">
+          <div className="cdiff__card cdiff__card--collect">
+            <IClock />
+            <h3>{t('diffCollectTitle')}</h3>
+            <p>{t('diffCollectText')}</p>
+            <ul className="cdiff__points">
+              <li>{t('diffCollectPoint1')}</li>
+              <li>{t('diffCollectPoint2')}</li>
+            </ul>
+            <Link href="/click-collect" className="btn btn-primary cdiff__card-cta">
+              {t('diffCollectCta')}
             </Link>
+            <p className="cdiff__note">{t('diffCollectNote')}</p>
+          </div>
+          <div className="cdiff__card cdiff__card--navy">
+            <ITruck />
+            <h3>{t('diffDeliveryTitle')}</h3>
+            <p>{t('diffDeliveryText')}</p>
+            <ul className="cdiff__points">
+              <li>{t('diffDeliveryPoint1')}</li>
+              <li>{t('diffDeliveryPoint2')}</li>
+            </ul>
+            <Link href="/livraison" className="btn btn-primary cdiff__card-cta">
+              {t('diffDeliveryCta')}
+            </Link>
+            <p className="cdiff__note">{t('diffDeliveryNote')}</p>
           </div>
         </div>
       </section>

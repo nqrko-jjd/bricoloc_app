@@ -73,21 +73,25 @@ export function PackFilter({
       <div className="bp-grid">
         {shown.map((p) => (
           <Link key={p.slug} href={`/bricopacks/${p.slug}`} className="bp-card">
-            {p.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="bp-card__img" src={p.image} alt="" loading="lazy" />
-            ) : (
-              <span className="bp-card__img bp-card__img--ph" aria-hidden />
-            )}
-            <span className="bp-card__tag">{FAM_LABEL[p.family] ?? p.family}</span>
-            {p.popular && <span className="bp-card__pop">Populaire</span>}
-            <span className="bp-card__name">{p.name}</span>
-            <span className="bp-card__intro">{p.intro}</span>
-            <span className="bp-card__foot">
-              <span className="bp-card__meta">
-                {p.toolCount} outils{p.teamSize ? ` · ${p.teamSize}` : ''}
+            <span className="bp-card__media">
+              {p.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="bp-card__img" src={p.image} alt="" loading="lazy" />
+              ) : (
+                <span className="bp-card__img bp-card__img--ph" aria-hidden />
+              )}
+              <span className="bp-card__tag">{FAM_LABEL[p.family] ?? p.family}</span>
+              {p.popular && <span className="bp-card__pop">Populaire</span>}
+            </span>
+            <span className="bp-card__body">
+              <span className="bp-card__name">{p.name}</span>
+              <span className="bp-card__intro">{p.intro}</span>
+              <span className="bp-card__foot">
+                <span className="bp-card__meta">
+                  {p.toolCount} outils{p.teamSize ? ` · ${p.teamSize}` : ''}
+                </span>
+                <span className="bp-card__cta">Voir le contenu →</span>
               </span>
-              <span className="bp-card__cta">Voir le contenu →</span>
             </span>
           </Link>
         ))}

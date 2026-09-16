@@ -2009,35 +2009,32 @@ button { font-family: inherit; }
 .cstep h3 { font-size: 1.35rem; margin: 0 0 8px; }
 .cstep p { color: #677a79; margin: 0; }
 
-/* ---- Notre différence : livraison + BricoPacks ---- */
+/* ---- Notre différence : Click & Collect + Livraison ---- */
 .cdiff { padding: clamp(60px, 8vw, 110px) 6vw; }
-.cdiff__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 34px; }
+.cdiff__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 34px; align-items: stretch; }
 @media (max-width: 900px) { .cdiff__grid { grid-template-columns: 1fr; } }
-/* Livraison seule (BricoPacks a sa propre section dédiée) : bandeau pleine
-   largeur plutôt qu'une carte étroite qui laisse un vide à côté. */
-.cdiff__grid--single { grid-template-columns: 1fr; }
 .cdiff__card {
   border-radius: 28px; padding: clamp(28px, 4vw, 46px);
-  display: flex; flex-direction: column; gap: 14px; align-items: flex-start;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
   min-width: 0;
 }
-.cdiff__card--delivery { background: var(--lavender); }
-.cdiff__card--pack { background: var(--red-tint); }
+.cdiff__card--collect { background: var(--surface); border: 1px solid var(--border); }
+.cdiff__card--navy { background: var(--navy); }
 .cdiff__card > svg { width: 42px; height: 42px; color: var(--primary); }
+.cdiff__card--navy > svg { color: #fff; }
 .cdiff__card h3 { font-size: clamp(1.5rem, 2.4vw, 1.9rem); margin: 0; letter-spacing: -0.035em; line-height: 1; }
 .cdiff__card p { margin: 0; color: #4a4d6b; line-height: 1.62; max-width: 42ch; }
-/* Doit rester APRÈS .cdiff__card ci-dessus : même spécificité, cette règle
-   doit gagner sur flex-direction/align-items pour la variante pleine largeur. */
-.cdiff__card--wide {
-  flex-direction: row; align-items: center; flex-wrap: wrap; gap: 28px 40px;
-}
-.cdiff__card--wide .cdiff__card-body { flex: 1 1 380px; display: flex; flex-direction: column; gap: 14px; }
-.cdiff__card--wide .cdiff__card-body p { max-width: 60ch; }
-.cdiff__card--wide .cdiff__card-cta { flex: none; }
-@media (max-width: 640px) { .cdiff__card--wide { flex-direction: column; align-items: flex-start; } }
+.cdiff__card--navy h3, .cdiff__card--navy p { color: #fff; }
 .cdiff__points { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 7px; font-weight: 700; color: var(--ink); }
 .cdiff__points li { padding-left: 26px; position: relative; }
-.cdiff__points li::before { content: '\2192'; position: absolute; left: 0; color: var(--primary); font-weight: 900; }
+.cdiff__points li::before { content: '\2713'; position: absolute; left: 0; color: var(--primary); font-weight: 900; }
+.cdiff__card--navy .cdiff__points { color: #fff; }
+.cdiff__card--navy .cdiff__points li::before { color: #fff; }
+.cdiff__card-cta { margin-top: 4px; }
+.cdiff__card--navy .cdiff__card-cta.btn-primary { background: #fff; color: var(--navy); }
+.cdiff__card--navy .cdiff__card-cta.btn-primary:hover { background: #fff; opacity: 0.9; }
+.cdiff__note { margin: -6px 0 0; font-size: 12.5px; font-style: italic; color: var(--muted-fg); }
+.cdiff__card--navy .cdiff__note { color: rgba(255, 255, 255, 0.68); }
 /* Slider une ligne (au lieu d'un flex-wrap qui gonflait la carte pack par
    rapport à la carte livraison, à côté). */
 .cdiff__packs {
@@ -2707,20 +2704,26 @@ button { font-family: inherit; }
 
 .bp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
 .bp-card {
-  position: relative; display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
-  padding: 18px; text-decoration: none; color: var(--ink);
+  overflow: hidden; text-decoration: none; color: var(--ink);
   transition: transform .16s, box-shadow .16s, border-color .16s;
 }
 .bp-card:hover { transform: translateY(-4px); border-color: var(--navy); box-shadow: 0 18px 40px -22px rgba(8,6,93,.35); text-decoration: none; }
-.bp-card__img { width: 100%; height: 150px; object-fit: cover; background: var(--surface-2); border-radius: 14px; display: block; }
+.bp-card__media { position: relative; }
+.bp-card__img { width: 100%; height: 200px; object-fit: cover; background: var(--surface-2); display: block; }
 .bp-card__img--ph { object-fit: contain; }
-.bp-card__tag { font-size: 10.5px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; color: var(--primary); }
+.bp-card__tag {
+  position: absolute; top: 14px; left: 14px;
+  font-size: 10.5px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; color: var(--primary);
+  background: rgba(255, 255, 255, 0.92); padding: 5px 10px; border-radius: 999px;
+}
 .bp-card__pop {
   position: absolute; top: 14px; right: 14px; background: var(--navy); color: #fff;
   font-size: 10px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 4px 9px; border-radius: 999px;
 }
+.bp-card__body { display: flex; flex-direction: column; gap: 8px; flex: 1; padding: 16px 18px 18px; }
 .bp-card__name { font-size: 19px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.1; }
 .bp-card__intro { font-size: 13px; color: var(--muted-fg); line-height: 1.5; flex: 1; }
 .bp-card__foot { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--border); }
