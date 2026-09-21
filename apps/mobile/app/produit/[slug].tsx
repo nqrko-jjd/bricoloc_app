@@ -226,8 +226,6 @@ export default function ProductScreen() {
             </Card>
           )}
 
-          <Reviews slug={slug} />
-
           {similar.length > 0 && (
             <View style={{ marginTop: 24 }}>
               <Text style={{ fontWeight: '800', color: C.ink, fontSize: 16, marginBottom: 10 }}>
@@ -246,6 +244,9 @@ export default function ProductScreen() {
               </ScrollView>
             </View>
           )}
+
+          {/* Avis tout en bas : ils ne doivent pas masquer les produits complémentaires. */}
+          <Reviews slug={slug} />
         </View>
       </ScrollView>
 
@@ -401,7 +402,7 @@ function Reviews({ slug }: { slug: string }) {
   }, [slug]);
 
   return (
-    <Card>
+    <Card style={{ marginTop: 24 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <H2>{ti('reviews.title')}</H2>
         {data && data.summary.count > 0 && (

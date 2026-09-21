@@ -1,18 +1,21 @@
 'use client';
 import { Link } from '@/i18n/navigation';
 import { useState } from 'react';
-import { formatEUR } from '@bricoloc/shared';
+import { formatEUR, formatDateBE } from '@bricoloc/shared';
 import { useCart } from '@/lib/providers';
+import { durationLabel } from '@/lib/dates';
 import { CartSummary } from '@/components/CartSummary';
 import { Steps } from '@/components/Steps';
 import { AvailabilityBadge } from '@/components/AvailabilityBadge';
+import { DateRangePicker } from '@/components/DateRangePicker';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 import { productHref } from '@/lib/productHref';
 
 export default function PanierPage() {
-  const { cart, loading, setQty, removeItem, addItem, applyPromo, clearPromo } = useCart();
+  const { cart, loading, setQty, removeItem, addItem, applyPromo, clearPromo, setPeriod } = useCart();
   const [promo, setPromo] = useState('');
   const [promoErr, setPromoErr] = useState('');
+  const [picking, setPicking] = useState(false);
 
   if (loading && !cart) return <div className="section container">Chargement du panier…</div>;
   if (!cart || cart.items.length === 0)
@@ -26,10 +29,45 @@ export default function PanierPage() {
       </div>
     );
 
+  const period = cart.period;
+  const lineOf = (productId: string) => cart.quote?.lines.find((l) => l.productId === productId);
+
   return (
     <div className="section container">
       <h1>Votre panier</h1>
       <Steps current={cart.recommendations.length > 0 ? 1 : 0} />
+
+      {/* Les dates se choisissent ICI : prix exact + disponibilités dès le panier,
+          sans devoir aller à la commande puis revenir corriger. */}
+      <div className={`card card-body card--flat cart-dates${period ? '' : ' cart-dates--empty'}`} style={{ marginBottom: 16 }}>
+        <div>
+          <span className="small muted">DATES DE LOCATION</span>
+          <strong>
+            {period
+              ? `${formatDateBE(period.start)} → ${formatDateBE(period.end)} · ${durationLabel(period.start, period.end)}`
+              : 'Choisissez vos dates'}
+          </strong>
+          {!period && (
+            <span className="small muted">
+              Pour voir le prix exact, la disponibilité de chaque article et les réductions longue durée.
+            </span>
+          )}
+        </div>
+        <button className={`btn btn-sm ${period ? 'btn-outline' : 'btn-primary'}`} onClick={() => setPicking(true)}>
+          {period ? 'Modifier' : 'Choisir mes dates'}
+        </button>
+      </div>
+      {picking && (
+        <DateRangePicker
+          initialStart={period ? new Date(period.start) : undefined}
+          initialEnd={period ? new Date(period.end) : undefined}
+          onClose={() => setPicking(false)}
+          onApply={async (s, e) => {
+            await setPeriod({ start: s.toISOString(), end: e.toISOString() });
+            setPicking(false);
+          }}
+        />
+      )}
 
       {cart.availabilityAlerts.length > 0 && (
         <div className="alert alert-warn" style={{ marginBottom: 16 }}>
@@ -41,7 +79,7 @@ export default function PanierPage() {
                 <li key={a.productId}>
                   {item?.name} —{' '}
                   {a.status === 'PARTIAL'
-                    ? `seulement ${a.availableQty} disponible(s) sur ${a.requestedQty}`
+                    ? <>seulement {a.availableQty} disponible(s) sur {a.requestedQty}{a.availableQty > 0 && (<>{' '}<button className="linklike" onClick={() => setQty(a.productId, a.availableQty)}>Ramener à {a.availableQty}</button></>)}</>
                     : a.status === 'NEARBY'
                       ? 'indisponible sur la période, mais disponible à des dates proches'
                       : 'indisponible sur la période choisie'}
@@ -50,49 +88,70 @@ export default function PanierPage() {
             })}
           </ul>
           <p className="small" style={{ margin: '6px 0 0' }}>
-            Corrigez les quantités ou les dates — inutile de recommencer votre commande.
+            Corrigez les quantités ou{' '}
+            <button className="linklike" onClick={() => setPicking(true)}>
+              changez vos dates
+            </button>{' '}
+            — inutile de recommencer votre commande.
           </p>
         </div>
       )}
 
       <div className="two-col">
         <div className="stack">
-          {cart.items.map((it) => (
-            <div key={it.id} className="card card-body row" style={{ alignItems: 'flex-start' }}>
-              <img
-                src={it.image || PLACEHOLDER_IMG}
-                alt={it.name}
-                style={{ width: 100, borderRadius: 8 }}
-              />
-              <div style={{ flex: 1, minWidth: 180 }}>
-                <Link href={productHref(it)} style={{ fontWeight: 700 }}>
-                  {it.name}
-                </Link>
-                <div className="small muted">
-                  {formatEUR(it.dailyPrice)} / {it.isConsumable ? 'unité' : 'jour'}
-                  {!it.isConsumable && ` · caution ${formatEUR(it.deposit)}`}
-                </div>
-                <div style={{ marginTop: 6 }}>
-                  <AvailabilityBadge a={it.availability} />
-                </div>
-              </div>
-              <div className="stack" style={{ gap: 6, alignItems: 'flex-end' }}>
-                <input
-                  type="number"
-                  min={1}
-                  value={it.quantity}
-                  style={{ width: 70 }}
-                  onChange={(e) => setQty(it.productId, Math.max(1, Number(e.target.value)))}
+          {cart.items.map((it) => {
+            const line = lineOf(it.productId);
+            return (
+              <div key={it.id} className="card card-body row" style={{ alignItems: 'flex-start' }}>
+                <img
+                  src={it.image || PLACEHOLDER_IMG}
+                  alt={it.name}
+                  style={{ width: 100, borderRadius: 8 }}
                 />
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => removeItem(it.productId)}
-                >
-                  Retirer
-                </button>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <Link href={productHref(it)} style={{ fontWeight: 700 }}>
+                    {it.name}
+                  </Link>
+                  <div className="small muted">
+                    {formatEUR(it.dailyPrice)} / {it.isConsumable ? 'unité' : 'jour'}
+                    {!it.isConsumable && ` · caution ${formatEUR(it.deposit)}`}
+                  </div>
+                  <div style={{ marginTop: 6 }}>
+                    <AvailabilityBadge a={it.availability} />
+                  </div>
+                </div>
+                <div className="stack" style={{ gap: 8, alignItems: 'flex-end' }}>
+                  <div className="qty" role="group" aria-label={`Quantité de ${it.name}`}>
+                    <button
+                      type="button"
+                      aria-label="Diminuer la quantité"
+                      disabled={it.quantity <= 1}
+                      onClick={() => setQty(it.productId, Math.max(1, it.quantity - 1))}
+                    >
+                      −
+                    </button>
+                    <output aria-live="polite">{it.quantity}</output>
+                    <button
+                      type="button"
+                      aria-label="Augmenter la quantité"
+                      onClick={() => setQty(it.productId, it.quantity + 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+                  {line && (
+                    <span className="cart-line-total">
+                      {formatEUR(line.lineHT)}
+                      <span className="small muted"> HTVA{!it.isConsumable && line.billedDays > 0 ? ` · ${line.billedDays} j` : ''}</span>
+                    </span>
+                  )}
+                  <button className="btn btn-ghost btn-sm" onClick={() => removeItem(it.productId)}>
+                    Retirer
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {cart.recommendations.map((g) => (
             <div key={g.type + g.label} className="card card-body">
@@ -157,17 +216,27 @@ export default function PanierPage() {
 
         <div className="stack">
           <CartSummary quote={cart.quote} />
-          <Link
-            href="/commande"
-            className="btn btn-primary btn-lg btn-block"
-            aria-disabled={cart.hasBlockingIssue}
-          >
-            Valider le panier
-          </Link>
-          {!cart.period && (
-            <p className="small muted center">
-              Vos dates seront demandées à l&apos;étape suivante.
-            </p>
+          {cart.hasBlockingIssue ? (
+            <>
+              <button className="btn btn-primary btn-lg btn-block" disabled>
+                Continuer
+              </button>
+              <p className="small center" style={{ color: 'var(--err)', margin: 0 }}>
+                Un article n’est pas disponible sur ces dates : corrigez la quantité ou{' '}
+                <button className="linklike" onClick={() => setPicking(true)}>
+                  changez vos dates
+                </button>
+                .
+              </p>
+            </>
+          ) : !period ? (
+            <button className="btn btn-primary btn-lg btn-block" onClick={() => setPicking(true)}>
+              Choisir mes dates pour continuer
+            </button>
+          ) : (
+            <Link href="/commande" className="btn btn-primary btn-lg btn-block">
+              Continuer vers la commande
+            </Link>
           )}
           <Link href="/catalogue" className="btn btn-ghost btn-block">
             Continuer mes achats

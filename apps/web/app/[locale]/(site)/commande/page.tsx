@@ -12,7 +12,7 @@ import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { WeekendOfferNote } from '@/components/WeekendOfferNote';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { PhoneInput } from '@/components/PhoneInput';
-import { fromLocalInput, toLocalInput, defaultPeriod } from '@/lib/dates';
+import { fromLocalInput, toLocalInput, defaultPeriod, durationLabel } from '@/lib/dates';
 
 type Phase = 'dates' | 'fulfil' | 'account' | 'identity' | 'review' | 'pay' | 'done';
 
@@ -24,7 +24,9 @@ export default function CommandePage() {
   const { user, login, register, setToken, refresh } = useSession();
   const kiosk = useKiosk();
 
-  const [phase, setPhase] = useState<Phase>('dates');
+  // Dates déjà choisies (panier / fiche produit) : on démarre directement au retrait/livraison.
+  const startsAtFulfil = !!cart?.period && !kiosk;
+  const [phase, setPhase] = useState<Phase>(startsAtFulfil ? 'fulfil' : 'dates');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -43,6 +45,35 @@ export default function CommandePage() {
   const [start, setStart] = useState(toLocalInput(cart?.period?.start ?? d.start));
   const [end, setEnd] = useState(toLocalInput(cart?.period?.end ?? d.end));
   const [datesPickerOpen, setDatesPickerOpen] = useState(false);
+
+  // Les dates déjà choisies (panier, fiche produit) restent la référence : on les recharge
+  // (ex. rafraîchissement de la page) et on ne redemande pas l'étape « dates ».
+  const cartStart = cart?.period?.start;
+  const cartEnd = cart?.period?.end;
+  useEffect(() => {
+    if (cartStart && cartEnd) {
+      setStart(toLocalInput(cartStart));
+      setEnd(toLocalInput(cartEnd));
+    }
+  }, [cartStart, cartEnd]);
+  const datesStepSeen = useRef(startsAtFulfil);
+  const goToDates = () => {
+    datesStepSeen.current = true; // retour volontaire : on ne re-saute pas l'étape
+    setPhase('dates');
+  };
+  useEffect(() => {
+    if (kiosk || datesStepSeen.current) return;
+    if (phase === 'dates' && cartStart && cartEnd) {
+      datesStepSeen.current = true;
+      setPhase('fulfil');
+    }
+  }, [kiosk, phase, cartStart, cartEnd]);
+
+  // Un message d'erreur doit se voir là où le client regarde, pas rester hors écran.
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [error]);
 
   const [mode, setMode] = useState<'PICKUP' | 'DELIVERY'>(
     (cart?.fulfilmentMode as 'PICKUP' | 'DELIVERY') ?? 'PICKUP',
@@ -485,7 +516,11 @@ export default function CommandePage() {
     <div className="section container">
       <h1>Commande</h1>
       <Steps current={phaseIndex} />
-      {error && <div className="alert alert-err" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && (
+        <div ref={errorRef} className="alert alert-err" role="alert" style={{ marginBottom: 16 }}>
+          {error}
+        </div>
+      )}
 
       <div className="two-col">
         <div className="stack">
@@ -536,6 +571,17 @@ export default function CommandePage() {
           {phase === 'fulfil' && (
             <div className="card card-pad stack card--flat">
               <h2>3. Retrait ou livraison</h2>
+              {!kiosk && (
+                <div className="cart-dates" style={{ fontSize: '0.95rem' }}>
+                  <span>
+                    📅 <strong style={{ display: 'inline' }}>{formatDateBE(fromLocalInput(start))} → {formatDateBE(fromLocalInput(end))}</strong>{' '}
+                    <span className="muted">({durationLabel(fromLocalInput(start), fromLocalInput(end))})</span>
+                  </span>
+                  <button type="button" className="linklike" onClick={goToDates}>
+                    Modifier les dates
+                  </button>
+                </div>
+              )}
               <div className="toggle2">
                 <button
                   className={`toggle2__btn${mode === 'PICKUP' ? ' active' : ''}`}
@@ -705,7 +751,7 @@ export default function CommandePage() {
                 </div>
               )}
               <div className="row">
-                <button className="btn btn-ghost" onClick={() => setPhase('dates')}>
+                <button className="btn btn-ghost" onClick={goToDates}>
                   Retour
                 </button>
                 <button className="btn btn-primary" onClick={saveFulfil} disabled={busy}>
@@ -948,7 +994,30 @@ export default function CommandePage() {
           )}
         </div>
 
-        <CartSummary quote={cart.quote} title="Votre commande" />
+        <div className="stack">
+          <div className="card card-pad card--flat checkout-recap">
+            <div className="spread">
+              <h3 style={{ margin: 0 }}>Votre panier</h3>
+              {!kiosk && (
+                <Link href="/panier" className="small">
+                  Modifier
+                </Link>
+              )}
+            </div>
+            {cart.items.map((it) => {
+              const line = cart.quote?.lines.find((l) => l.productId === it.productId);
+              return (
+                <div key={it.id} className="checkout-recap__row">
+                  <span>
+                    {it.quantity} × {it.name}
+                  </span>
+                  {line && <span className="muted">{formatEUR(line.lineHT)}</span>}
+                </div>
+              );
+            })}
+          </div>
+          <CartSummary quote={cart.quote} title="Votre commande" />
+        </div>
       </div>
     </div>
   );

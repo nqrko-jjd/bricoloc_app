@@ -118,8 +118,9 @@ export async function serializeCart(sessionKey: string, userId?: string) {
     itemCount: cart.items.reduce((a, i) => a + i.quantity, 0),
     items: itemsOut,
     availabilityAlerts,
+    // Un stock partiel bloque aussi : le paiement refuserait la commande (409) — autant le dire au panier.
     hasBlockingIssue: availabilityAlerts.some(
-      (a) => a.status === 'UNAVAILABLE' || a.status === 'NEARBY',
+      (a) => a.status === 'UNAVAILABLE' || a.status === 'NEARBY' || a.status === 'PARTIAL',
     ),
     quote,
     recommendations,

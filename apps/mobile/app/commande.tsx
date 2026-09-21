@@ -177,7 +177,7 @@ export default function CommandeScreen() {
     <Screen>
       <Stepper steps={STEPS} currentIndex={PHASE_STEP_INDEX[phase]} />
 
-      {err ? (
+      {err && phase !== 'account' && phase !== 'review' ? (
         <Card style={{ backgroundColor: C.errBg, borderColor: '#f0bcbc' }}>
           <Text style={{ color: C.err }}>{err}</Text>
         </Card>
@@ -400,6 +400,11 @@ export default function CommandeScreen() {
               }
             }}
           />
+          {err ? (
+            <Text accessibilityLiveRegion="polite" style={{ color: C.err, marginTop: 8, fontWeight: '600' }}>
+              {err}
+            </Text>
+          ) : null}
         </Card>
       )}
 
@@ -442,6 +447,11 @@ export default function CommandeScreen() {
           </View>
           <Badge text="Paiement de démonstration — aucun débit réel" tone="warn" />
           <Button title="Payer (mode test)" onPress={pay} loading={busy} />
+          {err ? (
+            <Text accessibilityLiveRegion="polite" style={{ color: C.err, marginTop: 8, fontWeight: '600' }}>
+              {err}
+            </Text>
+          ) : null}
           <Button title="Retour" variant="ghost" onPress={() => setPhase('identity')} />
         </Card>
       )}

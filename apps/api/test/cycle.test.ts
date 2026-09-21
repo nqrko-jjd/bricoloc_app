@@ -357,6 +357,7 @@ test('parcours B : dates demandees seulement avant validation, avec conflit de d
   const alert = res.json.availabilityAlerts[0];
   assert.ok(['PARTIAL', 'UNAVAILABLE', 'NEARBY'].includes(alert.status));
   assert.ok(alert.availableQty < 5);
+  assert.equal(res.json.hasBlockingIssue, true, 'un stock insuffisant bloque la validation du panier');
 
   // Correction du panier sans tout recommencer : on reduit la quantite.
   const fixed = await api(`/api/cart/items/${miniId}`, {

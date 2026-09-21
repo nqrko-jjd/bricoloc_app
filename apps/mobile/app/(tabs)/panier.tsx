@@ -34,6 +34,34 @@ export default function PanierScreen() {
     <Screen>
       <H1>Votre panier</H1>
 
+      <Card style={cart.period ? undefined : { borderWidth: 2, borderColor: C.brico, borderStyle: 'dashed' }}>
+        <Pressable
+          onPress={() => setPickerOpen(true)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: 4,
+          }}
+        >
+          <View>
+            <Text style={{ color: C.muted, fontSize: 11, fontWeight: '700' }}>DATES DE LOCATION</Text>
+            <Text style={{ color: C.locDeep, fontWeight: '800', fontSize: 14.5, marginTop: 2 }}>
+              {cart.period ? formatPeriod(cart.period.start, cart.period.end) : 'Choisir mes dates'}
+            </Text>
+          </View>
+          <Text style={{ color: C.brico, fontWeight: '800', fontSize: 13 }}>
+            {cart.period ? 'Modifier' : 'Choisir →'}
+          </Text>
+        </Pressable>
+        {!cart.period && (
+          <Text style={{ color: C.muted, fontSize: 12.5, marginTop: 6 }}>
+            Pour voir le prix exact, la disponibilité de chaque article et les réductions longue durée.
+          </Text>
+        )}
+      </Card>
+
+
       {cart.availabilityAlerts.length > 0 && (
         <Card style={{ backgroundColor: C.warnBg, borderColor: '#f0d5a8' }}>
           <Text style={{ color: C.warn, fontWeight: '700' }}>Disponibilités</Text>
@@ -47,9 +75,23 @@ export default function PanierScreen() {
                   : al.status === 'NEARBY'
                     ? 'dispo à des dates proches'
                     : 'indisponible sur la période'}
+                {al.status === 'PARTIAL' && al.availableQty > 0 ? (
+                  <Text
+                    onPress={() => setQty(al.productId, al.availableQty)}
+                    style={{ color: C.loc, fontWeight: '800' }}
+                  >
+                    {'  '}Ramener à {al.availableQty}
+                  </Text>
+                ) : null}
               </Text>
             );
           })}
+          <Text
+            onPress={() => setPickerOpen(true)}
+            style={{ color: C.loc, fontWeight: '800', marginTop: 6 }}
+          >
+            Modifier mes dates →
+          </Text>
         </Card>
       )}
 
@@ -93,9 +135,17 @@ export default function PanierScreen() {
             <Pressable onPress={() => setQty(it.productId, it.quantity + 1)} style={step}>
               <Text style={stepT}>+</Text>
             </Pressable>
-            <Pressable onPress={() => removeItem(it.productId)} style={{ marginLeft: 'auto' }}>
-              <Text style={{ color: C.err, fontWeight: '600' }}>Retirer</Text>
-            </Pressable>
+            <View style={{ marginLeft: 'auto', alignItems: 'flex-end' }}>
+              {cart.quote?.lines.find((l) => l.productId === it.productId) ? (
+                <Text style={{ fontWeight: '800', color: C.loc }}>
+                  {formatEUR(cart.quote.lines.find((l) => l.productId === it.productId)!.lineHT)}
+                  <Text style={{ fontWeight: '400', color: C.muted, fontSize: 12 }}> HTVA</Text>
+                </Text>
+              ) : null}
+              <Pressable onPress={() => removeItem(it.productId)}>
+                <Text style={{ color: C.err, fontWeight: '600', marginTop: 2 }}>Retirer</Text>
+              </Pressable>
+            </View>
           </View>
         </Card>
       ))}
@@ -122,28 +172,6 @@ export default function PanierScreen() {
           ))}
         </Card>
       ))}
-
-      <Card>
-        <Pressable
-          onPress={() => setPickerOpen(true)}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: 4,
-          }}
-        >
-          <View>
-            <Text style={{ color: C.muted, fontSize: 11, fontWeight: '700' }}>DATES DE LOCATION</Text>
-            <Text style={{ color: C.locDeep, fontWeight: '800', fontSize: 14.5, marginTop: 2 }}>
-              {cart.period ? formatPeriod(cart.period.start, cart.period.end) : 'Choisir mes dates'}
-            </Text>
-          </View>
-          <Text style={{ color: C.brico, fontWeight: '800', fontSize: 13 }}>
-            {cart.period ? 'Modifier' : 'Choisir →'}
-          </Text>
-        </Pressable>
-      </Card>
 
       <Card>
         {cart.quote ? (

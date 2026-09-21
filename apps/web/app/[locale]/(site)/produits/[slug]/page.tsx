@@ -273,8 +273,6 @@ export default async function ProductPage({
         </section>
       )}
 
-      <ReviewSection slug={product.slug} />
-
       {product.complementary.length > 0 && (
         <section className="section reveal">
           <h2>{t('similar')}</h2>
@@ -301,6 +299,9 @@ export default async function ProductPage({
           </div>
         </section>
       )}
+
+      {/* Avis tout en bas : ils ne doivent pas masquer les produits complémentaires. */}
+      <ReviewSection slug={product.slug} />
     </div>
   );
 }

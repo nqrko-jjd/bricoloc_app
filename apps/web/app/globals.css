@@ -3565,3 +3565,21 @@ button { font-family: inherit; }
 @media (max-width: 900px) { .ticket-split { grid-template-columns: 1fr; } }
 .ticket-notice { border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: var(--r-xs); padding: 12px 14px; background: var(--surface); }
 .ticket-notice--ok { border-left-color: var(--ok); }
+
+/* ---- Bandeau dates : « Effacer » discret (le CTA reste « Modifier ») ---- */
+.datebar .btn-ghost { background: transparent; border: 1px solid rgba(255, 255, 255, 0.35); color: #fff; }
+.datebar .btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ---- Panier : bloc dates + quantité +/- + lignes chiffrées ---- */
+.cart-dates { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.cart-dates strong { display: block; font-size: 1.05rem; color: var(--navy); }
+.cart-dates--empty { border: 2px dashed var(--primary); background: color-mix(in srgb, var(--primary) 5%, var(--surface)); }
+.qty { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--r-pill); background: var(--surface); }
+.qty button { width: 34px; height: 34px; border: 0; background: transparent; font-size: 1.15rem; font-weight: 800; color: var(--navy); cursor: pointer; border-radius: var(--r-pill); }
+.qty button:hover:not(:disabled) { background: var(--surface-2); }
+.qty button:disabled { opacity: 0.35; cursor: default; }
+.qty output { min-width: 28px; text-align: center; font-weight: 800; }
+.cart-line-total { font-weight: 800; color: var(--navy); white-space: nowrap; }
+.checkout-recap { display: flex; flex-direction: column; gap: 6px; }
+.checkout-recap__row { display: flex; justify-content: space-between; gap: 10px; font-size: 0.92rem; }
+.linklike { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; font-weight: 700; }
