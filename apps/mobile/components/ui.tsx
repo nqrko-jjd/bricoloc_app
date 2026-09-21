@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '@/lib/theme';
 import { mediaUrl } from '@/lib/api';
-import { formatEUR } from '@/lib/format';
+import { formatEUR, sanitizePhone } from '@/lib/format';
 import { useQuickView } from '@/components/ProductQuickView';
 
 export interface ProductMini {
@@ -168,6 +168,26 @@ export function Field({
         {...props}
       />
     </View>
+  );
+}
+
+/** Champ téléphone : clavier numérique, remplissage auto, seuls les caractères d'un n° passent. */
+export function PhoneField({
+  label,
+  onChangeText,
+  ...props
+}: { label: string } & TextInputProps) {
+  return (
+    <Field
+      label={label}
+      keyboardType="phone-pad"
+      textContentType="telephoneNumber"
+      autoComplete="tel"
+      autoCorrect={false}
+      placeholder="+32 470 12 34 56"
+      {...props}
+      onChangeText={(v) => onChangeText?.(sanitizePhone(v))}
+    />
   );
 }
 

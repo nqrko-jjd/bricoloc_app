@@ -11,6 +11,7 @@ import { Steps } from '@/components/Steps';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { WeekendOfferNote } from '@/components/WeekendOfferNote';
 import { DateRangePicker } from '@/components/DateRangePicker';
+import { PhoneInput } from '@/components/PhoneInput';
 import { fromLocalInput, toLocalInput, defaultPeriod } from '@/lib/dates';
 
 type Phase = 'dates' | 'fulfil' | 'account' | 'identity' | 'review' | 'pay' | 'done';
@@ -775,9 +776,9 @@ export default function CommandePage() {
                 {authMode !== 'login' && (
                   <div className="field">
                     <label>Téléphone</label>
-                    <input
+                    <PhoneInput
                       value={contact.phone}
-                      onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                      onValueChange={(v) => setContact({ ...contact, phone: v })}
                     />
                   </div>
                 )}

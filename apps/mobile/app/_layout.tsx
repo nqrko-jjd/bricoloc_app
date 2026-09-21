@@ -37,8 +37,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((resp) => {
-      const data = resp.notification.request.content.data as { reservationId?: string };
-      if (data?.reservationId) router.push(`/reservation/${data.reservationId}`);
+      const data = resp.notification.request.content.data as { reservationId?: string; ticketId?: string };
+      if (data?.ticketId) router.push(`/ticket/${data.ticketId}` as never);
+      else if (data?.reservationId) router.push(`/reservation/${data.reservationId}`);
     });
     return () => sub.remove();
   }, []);
@@ -71,6 +72,8 @@ export default function RootLayout() {
             <Stack.Screen name="compte/notifications" options={{ title: 'Notifications' }} />
             <Stack.Screen name="compte/langue" options={{ title: 'Langue' }} />
             <Stack.Screen name="compte/aide" options={{ title: 'Aide & assistance' }} />
+            <Stack.Screen name="compte/tickets" options={{ title: 'Mes demandes' }} />
+            <Stack.Screen name="ticket/[id]" options={{ title: 'Conversation' }} />
             <Stack.Screen name="scan" options={{ title: 'Scanner', presentation: 'fullScreenModal', headerShown: false }} />
             <Stack.Screen name="staff" options={{ headerShown: false }} />
           </Stack>

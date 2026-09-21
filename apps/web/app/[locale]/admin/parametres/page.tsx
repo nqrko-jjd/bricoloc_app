@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { sanitizePhone } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -301,8 +302,12 @@ export default function AdminParametres() {
             <div className="field" key={k}>
               <label>{k}</label>
               <input
+                type={k === 'phone' ? 'tel' : k === 'email' ? 'email' : 'text'}
+                inputMode={k === 'phone' ? 'tel' : undefined}
                 value={company[k] ?? ''}
-                onChange={(e) => setCompany({ ...company, [k]: e.target.value })}
+                onChange={(e) =>
+                  setCompany({ ...company, [k]: k === 'phone' ? sanitizePhone(e.target.value) : e.target.value })
+                }
               />
             </div>
           ))}

@@ -1,7 +1,7 @@
 'use client';
 import { use, useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
-import { formatEUR, formatDateBE } from '@bricoloc/shared';
+import { formatEUR, formatDateBE, sanitizePhone } from '@bricoloc/shared';
 import { API_URL } from '@/lib/api';
 import { staffApi, useStaff } from '@/lib/staff';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -180,7 +180,13 @@ export default function AdminClientDetail({ params }: { params: Promise<{ id: st
               </label>
             </div>
             <label className="field small">Téléphone
-              <input defaultValue={c.phone} onBlur={(e) => patch({ phone: e.target.value })} />
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="off"
+                defaultValue={c.phone}
+                onBlur={(e) => patch({ phone: sanitizePhone(e.target.value) })}
+              />
             </label>
             <p className="small muted">E-mail : {c.email} · Inscrit le {formatDateBE(c.createdAt)}</p>
             <div className="field-2">

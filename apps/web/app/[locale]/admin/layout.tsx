@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { usePathname } from 'next/navigation';
-import { StaffProvider, useStaff } from '@/lib/staff';
+import { StaffProvider, staffApi, useStaff } from '@/lib/staff';
 import { Logo } from '@/components/Logo';
 
 const NAV = [
@@ -10,6 +10,7 @@ const NAV = [
   ['/admin/comptoir', 'Comptoir (retrait/retour)'],
   ['/terminal', 'Terminal Zebra (handheld)'],
   ['/admin/reservations', 'Réservations'],
+  ['/admin/tickets', 'Tickets & messages'],
   ['/admin/planning', 'Planning'],
   ['/admin/livraisons', 'Livraisons'],
   ['/admin/produits', 'Catalogue & produits'],
@@ -31,8 +32,21 @@ function Shell({ children }: { children: React.ReactNode }) {
   const { staff, loading, logout } = useStaff();
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => setNavOpen(false), [pathname]);
+
+  // Pastille « nouveaux messages » sur l'entrée Tickets (rafraîchie toutes les 30 s).
+  useEffect(() => {
+    if (!staff) return;
+    const load = () =>
+      staffApi<{ counts: { unread: number } }>('/api/admin/tickets?status=OPEN')
+        .then((r) => setUnread(r.counts.unread))
+        .catch(() => undefined);
+    void load();
+    const t = setInterval(load, 30_000);
+    return () => clearInterval(t);
+  }, [staff, pathname]);
 
   if (loading)
     return (
@@ -55,6 +69,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       {NAV.map(([href, label]) => (
         <Link key={href} href={href} className={pathname === href ? 'active' : ''}>
           {label}
+          {href === '/admin/tickets' && unread > 0 && <span className="nav-badge">{unread}</span>}
         </Link>
       ))}
       <button className="btn btn-ghost btn-sm" style={{ margin: '14px 12px' }} onClick={logout}>

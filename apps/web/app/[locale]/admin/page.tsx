@@ -91,7 +91,7 @@ export default function AdminDashboard() {
     ['Dommages à traiter', d.alerts.damages, '/admin/exemplaires', 'warn'],
     ['Maintenances à faire', d.alerts.maintDue, '/admin/exemplaires', 'warn'],
     ['Avis à modérer', d.alerts.pendingReviews, '/admin/contenus', 'info'],
-    ['Tickets ouverts', d.alerts.openTickets, '/admin/reservations', 'info'],
+    ['Tickets ouverts', d.alerts.openTickets, '/admin/tickets', 'info'],
   ].filter(([, n]) => (n as number) > 0);
 
   return (

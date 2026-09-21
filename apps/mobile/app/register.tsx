@@ -3,7 +3,7 @@ import { Text, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
-import { Screen, H1, Card, Button, Field } from '@/components/ui';
+import { Screen, H1, Card, Button, Field, PhoneField } from '@/components/ui';
 
 export default function RegisterScreen() {
   const { register } = useStore();
@@ -56,7 +56,7 @@ export default function RegisterScreen() {
           keyboardType="email-address"
           onChangeText={(v) => set('email', v)}
         />
-        <Field label="Téléphone" value={f.phone} keyboardType="phone-pad" onChangeText={(v) => set('phone', v)} />
+        <PhoneField label="Téléphone" value={f.phone} onChangeText={(v) => set('phone', v)} />
         {f.customerType === 'PRO' && (
           <>
             <Field label="Société" value={f.companyName} onChangeText={(v) => set('companyName', v)} />

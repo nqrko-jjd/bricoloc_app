@@ -12,6 +12,8 @@ import {
   upsertPromoSchema,
   upsertSettingSchema,
   upsertUnitSchema,
+  ticketMessageSchema,
+  TICKET_STATUSES,
 } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { badRequest, forbidden, h, notFound } from '../lib/http.js';
@@ -22,6 +24,9 @@ import { productInclude, serializeProductDetail } from '../lib/serialize.js';
 import { generateInvoice } from '../lib/invoice.js';
 import { syncContentTranslations } from '../lib/i18n-content.js';
 import { recomputeReservation } from '../lib/quote.js';
+import { postMessage, threadOf, ticketListSelect } from '../lib/tickets.js';
+import { approveExtension, rejectExtension } from '../lib/extensions.js';
+import { notify } from '../lib/notifications.js';
 import { readPrivateFile, deletePrivateFile } from '../lib/media.js';
 import { createLoan, returnLoan } from '../lib/parc.js';
 import { buildLoiseletRequest } from '../lib/loiselet.js';
@@ -1788,25 +1793,123 @@ adminRouter.patch(
 );
 
 /* -------------------------- Tickets support -------------------------- */
+const staffName = async (id: string) =>
+  (await prisma.staffUser.findUnique({ where: { id } }))?.name ?? 'Équipe BRICOLOC';
+
+/** Liste : `?status=ACTIVE` (défaut, non clôturés) | OPEN | IN_PROGRESS | CLOSED | ALL. */
 adminRouter.get(
   '/tickets',
-  h(async (_req, res) => {
-    res.json({
-      tickets: await prisma.supportTicket.findMany({
-        include: { user: true, reservation: true },
-        orderBy: { createdAt: 'desc' },
+  h(async (req, res) => {
+    const status = typeof req.query.status === 'string' ? req.query.status : 'ACTIVE';
+    const where =
+      status === 'ALL'
+        ? {}
+        : status === 'ACTIVE'
+          ? { status: { not: 'CLOSED' } }
+          : (TICKET_STATUSES as readonly string[]).includes(status)
+            ? { status }
+            : {};
+    const [tickets, open, inProgress, closed, unread] = await Promise.all([
+      prisma.supportTicket.findMany({
+        where,
+        select: ticketListSelect,
+        orderBy: { lastMessageAt: 'desc' },
+        take: 300,
       }),
-    });
+      prisma.supportTicket.count({ where: { status: 'OPEN' } }),
+      prisma.supportTicket.count({ where: { status: 'IN_PROGRESS' } }),
+      prisma.supportTicket.count({ where: { status: 'CLOSED' } }),
+      prisma.supportTicket.count({ where: { staffUnread: true, status: { not: 'CLOSED' } } }),
+    ]);
+    res.json({ tickets, counts: { open, inProgress, closed, unread } });
   }),
 );
+
+/** Fiche ticket : fil complet + client + réservation + demande de prolongation liée. */
+adminRouter.get(
+  '/tickets/:id',
+  h(async (req, res) => {
+    const t = await prisma.supportTicket.findUnique({
+      where: { id: req.params.id },
+      include: {
+        messages: { orderBy: { createdAt: 'asc' } },
+        user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+        reservation: {
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            periodStart: true,
+            periodEnd: true,
+            fulfilmentMode: true,
+          },
+        },
+        extension: true,
+      },
+    });
+    if (!t) throw notFound();
+    if (t.staffUnread) {
+      await prisma.supportTicket.update({ where: { id: t.id }, data: { staffUnread: false } });
+    }
+    const { messages, ...ticket } = t;
+    res.json({ ticket: { ...ticket, staffUnread: false }, messages: threadOf({ ...t, messages }) });
+  }),
+);
+
+/** Réponse de l'équipe : ajoutée au fil, le client est notifié (in-app + push). */
+adminRouter.post(
+  '/tickets/:id/messages',
+  h(async (req, res) => {
+    const { body } = ticketMessageSchema.parse(req.body);
+    const t = await prisma.supportTicket.findUnique({ where: { id: req.params.id } });
+    if (!t) throw notFound();
+    const name = await staffName(req.principal!.id);
+    const message = await postMessage(t.id, { type: 'STAFF', name }, body);
+    if (t.userId) {
+      await notify({
+        userId: t.userId,
+        type: 'GENERIC',
+        title: 'Réponse de BRICOLOC',
+        body: body.length > 140 ? `${body.slice(0, 137)}…` : body,
+        data: { ticketId: t.id, reservationId: t.reservationId },
+      });
+    }
+    res.status(201).json({ message });
+  }),
+);
+
 adminRouter.patch(
   '/tickets/:id',
   h(async (req, res) => {
-    const t = await prisma.supportTicket.update({
+    const { status, response } = req.body ?? {};
+    if (status !== undefined && !(TICKET_STATUSES as readonly string[]).includes(status))
+      throw badRequest('Statut invalide');
+    if (typeof response === 'string' && response.trim()) {
+      const name = await staffName(req.principal!.id);
+      await postMessage(req.params.id!, { type: 'STAFF', name }, response.trim());
+    }
+    const ticket = await prisma.supportTicket.update({
       where: { id: req.params.id },
-      data: { status: req.body?.status ?? undefined, response: req.body?.response ?? undefined },
+      data: { status: status ?? undefined },
     });
-    res.json({ ticket: t });
+    res.json({ ticket });
+  }),
+);
+
+/** Prolongation : l'équipe accepte (la réservation elle-même est prolongée) ou refuse. */
+adminRouter.post(
+  '/extensions/:id/approve',
+  requireStaff('RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    res.json({ extension: await approveExtension(req.params.id!, req.principal!.id) });
+  }),
+);
+adminRouter.post(
+  '/extensions/:id/reject',
+  requireStaff('RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : undefined;
+    res.json({ extension: await rejectExtension(req.params.id!, req.principal!.id, reason || undefined) });
   }),
 );
 

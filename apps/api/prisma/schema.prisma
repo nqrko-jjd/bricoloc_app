@@ -503,6 +503,7 @@ model Reservation {
   damages    Damage[]
   invoices   Invoice[]
   tickets    SupportTicket[]
+  extensions ReservationExtension[]
 }
 
 model ReservationItem {
@@ -728,10 +729,58 @@ model SupportTicket {
   reservationId String?
   reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
   subject       String
+  /// Premier message du client (les suivants sont dans `messages`).
   message       String
   status        String       @default("OPEN") // OPEN | IN_PROGRESS | CLOSED
+  /// Ancienne réponse unique (avant le fil de discussion) — conservée pour l'historique.
   response      String?
+  kind          String       @default("PROBLEM") // PROBLEM | EXTENSION | QUESTION
+  lastMessageAt DateTime     @default(now())
+  /// Non lu par le client (réponse de l'équipe) / non lu par l'équipe (message du client).
+  clientUnread  Boolean      @default(false)
+  staffUnread   Boolean      @default(true)
   createdAt     DateTime     @default(now())
+
+  messages  TicketMessage[]
+  extension ReservationExtension?
+
+  @@index([status, lastMessageAt])
+}
+
+/// Fil de discussion d'un ticket (client <-> équipe).
+model TicketMessage {
+  id         String        @id @default(cuid())
+  ticketId   String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorType String // CLIENT | STAFF | SYSTEM
+  authorName String?
+  body       String
+  createdAt  DateTime      @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+/// Demande de prolongation d'une location : appliquée à la MÊME réservation
+/// (periodEnd) quand l'équipe l'accepte — jamais une nouvelle commande.
+model ReservationExtension {
+  id            String        @id @default(cuid())
+  reservationId String
+  reservation   Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  ticketId      String?       @unique
+  ticket        SupportTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  previousEnd   DateTime
+  requestedEnd  DateTime
+  extraHT       Float
+  extraTVAC     Float
+  status        String        @default("PENDING") // PENDING | APPROVED | REJECTED | CANCELLED
+  /// = reservationId tant que la demande est en attente, NULL ensuite : l'unicité garantit UNE seule demande
+  /// en attente par réservation, même si le client double-clique (les NULL multiples sont autorisés).
+  pendingKey    String?       @unique
+  decidedAt     DateTime?
+  decidedBy     String?
+  createdAt     DateTime      @default(now())
+
+  @@index([reservationId, status])
 }
 
 model Counter {

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { BRAND, pickText, SOURCE_LOCALE, type I18nText, type Locale } from '@bricoloc/shared';
 import { prisma } from '../db.js';
+import { createTicket } from '../lib/tickets.js';
 import { h, notFound, badRequest } from '../lib/http.js';
 import { getSettings } from '../lib/settings.js';
 import { quoteDelivery } from '../lib/delivery.js';
@@ -556,11 +557,13 @@ publicRouter.post(
   h(async (req, res) => {
     const { name, email, message, phone } = req.body ?? {};
     if (!email || !message) return res.status(400).json({ error: { message: 'email et message requis' } });
-    const ticket = await prisma.supportTicket.create({
-      data: {
-        subject: `Contact site : ${name ?? email}`,
-        message: `${message}\n\nTel: ${phone ?? '-'} / Email: ${email}`,
-      },
+    const ticket = await createTicket({
+      userId: null,
+      reservationId: null,
+      subject: `Contact site : ${name ?? email}`,
+      message: `${message}\n\nTel: ${phone ?? '-'} / Email: ${email}`,
+      kind: 'QUESTION',
+      authorName: name ?? null,
     });
     res.status(201).json({ ok: true, ticketId: ticket.id });
   }),

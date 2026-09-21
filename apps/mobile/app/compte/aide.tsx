@@ -5,8 +5,8 @@ export default function AideScreen() {
     <Screen>
       <Card>
         <P muted>
-          Support &amp; SAV depuis chaque réservation (« Signaler un problème »), ou par téléphone
-          au comptoir (coordonnées de démo dans l&apos;administration).
+          Un problème sur une machine ? Ouvrez la réservation concernée puis « Signaler un problème » :
+          l’équipe vous répond dans « Mes demandes » (Compte), avec une notification à chaque réponse.
         </P>
       </Card>
     </Screen>

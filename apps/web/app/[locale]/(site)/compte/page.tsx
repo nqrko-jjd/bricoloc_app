@@ -2,7 +2,7 @@
 import { Link } from '@/i18n/navigation';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatEUR, formatDateBE, formatDateTimeBE } from '@bricoloc/shared';
+import { formatEUR, formatDateBE, formatDateTimeBE, TICKET_KIND_LABEL, TICKET_STATUS_LABEL } from '@bricoloc/shared';
 import { clientApi } from '@/lib/api';
 import { useSession, useCart } from '@/lib/providers';
 import type { Reservation } from '@/lib/types';
@@ -14,11 +14,12 @@ export default function ComptePage() {
   const { user, loading, logout } = useSession();
   const { reload } = useCart();
   const router = useRouter();
-  const [tab, setTab] = useState<'reservations' | 'notifications' | 'adresses' | 'profil'>(
+  const [tab, setTab] = useState<'reservations' | 'messages' | 'notifications' | 'adresses' | 'profil'>(
     'reservations',
   );
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [notifs, setNotifs] = useState<{ id: string; type: string; title: string; body: string; createdAt: string; readAt: string | null }[]>([]);
+  const [notifs, setNotifs] = useState<{ id: string; type: string; title: string; body: string; createdAt: string; readAt: string | null; data?: { ticketId?: string } | null }[]>([]);
+  const [tickets, setTickets] = useState<{ id: string; subject: string; status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED'; kind: string; lastMessageAt: string; clientUnread: boolean; reservation: { number: string } | null; messages: { body: string }[] }[]>([]);
   const [addresses, setAddresses] = useState<{ id: string; line1: string; postalCode: string; city: string; label: string | null }[]>([]);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function ComptePage() {
     clientApi<{ reservations: Reservation[] }>('/api/reservations').then((r) =>
       setReservations(r.reservations),
     );
+    clientApi<{ tickets: typeof tickets }>('/api/account/tickets').then((r) => setTickets(r.tickets));
     clientApi<{ notifications: typeof notifs }>('/api/account/notifications').then((r) =>
       setNotifs(r.notifications),
     );
@@ -72,7 +74,7 @@ export default function ComptePage() {
       )}
 
       <div className="chips" style={{ margin: '16px 0' }}>
-        {(['reservations', 'notifications', 'adresses', 'profil'] as const).map((t) => (
+        {(['reservations', 'messages', 'notifications', 'adresses', 'profil'] as const).map((t) => (
           <button
             key={t}
             className={`chip${tab === t ? ' active' : ''}`}
@@ -80,7 +82,9 @@ export default function ComptePage() {
           >
             {t === 'reservations'
               ? 'Réservations'
-              : t === 'notifications'
+              : t === 'messages'
+                ? `Mes demandes${tickets.filter((x) => x.clientUnread).length ? ` (${tickets.filter((x) => x.clientUnread).length})` : ''}`
+                : t === 'notifications'
                 ? `Notifications${notifs.filter((n) => !n.readAt).length ? ` (${notifs.filter((n) => !n.readAt).length})` : ''}`
                 : t === 'adresses'
                   ? 'Adresses'
@@ -120,6 +124,36 @@ export default function ComptePage() {
         </div>
       )}
 
+      {tab === 'messages' && (
+        <div className="stack">
+          {tickets.length === 0 && (
+            <p className="muted">
+              Aucune demande. Un problème sur une machine ? Ouvrez la location concernée puis « Signaler un problème » :
+              vous suivrez la réponse de l’équipe ici.
+            </p>
+          )}
+          {tickets.map((t) => (
+            <Link
+              key={t.id}
+              href={`/compte/tickets/${t.id}`}
+              className="card card-body"
+              style={{ borderLeft: t.clientUnread ? '4px solid var(--primary)' : undefined }}
+            >
+              <div className="spread">
+                <strong>{t.subject}</strong>
+                <span className={`badge ${t.status === 'CLOSED' ? 'badge-ok' : ''}`}>{TICKET_STATUS_LABEL[t.status]}</span>
+              </div>
+              <div className="small muted">
+                {TICKET_KIND_LABEL[t.kind] ?? t.kind}
+                {t.reservation ? ` · ${t.reservation.number}` : ''} · {formatDateTimeBE(t.lastMessageAt)}
+                {t.clientUnread ? ' · nouvelle réponse' : ''}
+              </div>
+              <div className="small">{(t.messages[0]?.body ?? '').slice(0, 110)}</div>
+            </Link>
+          ))}
+        </div>
+      )}
+
       {tab === 'notifications' && (
         <div className="stack">
           <button
@@ -144,6 +178,13 @@ export default function ComptePage() {
                 {n.body}
               </p>
               <span className="small muted">{formatDateTimeBE(n.createdAt)}</span>
+              {n.data?.ticketId && (
+                <div>
+                  <Link href={`/compte/tickets/${n.data.ticketId}`} className="small">
+                    Ouvrir la conversation →
+                  </Link>
+                </div>
+              )}
             </div>
           ))}
         </div>

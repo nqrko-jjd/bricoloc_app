@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/providers';
+import { PhoneInput } from '@/components/PhoneInput';
 
 export default function InscriptionPage() {
   const { register } = useSession();
@@ -68,7 +69,7 @@ export default function InscriptionPage() {
           </div>
           <div className="field">
             <label>Téléphone</label>
-            <input value={f.phone} onChange={(e) => set('phone', e.target.value)} required />
+            <PhoneInput value={f.phone} onValueChange={(v) => set('phone', v)} required />
           </div>
         </div>
         {f.customerType === 'PRO' && (

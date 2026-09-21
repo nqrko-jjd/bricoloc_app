@@ -42,3 +42,10 @@ export function inDays(days: number, hour: number): Date {
   d.setHours(hour, 0, 0, 0);
   return d;
 }
+
+/** Saisie de numéro de téléphone : ne garde que chiffres, espaces et + - . / ( ) ; « + » seulement en tête. */
+export function sanitizePhone(input: string): string {
+  const cleaned = input.replace(/[^\d+\s\-./()]/g, '');
+  const hasPlus = cleaned.trimStart().startsWith('+');
+  return (hasPlus ? '+' : '') + cleaned.replace(/\+/g, '');
+}

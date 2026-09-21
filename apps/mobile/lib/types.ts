@@ -141,6 +141,46 @@ export interface Reservation {
   payments: { id: string; kind: string; status: string; amount: number }[];
   deposit: { amount: number; status: string } | null;
   invoices: { id: string; number: string; kind: string }[];
+  extensions?: ReservationExtension[];
+  tickets?: TicketSummary[];
+}
+
+export interface ReservationExtension {
+  id: string;
+  ticketId: string | null;
+  previousEnd: string;
+  requestedEnd: string;
+  extraHT: number;
+  extraTVAC: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  decidedAt: string | null;
+  decidedBy: string | null;
+}
+
+export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
+
+export interface TicketSummary {
+  id: string;
+  subject: string;
+  status: TicketStatus;
+  kind: string;
+  lastMessageAt: string;
+  clientUnread: boolean;
+}
+
+export interface TicketListItem extends TicketSummary {
+  message: string;
+  createdAt: string;
+  reservation: { id: string; number: string } | null;
+  messages: { body: string; authorType: string }[];
+}
+
+export interface TicketMessage {
+  id: string;
+  authorType: 'CLIENT' | 'STAFF' | 'SYSTEM' | string;
+  authorName: string | null;
+  body: string;
+  createdAt: string;
 }
 
 export interface Notif {
@@ -150,4 +190,5 @@ export interface Notif {
   body: string;
   createdAt: string;
   readAt: string | null;
+  data?: { ticketId?: string; reservationId?: string } | null;
 }

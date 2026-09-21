@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import type { PublicConfig } from '@/lib/types';
 import { PageHeader } from '@/components/PageHeader';
+import { PhoneInput } from '@/components/PhoneInput';
 
 export default function ContactPage() {
   const [cfg, setCfg] = useState<PublicConfig | null>(null);
@@ -53,7 +54,7 @@ export default function ContactPage() {
                 </div>
                 <div className="field">
                   <label>Téléphone</label>
-                  <input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
+                  <PhoneInput value={f.phone} onValueChange={(v) => setF({ ...f, phone: v })} />
                 </div>
               </div>
               <div className="field">

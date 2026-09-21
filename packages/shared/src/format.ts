@@ -48,3 +48,10 @@ export function buildReservationNumber(seq: number, date = new Date()): string {
 export function buildInvoiceNumber(seq: number, date = new Date()): string {
   return `F${date.getFullYear()}-${String(seq).padStart(5, '0')}`;
 }
+
+/** Saisie de numéro de téléphone : ne garde que chiffres, espaces et + - . / ( ) ; « + » seulement en tête. */
+export function sanitizePhone(input: string): string {
+  const cleaned = input.replace(/[^\d+\s\-./()]/g, '');
+  const hasPlus = cleaned.trimStart().startsWith('+');
+  return (hasPlus ? '+' : '') + cleaned.replace(/\+/g, '');
+}

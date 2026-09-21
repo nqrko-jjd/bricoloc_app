@@ -296,6 +296,30 @@ export interface Reservation {
   deposit: { amount: number; status: string; capturedAmount: number } | null;
   deliveries: { id: string; direction: string; status: string; feeHT: number }[];
   invoices: { id: string; number: string; kind: string; issuedAt: string }[];
+  extensions?: ReservationExtension[];
+  tickets?: TicketSummary[];
+}
+
+export interface ReservationExtension {
+  id: string;
+  ticketId: string | null;
+  previousEnd: string;
+  requestedEnd: string;
+  extraHT: number;
+  extraTVAC: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  decidedAt: string | null;
+  decidedBy: string | null;
+  createdAt: string;
+}
+
+export interface TicketSummary {
+  id: string;
+  subject: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
+  kind: string;
+  lastMessageAt: string;
+  clientUnread: boolean;
 }
 
 export interface PublicConfig {

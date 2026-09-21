@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { addressSchema, registerPushTokenSchema } from '@bricoloc/shared';
+import { addressSchema, registerPushTokenSchema, ticketMessageSchema } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { badRequest, forbidden, h, notFound } from '../lib/http.js';
 import { attachPrincipal, requireUser } from '../lib/auth.js';
 import { storeIdDocument, readPrivateFile, deletePrivateFile } from '../lib/media.js';
+import { postMessage, threadOf, ticketListSelect } from '../lib/tickets.js';
 
 export const accountRouter = Router();
 accountRouter.use(attachPrincipal, requireUser);
@@ -210,14 +211,52 @@ accountRouter.post(
   }),
 );
 
+/** Mes tickets (problèmes signalés, prolongations, questions) — du plus récent au plus ancien. */
 accountRouter.get(
   '/tickets',
   h(async (req, res) => {
-    res.json({
-      tickets: await prisma.supportTicket.findMany({
-        where: { userId: uid(req) },
-        orderBy: { createdAt: 'desc' },
-      }),
+    const tickets = await prisma.supportTicket.findMany({
+      where: { userId: uid(req) },
+      select: ticketListSelect,
+      orderBy: { lastMessageAt: 'desc' },
     });
+    res.json({ tickets, unread: tickets.filter((t) => t.clientUnread).length });
+  }),
+);
+
+/** Un ticket avec tout son fil de discussion (marque les réponses comme lues). */
+accountRouter.get(
+  '/tickets/:id',
+  h(async (req, res) => {
+    const t = await prisma.supportTicket.findUnique({
+      where: { id: req.params.id },
+      include: {
+        messages: { orderBy: { createdAt: 'asc' } },
+        reservation: { select: { id: true, number: true, periodEnd: true } },
+        extension: true,
+      },
+    });
+    if (!t || t.userId !== uid(req)) throw notFound();
+    if (t.clientUnread) {
+      await prisma.supportTicket.update({ where: { id: t.id }, data: { clientUnread: false } });
+    }
+    const { messages, ...ticket } = t;
+    res.json({ ticket: { ...ticket, clientUnread: false }, messages: threadOf({ ...t, messages }) });
+  }),
+);
+
+accountRouter.post(
+  '/tickets/:id/messages',
+  h(async (req, res) => {
+    const { body } = ticketMessageSchema.parse(req.body);
+    const t = await prisma.supportTicket.findUnique({ where: { id: req.params.id } });
+    if (!t || t.userId !== uid(req)) throw notFound();
+    const user = await prisma.user.findUnique({ where: { id: uid(req) } });
+    const message = await postMessage(
+      t.id,
+      { type: 'CLIENT', name: user ? `${user.firstName} ${user.lastName}`.trim() : null },
+      body,
+    );
+    res.status(201).json({ message });
   }),
 );

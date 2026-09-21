@@ -20,12 +20,16 @@ export default function CompteScreen() {
   const { user, logout } = useStore();
   const router = useRouter();
   const [unread, setUnread] = useState(0);
+  const [ticketUnread, setTicketUnread] = useState(0);
   const [rentalCount, setRentalCount] = useState<number | null>(null);
 
   const load = useCallback(() => {
     if (!user) return;
     api<{ notifications: Notif[] }>('/api/account/notifications')
       .then((r) => setUnread(r.notifications.filter((n) => !n.readAt).length))
+      .catch(() => {});
+    api<{ unread: number }>('/api/account/tickets')
+      .then((r) => setTicketUnread(r.unread))
       .catch(() => {});
     api<{ reservations: unknown[] }>('/api/reservations')
       .then((r) => setRentalCount(r.reservations.length))
@@ -128,6 +132,13 @@ export default function CompteScreen() {
           hint={idHint.label}
           hintTone={idHint.tone}
           onPress={() => router.push('/compte/identite' as never)}
+        />
+        <MenuRow
+          icon="chatbubbles-outline"
+          label="Mes demandes"
+          hint={ticketUnread > 0 ? `${ticketUnread} réponse${ticketUnread > 1 ? 's' : ''}` : undefined}
+          hintTone="warn"
+          onPress={() => router.push('/compte/tickets' as never)}
         />
         <MenuRow
           icon="notifications-outline"

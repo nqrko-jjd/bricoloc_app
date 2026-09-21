@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Image, Text, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
-import { formatEUR } from '@/lib/format';
-import { Screen, H1, H2, P, Card, Button, Field, Badge } from '@/components/ui';
+import { formatEUR, formatDateBE } from '@/lib/format';
+import { Screen, H1, H2, P, Card, Button, Field, PhoneField, Badge } from '@/components/ui';
 import { PeriodPicker } from '@/components/PeriodPicker';
 import { AddressField } from '@/components/AddressField';
 import { IdStep } from '@/components/IdStep';
@@ -53,17 +53,51 @@ export default function CommandeScreen() {
     { id: string; name: string; line1: string; postalCode: string; city: string; isMain: boolean; transferHours: number }[]
   >([]);
   const [pointId, setPointId] = useState('');
+  const [slot, setSlot] = useState('');
+  const [fulfilErr, setFulfilErr] = useState('');
+  const [pickupCfg, setPickupCfg] = useState<{
+    days: number[];
+    fromHour: number;
+    toHour: number;
+    slotMinutes: number;
+    note: string;
+  } | null>(null);
+  const [minLeadHours, setMinLeadHours] = useState(2);
+
+  // Heures d'arrivée proposées le jour de début de location (comme sur le site).
+  const startIso = cart?.period?.start;
+  const pickupSlots = useMemo(() => {
+    if (!pickupCfg || !startIso) return [];
+    const startDate = new Date(startIso);
+    if (!pickupCfg.days.includes(startDate.getDay())) return [];
+    const step = Math.max(15, pickupCfg.slotMinutes || 30);
+    const now = new Date();
+    const isToday = startDate.toDateString() === now.toDateString();
+    const earliestMin = isToday
+      ? Math.ceil((now.getHours() * 60 + now.getMinutes() + minLeadHours * 60) / step) * step
+      : 0;
+    const out: string[] = [];
+    for (let m = pickupCfg.fromHour * 60; m + step <= pickupCfg.toHour * 60; m += step) {
+      if (m < earliestMin) continue;
+      const mm = m % 60;
+      out.push(`${Math.floor(m / 60)}h${mm === 0 ? '00' : String(mm).padStart(2, '0')}`);
+    }
+    return out;
+  }, [pickupCfg, startIso, minLeadHours]);
+  const pickupDayClosed = !!pickupCfg && !!startIso && !pickupCfg.days.includes(new Date(startIso).getDay());
 
   useEffect(() => {
     if (phase === 'identity' && idOk(user?.idDocStatus)) setPhase('review');
   }, [phase, user?.idDocStatus]);
 
   useEffect(() => {
-    api<{ pickupPoints?: typeof points }>('/api/public/config')
+    api<{ pickupPoints?: typeof points; pickup?: typeof pickupCfg; minLeadTimeHours?: number }>('/api/public/config')
       .then((c) => {
         const pts = c.pickupPoints ?? [];
         setPoints(pts);
         setPointId(pts.find((p) => p.isMain)?.id ?? pts[0]?.id ?? '');
+        if (c.pickup) setPickupCfg(c.pickup);
+        if (typeof c.minLeadTimeHours === 'number') setMinLeadHours(c.minLeadTimeHours);
       })
       .catch(() => undefined);
   }, []);
@@ -111,8 +145,8 @@ export default function CommandeScreen() {
           period: cart?.period,
           fulfilment:
             mode === 'DELIVERY'
-              ? { mode, address: { ...addr, country: 'BE' } }
-              : { mode, pickupPointId: pointId || undefined },
+              ? { mode, address: { ...addr, country: 'BE' }, slot: slot || undefined }
+              : { mode, pickupPointId: pointId || undefined, slot: pickupSlots.includes(slot) ? slot : undefined },
           acceptTerms: true,
           channel: 'MOBILE',
         },
@@ -168,10 +202,10 @@ export default function CommandeScreen() {
         <Card>
           <H2>2. Retrait ou livraison</H2>
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-            <Pressable onPress={() => setMode('PICKUP')} style={chip(mode === 'PICKUP')}>
+            <Pressable onPress={() => { setMode('PICKUP'); setSlot(''); setFulfilErr(''); }} style={chip(mode === 'PICKUP')}>
               <Text style={chipT(mode === 'PICKUP')}>Click &amp; Collect</Text>
             </Pressable>
-            <Pressable onPress={() => setMode('DELIVERY')} style={chip(mode === 'DELIVERY')}>
+            <Pressable onPress={() => { setMode('DELIVERY'); setSlot(''); setFulfilErr(''); }} style={chip(mode === 'DELIVERY')}>
               <Text style={chipT(mode === 'DELIVERY')}>Livraison</Text>
             </Pressable>
           </View>
@@ -204,6 +238,38 @@ export default function CommandeScreen() {
               ))}
             </View>
           )}
+          {mode === 'PICKUP' && (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ fontWeight: '700', color: C.ink, marginBottom: 6 }}>
+                Heure d’arrivée au dépôt{cart.period ? ` — le ${formatDateBE(cart.period.start)}` : ''}
+              </Text>
+              {pickupSlots.length > 0 ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {pickupSlots.map((s) => (
+                    <Pressable
+                      key={s}
+                      onPress={() => {
+                        setSlot(s);
+                        setFulfilErr('');
+                      }}
+                      style={chip(slot === s)}
+                    >
+                      <Text style={chipT(slot === s)}>{s}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : pickupCfg ? (
+                <Text style={{ color: C.warn, backgroundColor: C.warnBg, padding: 10, borderRadius: 10 }}>
+                  {pickupDayClosed
+                    ? 'Le dépôt est fermé ce jour-là. Revenez à l’étape « Dates » pour choisir une autre date de début.'
+                    : `Plus d’heure disponible aujourd’hui (préparation ${minLeadHours} h avant l’enlèvement). Choisissez une date à partir de demain.`}
+                </Text>
+              ) : null}
+              {pickupCfg?.note ? (
+                <Text style={{ color: C.muted, fontSize: 12, marginTop: 6 }}>ℹ️ {pickupCfg.note}</Text>
+              ) : null}
+            </View>
+          )}
           {mode === 'DELIVERY' && (
             <>
               <AddressField
@@ -228,19 +294,54 @@ export default function CommandeScreen() {
                 value={addr.city}
                 onChangeText={(v) => setAddr({ ...addr, city: v })}
               />
+              <Text style={{ fontWeight: '700', color: C.ink, marginBottom: 6 }}>Créneau de livraison souhaité</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                {['Matin (8h-12h)', 'Après-midi (13h-17h)'].map((s) => (
+                  <Pressable
+                    key={s}
+                    onPress={() => {
+                      setSlot(s);
+                      setFulfilErr('');
+                    }}
+                    style={chip(slot === s)}
+                  >
+                    <Text style={chipT(slot === s)}>{s}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </>
           )}
           <Button
             title="Continuer"
             onPress={async () => {
+              if (mode === 'PICKUP' && pickupCfg) {
+                if (pickupSlots.length === 0) {
+                  setFulfilErr('Le dépôt est fermé (ou complet) le jour de début choisi : changez la date à l’étape « Dates ».');
+                  return;
+                }
+                if (!pickupSlots.includes(slot)) {
+                  setFulfilErr('Choisissez votre heure d’arrivée au dépôt.');
+                  return;
+                }
+              }
+              if (mode === 'DELIVERY' && !slot) {
+                setFulfilErr('Choisissez un créneau de livraison.');
+                return;
+              }
+              setFulfilErr('');
               await setFulfilment(
                 mode === 'DELIVERY'
-                  ? { mode, address: { ...addr, country: 'BE' } }
-                  : { mode },
+                  ? { mode, address: { ...addr, country: 'BE' }, slot }
+                  : { mode, slot: pickupSlots.includes(slot) ? slot : undefined },
               );
               setPhase(user ? (idOk(user.idDocStatus) ? 'review' : 'identity') : 'account');
             }}
           />
+          {fulfilErr ? (
+            <Text accessibilityLiveRegion="polite" style={{ color: C.err, marginTop: 8, fontWeight: '600' }}>
+              {fulfilErr}
+            </Text>
+          ) : null}
         </Card>
       )}
 
@@ -262,7 +363,7 @@ export default function CommandeScreen() {
             keyboardType="email-address"
             onChangeText={(v) => setContact({ ...contact, email: v })}
           />
-          <Field label="Téléphone" value={contact.phone} keyboardType="phone-pad" onChangeText={(v) => setContact({ ...contact, phone: v })} />
+          <PhoneField label="Téléphone" value={contact.phone} onChangeText={(v) => setContact({ ...contact, phone: v })} />
           <Field
             label="Mot de passe (8 car. min.)"
             value={password}

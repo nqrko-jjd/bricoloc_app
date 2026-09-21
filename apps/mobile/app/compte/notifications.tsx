@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { C } from '@/lib/theme';
@@ -10,6 +10,7 @@ import type { Notif } from '@/lib/types';
 
 export default function NotificationsScreen() {
   const { user } = useStore();
+  const router = useRouter();
   const [notifs, setNotifs] = useState<Notif[]>([]);
 
   const load = useCallback(() => {
@@ -55,6 +56,14 @@ export default function NotificationsScreen() {
             <Text style={{ fontWeight: '700', color: C.loc }}>{n.title}</Text>
             <Text style={{ fontSize: 13 }}>{n.body}</Text>
             <Text style={{ fontSize: 11, color: C.lightGray }}>{formatDateTimeBE(n.createdAt)}</Text>
+            {n.data?.ticketId ? (
+              <Text
+                style={{ color: C.loc, fontWeight: '700', marginTop: 4 }}
+                onPress={() => router.push(`/ticket/${n.data!.ticketId}` as never)}
+              >
+                Ouvrir la conversation →
+              </Text>
+            ) : null}
           </View>
         ))}
       </Card>

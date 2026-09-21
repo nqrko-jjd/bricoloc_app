@@ -113,13 +113,33 @@ export const mockPaySchema = z.object({
 
 export const extendReservationSchema = z.object({
   newEnd: isoDate,
+  /** true = ne fait que chiffrer le supplément, sans enregistrer de demande. */
+  preview: z.boolean().optional(),
 });
 
 export const reportProblemSchema = z.object({
   reservationId: z.string().min(1),
-  subject: z.string().min(1),
-  message: z.string().min(1),
+  subject: z.string().trim().min(1).max(200),
+  message: z.string().trim().min(1).max(4000),
 });
+
+/** Message dans le fil d'un ticket (client ou équipe). */
+export const ticketMessageSchema = z.object({
+  body: z.string().trim().min(1, 'Message vide').max(4000),
+});
+
+export const TICKET_STATUSES = ['OPEN', 'IN_PROGRESS', 'CLOSED'] as const;
+export type TicketStatus = (typeof TICKET_STATUSES)[number];
+export const TICKET_STATUS_LABEL: Record<TicketStatus, string> = {
+  OPEN: 'Ouvert',
+  IN_PROGRESS: 'En cours',
+  CLOSED: 'Clôturé',
+};
+export const TICKET_KIND_LABEL: Record<string, string> = {
+  PROBLEM: 'Problème',
+  EXTENSION: 'Prolongation',
+  QUESTION: 'Question',
+};
 
 /* ------------------------- Back-office ------------------------- */
 

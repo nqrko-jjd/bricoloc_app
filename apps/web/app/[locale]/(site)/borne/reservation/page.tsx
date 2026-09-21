@@ -4,6 +4,7 @@ import { formatDateTimeBE } from '@bricoloc/shared';
 import { api } from '@/lib/api';
 import { useRouter } from '@/i18n/navigation';
 import { ScanField } from '@/components/admin/ScanField';
+import { PhoneInput } from '@/components/PhoneInput';
 
 interface Lookup {
   number: string;
@@ -99,12 +100,7 @@ function KioskReservation() {
               </label>
               <label className="field">
                 <span>Téléphone</span>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="0470 12 34 56"
-                  inputMode="tel"
-                />
+                <PhoneInput value={phone} onValueChange={setPhone} placeholder="0470 12 34 56" />
               </label>
               <button
                 className="btn btn-primary btn-lg"
