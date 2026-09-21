@@ -2,6 +2,7 @@
   "expo": {
     "name": "BRICOLOC",
     "slug": "bricoloc",
+    "owner": "jjd-consult",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "bricoloc",
@@ -25,7 +26,11 @@
       "package": "com.bricoloc.app",
       "adaptiveIcon": {
         "backgroundColor": "#0B1D3A"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -48,8 +53,12 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://localhost:4000",
-      "teamMode": false
+      "apiUrl": "https://new.bricoloc.be/bricoloc-api",
+      "teamMode": false,
+      "router": {},
+      "eas": {
+        "projectId": "c4f91fbb-5b17-4cc1-8940-28117766ac77"
+      }
     }
   }
 }
