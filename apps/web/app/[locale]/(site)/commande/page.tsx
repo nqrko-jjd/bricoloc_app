@@ -780,10 +780,10 @@ export default function CommandePage() {
                       {!delivQuote.served ? (
                         <>Hors zone de livraison ({delivQuote.distanceKm} km du dépôt). Contactez-nous pour un devis.</>
                       ) : delivQuote.free && !delivQuote.saturdaySurchargeHT ? (
-                        <>Livraison offerte 🎉 ({delivQuote.distanceKm} km — franchise atteinte)</>
+                        <>Livraison + reprise offertes 🎉 ({delivQuote.distanceKm} km — franchise atteinte)</>
                       ) : (
                         <>
-                          Livraison : <strong>{formatEUR(delivQuote.feeHT)}</strong> HTVA —{' '}
+                          Livraison + reprise : <strong>{formatEUR(delivQuote.feeHT)}</strong> HTVA —{' '}
                           {delivQuote.distanceKm} km depuis le dépôt
                           {delivQuote.saturdaySurchargeHT ? (
                             <>

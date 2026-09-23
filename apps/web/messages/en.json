@@ -298,7 +298,7 @@
     "pickupMode": "Click & Collect",
     "pickupModeHint": "Pick up at the depot",
     "deliveryMode": "Delivery",
-    "deliveryModeHint": "Home or job site",
+    "deliveryModeHint": "Home or job site · round trip",
     "deliveryDetailsAtCheckout": "The address and time slot are set at the next step.",
     "quantity": "Quantity",
     "estimatedTotal": "Estimated total"

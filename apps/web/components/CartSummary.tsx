@@ -85,7 +85,7 @@ export function CartSummary({ quote, title = 'Récapitulatif' }: { quote: Quote 
       ) : (
         t.deliveryFeeHT > 0 && (
           <div className="line">
-            <span>Livraison HTVA</span>
+            <span>Livraison + reprise HTVA</span>
             <span>{formatEUR(t.deliveryFeeHT)}</span>
           </div>
         )

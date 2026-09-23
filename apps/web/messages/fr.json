@@ -167,7 +167,7 @@
     "pickupMode": "Click & Collect",
     "pickupModeHint": "Retrait au dépôt",
     "deliveryMode": "Livraison",
-    "deliveryModeHint": "Domicile ou chantier",
+    "deliveryModeHint": "Domicile ou chantier · aller-retour",
     "deliveryDetailsAtCheckout": "L’adresse et le créneau se précisent à l’étape suivante.",
     "quantity": "Quantité",
     "estimatedTotal": "Total estimé"

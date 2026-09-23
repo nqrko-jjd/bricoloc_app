@@ -296,7 +296,7 @@ export default function AdminReservationDetail({
           <div className="card card-body">
             <h3>Totaux</h3>
             <div className="line small"><span>Location HTVA</span><span>{formatEUR(t.rentalHT ?? 0)}</span></div>
-            {t.deliveryFeeHT ? <div className="line small"><span>Livraison HTVA</span><span>{formatEUR(t.deliveryFeeHT)}</span></div> : null}
+            {t.deliveryFeeHT ? <div className="line small"><span>Livraison + reprise HTVA</span><span>{formatEUR(t.deliveryFeeHT)}</span></div> : null}
             {t.extraFeesHT ? <div className="line small"><span>Frais</span><span>{formatEUR(t.extraFeesHT)}</span></div> : null}
             {t.discountHT ? <div className="line small"><span>Remise</span><span>−{formatEUR(t.discountHT)}</span></div> : null}
             <div className="line"><strong>Total TVAC</strong><strong>{formatEUR(t.totalTVAC ?? 0)}</strong></div>

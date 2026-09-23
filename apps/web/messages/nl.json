@@ -298,7 +298,7 @@
     "pickupMode": "Click & Collect",
     "pickupModeHint": "Afhalen op het depot",
     "deliveryMode": "Levering",
-    "deliveryModeHint": "Thuis of op de werf",
+    "deliveryModeHint": "Thuis of op de werf · heen en terug",
     "deliveryDetailsAtCheckout": "Het adres en tijdslot worden in de volgende stap bepaald.",
     "quantity": "Aantal",
     "estimatedTotal": "Geschat totaal"
