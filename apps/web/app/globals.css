@@ -1337,7 +1337,7 @@ button { font-family: inherit; }
 #accessoires { scroll-margin-top: 110px; }
 
 /* L'essentiel — fiche technique en cartes (pas d'accordéon) */
-.pessential { margin-top: var(--sp-8); }
+.pessential { margin-top: var(--sp-7); }
 .pessential__grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 24px;
 }
@@ -1359,7 +1359,7 @@ button { font-family: inherit; }
 }
 .pgallery__main {
   border-radius: 18px; overflow: hidden; background: var(--surface-2);
-  aspect-ratio: 1.05 / 1; position: relative;
+  aspect-ratio: 0.95 / 1; position: relative;
 }
 .pgallery__main img { width: 100%; height: 100%; object-fit: contain; padding: 24px; }
 .pgallery__tag {
@@ -1382,11 +1382,6 @@ button { font-family: inherit; }
 }
 .pgallery__thumbs button.is-active { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent); }
 .pgallery__thumbs img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
-.pgallery__trust {
-  display: flex; align-items: flex-start; gap: 12px; margin: 20px 0 0; padding-top: 20px;
-  border-top: 1px solid var(--border); color: var(--ink);
-}
-.pgallery__trust svg { width: 22px; height: 22px; color: var(--ok); flex-shrink: 0; margin-top: 2px; }
 
 /* Prix unique, mis en avant (le détail des paliers vit dans le panneau d'achat) */
 .pdetail__price { margin: 16px 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }

@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
-import { Heart, ShieldCheck } from './icons';
+import { Heart } from './icons';
 
-/** Galerie photo produit : grande image + vignettes cliquables, favori et
- * bloc de confiance intégrés à la même carte (comme le reste du catalogue). */
+/** Galerie photo produit : grande image + vignettes cliquables, favori
+ * intégré à la même carte (comme le reste du catalogue). */
 export function ProductGallery({
   images,
   alt,
@@ -63,14 +63,6 @@ export function ProductGallery({
           ))}
         </ul>
       )}
-      <p className="pgallery__trust">
-        <ShieldCheck />
-        <span>
-          <strong>{t('trustTitle')}</strong>
-          <br />
-          <span className="small muted">{t('trustHint')}</span>
-        </span>
-      </p>
     </div>
   );
 }
