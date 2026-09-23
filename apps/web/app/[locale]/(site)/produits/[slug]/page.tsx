@@ -207,8 +207,10 @@ export default async function ProductPage({
       <section className="pessential reveal">
         <span className="eyebrow">{t('essentialKicker')}</span>
         <h2>{t('essentialTitle')}</h2>
-        <p className="muted measure">{essentialIntro}</p>
         <div className="pessential__grid">
+          <article className="pessential__card pessential__card--intro">
+            <p>{essentialIntro}</p>
+          </article>
           {product.recommendedUses.length > 0 && (
             <article className="pessential__card">
               <h3>{t('recommendedUses')}</h3>
