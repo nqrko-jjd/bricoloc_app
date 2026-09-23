@@ -5,6 +5,7 @@ import { formatEUR, formatDateBE } from '@bricoloc/shared';
 import { useCart } from '@/lib/providers';
 import { durationLabel } from '@/lib/dates';
 import { CartSummary } from '@/components/CartSummary';
+import { Price } from '@/components/Price';
 import { Steps } from '@/components/Steps';
 import { AvailabilityBadge } from '@/components/AvailabilityBadge';
 import { DateRangePicker } from '@/components/DateRangePicker';
@@ -113,7 +114,7 @@ export default function PanierPage() {
                     {it.name}
                   </Link>
                   <div className="small muted">
-                    {formatEUR(it.dailyPrice)} / {it.isConsumable ? 'unité' : 'jour'}
+                    <Price amountHT={it.dailyPrice} /> / {it.isConsumable ? 'unité' : 'jour'}
                     {!it.isConsumable && ` · caution ${formatEUR(it.deposit)}`}
                   </div>
                   <div style={{ marginTop: 6 }}>
@@ -163,7 +164,7 @@ export default function PanierPage() {
                       {p.name}
                     </Link>
                     <div className="small muted">
-                      {formatEUR(p.dailyPrice)} / {p.isConsumable ? 'unité' : 'jour'}
+                      <Price amountHT={p.dailyPrice} /> / {p.isConsumable ? 'unité' : 'jour'}
                     </div>
                     <button
                       className="btn btn-outline btn-sm"

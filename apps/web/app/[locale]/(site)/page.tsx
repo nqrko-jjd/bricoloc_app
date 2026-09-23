@@ -1,5 +1,4 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { formatEUR } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { loadContent } from '@/lib/content';
@@ -8,6 +7,7 @@ import { SearchAutocomplete } from '@/components/SearchAutocomplete';
 import { DegressivePricing } from '@/components/DegressivePricing';
 import { PopularSlider } from '@/components/PopularSlider';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
+import { Price } from '@/components/Price';
 import {
   CATEGORY_ICON,
   ArrowUpRight,
@@ -209,7 +209,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   <span className="bp-card__name">{p.name.replace(/^BricoPack\s*/i, '')}</span>
                   <span className="bp-card__foot">
                     <span className="bp-card__meta">
-                      {t('diffFrom')} {formatEUR(p.dailyPrice)}/j
+                      {t('diffFrom')} <Price amountHT={p.dailyPrice} suffix="/j" />
                     </span>
                     <span className="bp-card__cta">Voir le contenu →</span>
                   </span>

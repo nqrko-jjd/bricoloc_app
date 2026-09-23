@@ -15,8 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '@/lib/theme';
 import { mediaUrl } from '@/lib/api';
-import { formatEUR, sanitizePhone } from '@/lib/format';
+import { sanitizePhone } from '@/lib/format';
 import { useQuickView } from '@/components/ProductQuickView';
+import { Price } from '@/components/Price';
 
 export interface ProductMini {
   slug: string;
@@ -288,7 +289,7 @@ export function ProductMiniCard({
             {p.name}
           </Text>
           <Text style={{ fontWeight: '900', color: C.ink, fontSize: 15 }}>
-            {formatEUR(p.dailyPrice)}
+            <Price amountHT={p.dailyPrice} />
             <Text style={{ fontWeight: '600', color: C.muted, fontSize: 11 }}> / jour</Text>
           </Text>
           {p.rating && p.rating.count > 0 ? (
@@ -356,7 +357,7 @@ export function ProductListRow({ p }: { p: ProductMini }) {
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
           <Text style={{ fontWeight: '900', color: C.ink, fontSize: 14 }}>
-            {formatEUR(p.dailyPrice)}
+            <Price amountHT={p.dailyPrice} />
             <Text style={{ fontWeight: '600', color: C.muted, fontSize: 11 }}> / jour</Text>
           </Text>
           {p.rating && p.rating.count > 0 ? (

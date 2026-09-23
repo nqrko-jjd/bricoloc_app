@@ -2,6 +2,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { formatEUR, suggestDegressivePricing } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
+import { usePriceDisplay } from '@/lib/usePriceDisplay';
 import { ImageDropzone } from '@/components/admin/ImageDropzone';
 import { DocumentUploader } from '@/components/admin/DocumentUploader';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
@@ -127,6 +128,7 @@ const EMPTY_PARTNER: PartnerRow = {
 };
 
 export default function AdminProduits() {
+  const { vatRate } = usePriceDisplay();
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<typeof EMPTY>(EMPTY);
@@ -194,6 +196,12 @@ export default function AdminProduits() {
   }, []);
 
   const set = (k: string, v: unknown) => setForm((s) => ({ ...s, [k]: v }));
+
+  /** Aperçu du prix client (TVAC) pendant la saisie du prix HTVA. */
+  const vatHint = (v: unknown) => {
+    const n = Number(v);
+    return n > 0 ? `≈ ${formatEUR(n * (1 + vatRate))} TVAC` : null;
+  };
 
   const dailyNum = Number(form.dailyPrice);
   const autoPricing =
@@ -688,6 +696,9 @@ export default function AdminProduits() {
                   value={form.dailyPrice}
                   onChange={(e) => set('dailyPrice', e.target.value)}
                 />
+                {vatHint(form.dailyPrice) && (
+                  <span className="small muted">{vatHint(form.dailyPrice)}</span>
+                )}
               </div>
               <div className="field">
                 <label>Caution</label>
@@ -728,6 +739,9 @@ export default function AdminProduits() {
                     value={form.dailyPrice}
                     onChange={(e) => set('dailyPrice', e.target.value)}
                   />
+                  {vatHint(form.dailyPrice) && (
+                    <span className="small muted">{vatHint(form.dailyPrice)}</span>
+                  )}
                 </div>
                 <div className="field">
                   <label>Caution</label>
@@ -741,16 +755,19 @@ export default function AdminProduits() {
               </div>
               <div className="field-3">
                 <div className="field">
-                  <label>Prix week-end</label>
+                  <label>Prix week-end (HTVA)</label>
                   <input
                     type="number"
                     step="0.01"
                     value={form.weekendPrice}
                     onChange={(e) => set('weekendPrice', e.target.value)}
                   />
+                  {vatHint(form.weekendPrice) && (
+                    <span className="small muted">{vatHint(form.weekendPrice)}</span>
+                  )}
                 </div>
                 <div className="field">
-                  <label>Prix semaine (7 j)</label>
+                  <label>Prix semaine (7 j, HTVA)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -758,9 +775,12 @@ export default function AdminProduits() {
                     onChange={(e) => set('weekPrice', e.target.value)}
                     placeholder={autoPricing ? String(autoPricing.weekPrice) : ''}
                   />
+                  {vatHint(form.weekPrice || autoPricing?.weekPrice) && (
+                    <span className="small muted">{vatHint(form.weekPrice || autoPricing?.weekPrice)}</span>
+                  )}
                 </div>
                 <div className="field">
-                  <label>Prix mois (30 j)</label>
+                  <label>Prix mois (30 j, HTVA)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -768,6 +788,9 @@ export default function AdminProduits() {
                     onChange={(e) => set('monthPrice', e.target.value)}
                     placeholder={autoPricing ? String(autoPricing.monthPrice) : ''}
                   />
+                  {vatHint(form.monthPrice || autoPricing?.monthPrice) && (
+                    <span className="small muted">{vatHint(form.monthPrice || autoPricing?.monthPrice)}</span>
+                  )}
                 </div>
               </div>
             </>

@@ -908,7 +908,9 @@ export default function CommandePage() {
                           <span className="small muted"> · {l.billedDays} j · {l.appliedRule}</span>
                         )}
                       </td>
-                      <td style={{ textAlign: 'right' }}>{formatEUR(l.lineHT)}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        {formatEUR(l.lineHT)} <span className="small muted">HTVA</span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1011,7 +1013,7 @@ export default function CommandePage() {
                   <span>
                     {it.quantity} × {it.name}
                   </span>
-                  {line && <span className="muted">{formatEUR(line.lineHT)}</span>}
+                  {line && <span className="muted">{formatEUR(line.lineHT)} HTVA</span>}
                 </div>
               );
             })}

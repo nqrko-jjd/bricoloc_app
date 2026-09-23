@@ -5,6 +5,7 @@ import { formatEUR, type Locale } from '@bricoloc/shared';
 import { api } from '@/lib/api';
 import { useCart } from '@/lib/providers';
 import { useRouter } from '@/i18n/navigation';
+import { usePriceDisplay } from '@/lib/usePriceDisplay';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 
 type PackRow = {
@@ -81,6 +82,7 @@ export default function BornePacksPage() {
   const locale = useLocale() as Locale;
   const t = T[locale] ?? T.fr;
   const { addItem } = useCart();
+  const { display } = usePriceDisplay();
 
   const [packs, setPacks] = useState<PackRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,9 +140,9 @@ export default function BornePacksPage() {
                 {p.toolCount} {t.tools}
               </span>
               <span className="kioskm-prod__price">
-                {formatEUR(p.dailyPrice)} {t.perDay}
+                {formatEUR(display(p.dailyPrice))} {t.perDay}
                 {p.separateTotal && p.separateTotal > p.dailyPrice && (
-                  <s> {formatEUR(p.separateTotal)}</s>
+                  <s> {formatEUR(display(p.separateTotal))}</s>
                 )}
               </span>
             </button>
@@ -162,13 +164,13 @@ export default function BornePacksPage() {
               <div className="kioskm-modal__tiers">
                 <div>
                   <span>{t.perDay.replace('/ ', '')}</span>
-                  <strong>{formatEUR(open.dailyPrice)}</strong>
+                  <strong>{formatEUR(display(open.dailyPrice))}</strong>
                 </div>
                 {open.separateTotal > open.dailyPrice && (
                   <div>
                     <span>{t.instead}</span>
                     <strong>
-                      <s>{formatEUR(open.separateTotal)}</s>
+                      <s>{formatEUR(display(open.separateTotal))}</s>
                     </strong>
                   </div>
                 )}
@@ -176,7 +178,7 @@ export default function BornePacksPage() {
                   <div>
                     <span>{t.save}</span>
                     <strong style={{ color: 'var(--ok, #1a7f37)' }}>
-                      −{formatEUR(open.savingPerDay)}
+                      −{formatEUR(display(open.savingPerDay))}
                     </strong>
                   </div>
                 )}

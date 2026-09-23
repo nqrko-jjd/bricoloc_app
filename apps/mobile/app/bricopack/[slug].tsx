@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, mediaUrl } from '@/lib/api';
-import { formatEUR } from '@/lib/format';
 import { useStore } from '@/lib/store';
+import { Price } from '@/components/Price';
 import { C, R } from '@/lib/theme';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -215,7 +215,7 @@ export default function BricoPackDetail() {
               </Text>
               <Text style={{ fontSize: 13.5, color: C.muted, lineHeight: 19, marginTop: 6 }}>{it.why}</Text>
               <Text style={{ fontSize: 12, fontWeight: '800', color: C.muted, marginTop: 8 }}>
-                Location seule : {formatEUR(it.dailyPrice)} / jour
+                Location seule : <Price amountHT={it.dailyPrice} suffix=" / jour" />
               </Text>
             </View>
           </View>
@@ -237,12 +237,12 @@ export default function BricoPackDetail() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
             <Text style={{ color: '#c9c8ec', fontSize: 13 }}>{pack.items.length} outils séparés</Text>
             <Text style={{ color: '#c9c8ec', fontSize: 15, fontWeight: '800', textDecorationLine: 'line-through' }}>
-              {formatEUR(pack.separateTotal)}/j
+              <Price amountHT={pack.separateTotal} suffix="/j" />
             </Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
             <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800' }}>Prix du BricoPack</Text>
-            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '900' }}>{formatEUR(pack.dailyPrice)}/j</Text>
+            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '900' }}><Price amountHT={pack.dailyPrice} suffix="/j" /></Text>
           </View>
           <View
             style={{
@@ -256,7 +256,7 @@ export default function BricoPackDetail() {
             }}
           >
             <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900' }}>
-              Économie {formatEUR(pack.savingPerDay)}/j
+              Économie <Price amountHT={pack.savingPerDay} suffix="/j" />
             </Text>
             {pack.discountPct ? (
               <Text
@@ -304,7 +304,7 @@ export default function BricoPackDetail() {
                 </View>
                 {c.price > 0 && (
                   <Text style={{ fontSize: 14, fontWeight: '900', color: C.brico }}>
-                    {formatEUR(c.price)}
+                    <Price amountHT={c.price} />
                   </Text>
                 )}
               </View>
@@ -369,7 +369,7 @@ export default function BricoPackDetail() {
         <View>
           <Text style={{ fontSize: 11, color: C.muted }}>BricoPack</Text>
           <Text style={{ fontSize: 20, fontWeight: '900', color: C.ink }}>
-            {formatEUR(pack.dailyPrice)}
+            <Price amountHT={pack.dailyPrice} />
             <Text style={{ fontSize: 12, fontWeight: '600', color: C.muted }}> / j</Text>
           </Text>
         </View>

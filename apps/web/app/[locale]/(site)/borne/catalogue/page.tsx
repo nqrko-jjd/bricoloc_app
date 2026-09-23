@@ -8,6 +8,7 @@ import { useCart } from '@/lib/providers';
 import { useRouter } from '@/i18n/navigation';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 import { defaultPeriod, toLocalInput, fromLocalInput } from '@/lib/dates';
+import { usePriceDisplay } from '@/lib/usePriceDisplay';
 import type { Category, ProductSummary, ProductDetail, RecommendationGroup } from '@/lib/types';
 
 type Step = 'dates' | 'browse' | 'cart' | 'extras';
@@ -154,6 +155,7 @@ function ShopInner() {
   const locale = useLocale() as Locale;
   const t = T[locale] ?? T.fr;
   const { cart, addItem, setQty, removeItem, setPeriod, setFulfilment } = useCart();
+  const { display } = usePriceDisplay();
 
   const wantCart = params.get('to') === 'cart';
   const hasPeriod = !!cart?.period;
@@ -372,7 +374,7 @@ function ShopInner() {
                     <img src={img(p.image)} alt="" className="kioskm-prod__img" />
                     <span className="kioskm-prod__name">{p.name}</span>
                     <span className="kioskm-prod__price">
-                      {formatEUR(p.dailyPrice)} {p.isConsumable ? t.perUnit : t.perDay}
+                      {formatEUR(display(p.dailyPrice))} {p.isConsumable ? t.perUnit : t.perDay}
                     </span>
                     <button
                       className={`btn ${has ? 'btn-outline' : 'btn-primary'} btn-block`}
@@ -422,7 +424,7 @@ function ShopInner() {
                   <div className="kioskm-line__body">
                     <span className="kioskm-line__name">{i.name}</span>
                     <span className="kioskm-line__price">
-                      {formatEUR(i.dailyPrice)} {i.isConsumable ? t.perUnit : t.perDay}
+                      {formatEUR(display(i.dailyPrice))} {i.isConsumable ? t.perUnit : t.perDay}
                     </span>
                   </div>
                   <div className="kioskm-qty">
@@ -461,7 +463,7 @@ function ShopInner() {
                 <div>
                   <span>{t.dayTotal}</span>
                   <strong>
-                    {formatEUR(dailySubtotal)} <small>{t.perDay}</small>
+                    {formatEUR(display(dailySubtotal))} <small>{t.perDay}</small>
                   </strong>
                 </div>
               )}
@@ -550,7 +552,7 @@ function ShopInner() {
                   {p.brand && <span className="kioskm-prod__brand">{p.brand}</span>}
                   <span className="kioskm-prod__name">{p.name}</span>
                   <span className="kioskm-prod__price">
-                    {formatEUR(p.dailyPrice)} {p.isConsumable ? t.perUnit : t.perDay}
+                    {formatEUR(display(p.dailyPrice))} {p.isConsumable ? t.perUnit : t.perDay}
                   </span>
                   {st && (
                     <span
@@ -596,7 +598,7 @@ function ShopInner() {
           <span className="kioskm-shop__bar-c">{count}</span>
           <span>{t.seeCart}</span>
           <strong>
-            {formatEUR(totals?.totalTVAC ?? dailySubtotal)}
+            {formatEUR(totals?.totalTVAC ?? display(dailySubtotal))}
             {!totals && <small> {t.perDay}</small>}
           </strong>
         </button>
@@ -643,15 +645,15 @@ function ShopInner() {
                 <div className="kioskm-modal__tiers">
                   <div>
                     <span>{t.day}</span>
-                    <strong>{formatEUR(detail.dailyPrice)}</strong>
+                    <strong>{formatEUR(display(detail.dailyPrice))}</strong>
                   </div>
                   <div>
                     <span>{t.week}</span>
-                    <strong>{formatEUR(detail.weekPrice ?? detail.dailyPrice * 4)}</strong>
+                    <strong>{formatEUR(display(detail.weekPrice ?? detail.dailyPrice * 4))}</strong>
                   </div>
                   <div>
                     <span>{t.month}</span>
-                    <strong>{formatEUR(detail.monthPrice ?? detail.dailyPrice * 12)}</strong>
+                    <strong>{formatEUR(display(detail.monthPrice ?? detail.dailyPrice * 12))}</strong>
                   </div>
                 </div>
                 {detail.deposit > 0 && (

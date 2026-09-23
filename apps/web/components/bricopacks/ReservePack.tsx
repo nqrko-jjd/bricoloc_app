@@ -4,10 +4,12 @@ import { useRouter } from '@/i18n/navigation';
 import { useState } from 'react';
 import { formatEUR } from '@bricoloc/shared';
 import { useCart } from '@/lib/providers';
+import { usePriceDisplay } from '@/lib/usePriceDisplay';
 
 export function ReservePack({ packId, price }: { packId: string; price: number }) {
   const { addItem } = useCart();
   const router = useRouter();
+  const { display } = usePriceDisplay();
   const [busy, setBusy] = useState(false);
 
   async function reserve() {
@@ -22,7 +24,7 @@ export function ReservePack({ packId, price }: { packId: string; price: number }
 
   return (
     <button className="btn btn-primary btn-lg bpd-reserve__btn" onClick={reserve} disabled={busy}>
-      {busy ? '…' : `Réserver ce BricoPack — ${formatEUR(price)}/j`}
+      {busy ? '…' : `Réserver ce BricoPack — ${formatEUR(display(price))}/j`}
     </button>
   );
 }

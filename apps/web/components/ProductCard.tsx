@@ -1,10 +1,10 @@
 'use client';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { formatEUR } from '@bricoloc/shared';
 import type { ProductSummary } from '@/lib/types';
 import { AvailabilityBadge } from './AvailabilityBadge';
 import { AddToCartButton } from './AddToCartButton';
+import { Price } from './Price';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 import { productHref } from '@/lib/productHref';
 import { Heart } from './icons';
@@ -37,7 +37,7 @@ export function ProductCard({ p }: { p: ProductSummary }) {
           <Link href={href}>{p.name}</Link>
         </h3>
         <div className="pcard__price">
-          {formatEUR(p.dailyPrice)}
+          <Price amountHT={p.dailyPrice} />
           <small>/ {p.isConsumable ? t('perUnit') : t('perDay')}</small>
         </div>
         {p.rating && p.rating.count > 0 ? (

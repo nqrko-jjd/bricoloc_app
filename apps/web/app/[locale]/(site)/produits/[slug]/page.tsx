@@ -8,6 +8,7 @@ import { api, ApiError } from '@/lib/api';
 import type { ProductDetail, ProductSummary } from '@/lib/types';
 import { ProductPurchasePanel } from '@/components/ProductPurchasePanel';
 import { PriceTiersHead } from '@/components/PriceTiersHead';
+import { Price } from '@/components/Price';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductGallery } from '@/components/ProductGallery';
 import { ReviewSection } from '@/components/ReviewSection';
@@ -234,7 +235,7 @@ export default async function ProductPage({
                 <div>
                   <Link href={`/produits/${a.slug}`}>{a.name}</Link>
                   <div className="small muted">
-                    {formatEUR(a.dailyPrice)}
+                    <Price amountHT={a.dailyPrice} />
                     {a.isConsumable ? '' : ` ${t('perDay')}`}
                   </div>
                 </div>
@@ -263,7 +264,7 @@ export default async function ProductPage({
                     <div className="small muted">{c.shortDescription}</div>
                   )}
                   <div className="small muted">
-                    {formatEUR(c.dailyPrice)} {t('perUnit')}
+                    <Price amountHT={c.dailyPrice} /> {t('perUnit')}
                   </div>
                 </div>
                 <AddToCartButton productId={c.id} small />
@@ -281,7 +282,7 @@ export default async function ProductPage({
               <div key={c.id} className="card card-body">
                 <Link href={`/produits/${c.slug}`}>{c.name}</Link>
                 <div className="small muted">
-                  {formatEUR(c.dailyPrice)} {t('perDay')}
+                  <Price amountHT={c.dailyPrice} /> {t('perDay')}
                 </div>
               </div>
             ))}

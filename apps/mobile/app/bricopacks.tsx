@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, mediaUrl } from '@/lib/api';
-import { formatEUR } from '@/lib/format';
 import { C, R } from '@/lib/theme';
+import { Price } from '@/components/Price';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -189,7 +189,7 @@ export default function BricoPacksScreen() {
                 {p.toolCount} outils{p.teamSize ? ` · ${p.teamSize}` : ''}
               </Text>
               <Text style={{ fontSize: 15, fontWeight: '900', color: C.loc }}>
-                {formatEUR(p.dailyPrice)}
+                <Price amountHT={p.dailyPrice} />
                 <Text style={{ fontSize: 11, fontWeight: '600', color: C.muted }}> / j</Text>
               </Text>
             </View>

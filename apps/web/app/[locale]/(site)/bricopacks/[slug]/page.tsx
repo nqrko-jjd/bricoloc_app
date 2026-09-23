@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { Link } from '@/i18n/navigation';
 import { CheckCircle, ArrowRight } from '@/components/icons';
 import { ReservePack } from '@/components/bricopacks/ReservePack';
+import { Price } from '@/components/Price';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,8 +57,9 @@ export async function generateMetadata({
   const { slug, locale } = await params;
   const pack = await getPack(slug, locale);
   if (!pack) return { title: 'BricoPack introuvable' };
+  const { vatRate } = await api<{ vatRate: number }>('/api/public/config').catch(() => ({ vatRate: 0.21 }));
   return {
-    title: `BricoPack ${pack.name} — ${pack.items.length} outils, ${formatEUR(pack.dailyPrice)}/jour | BRICOLOC`,
+    title: `BricoPack ${pack.name} — ${pack.items.length} outils, ${formatEUR(pack.dailyPrice * (1 + vatRate))}/jour TVAC | BRICOLOC`,
     description: pack.intro,
   };
 }
@@ -136,7 +138,7 @@ export default async function BricoPackDetail({
                 <h3>{it.name}</h3>
                 <p>{it.why}</p>
                 <span className="bpd-item__price">
-                  Location seule&nbsp;: {formatEUR(it.dailyPrice)} / jour
+                  Location seule&nbsp;: <Price amountHT={it.dailyPrice} suffix=" / jour" />
                 </span>
               </div>
             </li>
@@ -153,15 +155,15 @@ export default async function BricoPackDetail({
         <div className="bpd-compare__grid">
           <div>
             <span>{pack.items.length} outils séparés</span>
-            <strong className="is-strike">{formatEUR(pack.separateTotal)} / jour</strong>
+            <strong className="is-strike"><Price amountHT={pack.separateTotal} suffix=" / jour" /></strong>
           </div>
           <div className="is-pack">
             <span>Prix du BricoPack</span>
-            <strong>{formatEUR(pack.dailyPrice)} / jour</strong>
+            <strong><Price amountHT={pack.dailyPrice} suffix=" / jour" /></strong>
           </div>
           <div className="bpd-compare__save">
             <span>Vous économisez</span>
-            <strong>{formatEUR(pack.savingPerDay)} / jour</strong>
+            <strong><Price amountHT={pack.savingPerDay} suffix=" / jour" /></strong>
             {pack.discountPct ? <em>−{Math.round(pack.discountPct * 100)} %</em> : null}
           </div>
         </div>
@@ -190,7 +192,7 @@ export default async function BricoPackDetail({
               <div key={c.label} className="bpd-conso__card">
                 <span className="bpd-conso__name">{c.label}</span>
                 <span className="bpd-conso__detail">{c.detail}</span>
-                {c.price > 0 && <span className="bpd-conso__price">{formatEUR(c.price)}</span>}
+                {c.price > 0 && <span className="bpd-conso__price"><Price amountHT={c.price} /></span>}
               </div>
             ))}
           </div>
@@ -230,11 +232,11 @@ export default async function BricoPackDetail({
         <div className="bpd-reserve__box">
           <div className="bpd-reserve__line">
             <span>BricoPack {pack.name}</span>
-            <strong>{formatEUR(pack.dailyPrice)}</strong>
+            <strong><Price amountHT={pack.dailyPrice} showVat /></strong>
           </div>
           <div className="bpd-reserve__line bpd-reserve__line--muted">
             <span>Consommables (optionnels)</span>
-            <span>dès {formatEUR(consoBase)}</span>
+            <span>dès <Price amountHT={consoBase} /></span>
           </div>
           <ReservePack packId={pack.id} price={pack.dailyPrice} />
         </div>

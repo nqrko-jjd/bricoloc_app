@@ -7,7 +7,7 @@ import { api, mediaUrl } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
 import { t as ti } from '@/lib/i18n';
-import { formatEUR } from '@/lib/format';
+import { Price } from '@/components/Price';
 import { H2, P, Card, Button, ProductMiniCard } from '@/components/ui';
 import type { ProductDetail, ProductSummary } from '@/lib/types';
 
@@ -150,7 +150,7 @@ export default function ProductScreen() {
                   {row.label}
                 </Text>
                 <Text style={{ color: C.locDeep, fontWeight: '900', fontSize: 16 }}>
-                  {formatEUR(row.value)}
+                  <Price amountHT={row.value} />
                 </Text>
               </View>
             ))}
@@ -270,7 +270,7 @@ export default function ProductScreen() {
       >
         <View>
           <Text style={{ fontSize: 20, fontWeight: '900', color: C.ink, letterSpacing: -0.4 }}>
-            {formatEUR(p.dailyPrice)}
+            <Price amountHT={p.dailyPrice} />
           </Text>
           <Text style={{ fontSize: 11, color: C.muted }}>/ {p.isConsumable ? 'unité' : 'jour'}</Text>
         </View>
@@ -357,7 +357,7 @@ function LinkedItem({
           {l.name}
         </Text>
         <Text style={{ color: C.muted, marginTop: 2 }}>
-          {formatEUR(l.dailyPrice)}
+          <Price amountHT={l.dailyPrice} />
           {l.isConsumable ? ` ${ti('prod.priceUnit').toLowerCase()}` : '/j'}
         </Text>
       </View>

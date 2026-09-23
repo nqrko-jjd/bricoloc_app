@@ -7,6 +7,7 @@ import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
 import { t as ti } from '@/lib/i18n';
 import { formatEUR } from '@/lib/format';
+import { Price } from '@/components/Price';
 import type { ProductDetail } from '@/lib/types';
 
 interface Ctx {
@@ -141,7 +142,7 @@ export function ProductQuickViewProvider({ children }: { children: React.ReactNo
                   >
                     <Text style={{ color: C.muted, fontSize: 11, fontWeight: '700' }}>{row.label}</Text>
                     <Text style={{ color: C.locDeep, fontWeight: '900', fontSize: 15, marginTop: 3 }}>
-                      {formatEUR(row.value as number)}
+                      <Price amountHT={row.value as number} />
                     </Text>
                   </View>
                 ))}

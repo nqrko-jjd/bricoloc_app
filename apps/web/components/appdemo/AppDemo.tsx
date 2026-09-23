@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { formatEUR } from '@bricoloc/shared';
 import { api } from '@/lib/api';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
+import { Price } from '@/components/Price';
 import type { Category, ProductDetail, ProductSummary } from '@/lib/types';
 import {
   Home,
@@ -198,7 +198,7 @@ function HomeScreen({
                   <b>{p.name}</b>
                   {p.toolCount ? <span style={{ fontSize: 11, color: '#5B5F7A' }}>{p.toolCount} outils</span> : null}
                   <strong>
-                    {formatEUR(p.dailyPrice)} <small>/ jour</small>
+                    <Price amountHT={p.dailyPrice} /> <small>/ jour</small>
                   </strong>
                 </span>
               </button>
@@ -230,7 +230,7 @@ function ProductMini({ p, onOpen }: { p: ProductSummary; onOpen: () => void }) {
       <span className="appdemo-mini__body">
         <b>{p.name}</b>
         <strong>
-          {formatEUR(p.dailyPrice)} <small>/ jour</small>
+          <Price amountHT={p.dailyPrice} /> <small>/ jour</small>
         </strong>
         {p.rating && p.rating.count > 0 ? (
           <span className="appdemo-mini__rating">
@@ -375,7 +375,7 @@ function ProductScreen({
             {tiers.map((t) => (
               <div key={t.label}>
                 <span>{t.label}</span>
-                <b>{formatEUR(t.value)}</b>
+                <b><Price amountHT={t.value} /></b>
               </div>
             ))}
           </div>
@@ -391,7 +391,7 @@ function ProductScreen({
                 <img src={l.image || PLACEHOLDER_IMG} alt="" />
                 <div style={{ flex: 1 }}>
                   <div className="appdemo-linked__name">{l.name}</div>
-                  <div className="appdemo-linked__price">{formatEUR(l.dailyPrice)}</div>
+                  <div className="appdemo-linked__price"><Price amountHT={l.dailyPrice} /></div>
                 </div>
               </div>
             ))}
@@ -416,7 +416,7 @@ function ProductScreen({
                   </span>
                   <span className="appdemo-mini__body">
                     <b>{s.name}</b>
-                    <strong>{formatEUR(s.dailyPrice)}</strong>
+                    <strong><Price amountHT={s.dailyPrice} /></strong>
                   </span>
                 </button>
               ))}
@@ -427,7 +427,7 @@ function ProductScreen({
 
       <div className="appdemo-actionbar">
         <div className="price">
-          {formatEUR(p.dailyPrice)}
+          <Price amountHT={p.dailyPrice} />
           <small>/ jour</small>
         </div>
         <div className="appdemo-stepper">

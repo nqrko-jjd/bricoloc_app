@@ -7,7 +7,7 @@ import { api, mediaUrl } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
-import { formatEUR } from '@/lib/format';
+import { Price } from '@/components/Price';
 import type { ProductSummary } from '@/lib/types';
 import { Logo, ProductListRow } from '@/components/ui';
 
@@ -282,7 +282,7 @@ export default function HomeScreen() {
                       <Text style={{ color: C.muted, fontSize: 11 }}>{bp.toolCount} outils</Text>
                     ) : null}
                     <Text style={{ fontWeight: '900', color: C.ink, fontSize: 14 }}>
-                      {formatEUR(bp.dailyPrice)}
+                      <Price amountHT={bp.dailyPrice} />
                       <Text style={{ fontWeight: '600', color: C.muted, fontSize: 11 }}> / jour</Text>
                     </Text>
                   </View>

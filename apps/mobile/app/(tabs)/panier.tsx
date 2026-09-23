@@ -7,6 +7,7 @@ import { mediaUrl } from '@/lib/api';
 import { formatEUR } from '@/lib/format';
 import { Screen, H1, H2, P, Card, Button } from '@/components/ui';
 import { DateRangePicker } from '@/components/DateRangePicker';
+import { Price } from '@/components/Price';
 
 function formatPeriod(start: string, end: string): string {
   const s = new Date(start);
@@ -119,7 +120,7 @@ export default function PanierScreen() {
               </Text>
               <Text style={{ fontWeight: '800', color: C.ink, fontSize: 14.5, marginTop: 2 }}>{it.name}</Text>
               <Text style={{ color: C.muted, fontSize: 12, marginTop: 1 }}>
-                {formatEUR(it.dailyPrice)} / {it.isConsumable ? 'unité' : 'jour'}
+                <Price amountHT={it.dailyPrice} /> / {it.isConsumable ? 'unité' : 'jour'}
                 {!it.isConsumable && ` · caution ${formatEUR(it.deposit)}`}
               </Text>
             </View>
@@ -160,7 +161,7 @@ export default function PanierScreen() {
             >
               <Text style={{ flex: 1 }}>
                 {rp.name}{' '}
-                <Text style={{ color: C.lightGray }}>({formatEUR(rp.dailyPrice)})</Text>
+                <Text style={{ color: C.lightGray }}>(<Price amountHT={rp.dailyPrice} />)</Text>
               </Text>
               <Pressable
                 onPress={() => addItem(rp.id, 1)}

@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { productHref } from '@/lib/productHref';
+import { Price } from './Price';
 import { Search, ArrowUpRight } from './icons';
 
 interface SuggestProduct {
@@ -174,7 +175,7 @@ export function SearchAutocomplete({
               <img src={p.image || FALLBACK} alt="" loading="lazy" />
               <span className="search-ac__name">{p.name}</span>
               <span className="search-ac__price">
-                {p.dailyPrice.toLocaleString('fr-BE', { style: 'currency', currency: 'EUR' })}
+                <Price amountHT={p.dailyPrice} />
                 <small>{t('perDay')}</small>
               </span>
             </button>

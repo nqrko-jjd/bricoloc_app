@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { formatEUR } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
 import { Heart as IHeart, ArrowUpRight as IArrowUpRight } from './icons';
+import { Price } from './Price';
 import { productHref } from '@/lib/productHref';
 import type { ProductSummary } from '@/lib/types';
 
@@ -77,7 +77,7 @@ export function PopularSlider({
               <p>
                 {t('from')}
                 <br />
-                <b>{formatEUR(p.dailyPrice)}</b> {t('perDay')}
+                <b><Price amountHT={p.dailyPrice} /></b> {t('perDay')}
               </p>
               <span className="ctool__go" aria-hidden>
                 <IArrowUpRight />
