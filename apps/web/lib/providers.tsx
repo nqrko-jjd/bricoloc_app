@@ -35,6 +35,9 @@ interface CartCtx {
   setFulfilment: (body: Record<string, unknown>) => Promise<void>;
   applyPromo: (code: string) => Promise<void>;
   clearPromo: () => Promise<void>;
+  drawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 }
 const CartContext = createContext<CartCtx | null>(null);
 
@@ -47,6 +50,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [cartLoading, setCartLoading] = useState(true);
   const [cartKey, setCartKey] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const token = () => (typeof window === 'undefined' ? null : localStorage.getItem(TOKEN_KEY));
 
@@ -183,8 +187,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         ),
       clearPromo: () =>
         mutateCart(() => clientApi<Cart>('/api/cart/promo', { method: 'DELETE' })),
+      drawerOpen,
+      openDrawer: () => setDrawerOpen(true),
+      closeDrawer: () => setDrawerOpen(false),
     }),
-    [cart, cartLoading, cartKey, reloadCart, mutateCart],
+    [cart, cartLoading, cartKey, reloadCart, mutateCart, drawerOpen],
   );
 
   const sessionApi = useMemo<SessionCtx>(

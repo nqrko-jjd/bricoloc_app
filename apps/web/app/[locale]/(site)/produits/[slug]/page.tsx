@@ -11,9 +11,10 @@ import { ProductPriceHead } from '@/components/ProductPriceHead';
 import { Price } from '@/components/Price';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductGallery } from '@/components/ProductGallery';
+import { AccessoryCard } from '@/components/AccessoryCard';
 import { ReviewSection } from '@/components/ReviewSection';
 import { StarRating } from '@/components/StarRating';
-import { AddToCartButton } from '@/components/AddToCartButton';
+import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,14 +65,19 @@ export default async function ProductPage({
   const t = await getTranslations('product');
   const isLoiselet = product.supplier === 'LOISELET';
 
-  // Accessoires / EPI louables d'un côté, consommables (achat à l'unité) de l'autre.
-  // La provenance fournisseur des consommables reste interne (back-office).
+  // Accessoires / EPI louables d'un côté, consommables (achat à l'unité) de l'autre —
+  // section 100% facultative, jamais mêlée à l'outil principal.
   const accessories = [...product.recommendedAccessories, ...product.ppe];
   // Uniquement les consommables réellement mis en vente (prix client renseigné).
   const consumables = product.consumables.filter((c) => c.dailyPrice > 0);
   const specsEntries = Object.entries(product.specs);
+  const hasDocs = !!product.manualUrl || product.documents.length > 0;
   const hasEssential =
-    product.recommendedUses.length > 0 || specsEntries.length > 0 || product.includedAccessories.length > 0;
+    product.recommendedUses.length > 0 ||
+    specsEntries.length > 0 ||
+    product.includedAccessories.length > 0 ||
+    hasDocs;
+  const hasExtra = !!product.description || product.packItems.length > 0;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -98,7 +104,7 @@ export default async function ProductPage({
   };
 
   return (
-    <div className="section container">
+    <div className="section container pdetail-page">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -121,20 +127,12 @@ export default async function ProductPage({
       <div className="pdetail">
         <div className="pdetail__media">
           <ProductGallery images={product.images} alt={product.name} tag={product.category?.name} />
-          <p className="pdetail__trust">
-            <span className="pdetail__trust-icon" aria-hidden>
-              🛡️
-            </span>
-            <span>
-              <strong>{t('trustTitle')}</strong>
-              <br />
-              <span className="small muted">{t('trustHint')}</span>
-            </span>
-          </p>
         </div>
 
         <div className="pdetail__head">
-          {product.brand && <span className="eyebrow">{product.brand}</span>}
+          {(product.category?.name || product.brand) && (
+            <span className="eyebrow">{product.category?.name ?? product.brand}</span>
+          )}
           <h1>{product.name}</h1>
           {product.rating && product.rating.count > 0 && (
             <a href="#avis" className="pdetail__rating">
@@ -163,10 +161,11 @@ export default async function ProductPage({
         <div className="pdetail__buy">
           <ProductPurchasePanel product={product} />
         </div>
+      </div>
 
-        <div className="pdetail__body">
+      {hasExtra && (
+        <div className="pdetail-extra">
           {product.description && <p className="measure">{product.description}</p>}
-
           {product.packItems.length > 0 && (
             <details className="pacc" open>
               <summary>{t('packContent')}</summary>
@@ -179,24 +178,38 @@ export default async function ProductPage({
               </ul>
             </details>
           )}
-
-          <details className="pacc">
-            <summary>{t('documents')}</summary>
-            <p className="small muted">
-              {product.manualUrl ? (
-                <a href={product.manualUrl}>{t('manual')}</a>
-              ) : (
-                t('noManual')
-              )}
-            </p>
-            {product.documents.map((d) => (
-              <p key={d.url} className="small">
-                <a href={d.url}>{d.label}</a>
-              </p>
-            ))}
-          </details>
         </div>
-      </div>
+      )}
+
+      {/* Ancre de repli pour « Continuer mes achats » même si l'outil n'a ni
+          accessoire ni consommable associé. */}
+      <div id="accessoires" />
+
+      {accessories.length > 0 && (
+        <section className="complete reveal">
+          <span className="eyebrow">{t('completeKicker')}</span>
+          <h2>{t('complete')}</h2>
+          <p className="muted">{t('completeHint')}</p>
+          <ul className="complete__grid">
+            {accessories.map((a) => (
+              <AccessoryCard key={a.id} item={a} />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {consumables.length > 0 && (
+        <section className="complete reveal">
+          <span className="eyebrow">{t('consumablesKicker')}</span>
+          <h2>{t('consumables')}</h2>
+          <p className="muted">{t('consumablesHint')}</p>
+          <ul className="complete__grid">
+            {consumables.map((c) => (
+              <AccessoryCard key={c.id} item={c} />
+            ))}
+          </ul>
+        </section>
+      )}
 
       {hasEssential && (
         <section className="pessential reveal">
@@ -237,60 +250,20 @@ export default async function ProductPage({
                 </ul>
               </article>
             )}
+            {hasDocs && (
+              <article className="pessential__card">
+                <h3>{t('documents')}</h3>
+                <p className="small muted">
+                  {product.manualUrl ? <a href={product.manualUrl}>{t('manual')}</a> : t('noManual')}
+                </p>
+                {product.documents.map((d) => (
+                  <p key={d.url} className="small">
+                    <a href={d.url}>{d.label}</a>
+                  </p>
+                ))}
+              </article>
+            )}
           </div>
-        </section>
-      )}
-
-      {accessories.length > 0 && (
-        <section className="complete reveal">
-          <span className="eyebrow">{t('completeKicker')}</span>
-          <h2>{t('complete')}</h2>
-          <p className="muted">{t('completeHint')}</p>
-          <ul className="complete__grid">
-            {accessories.map((a) => (
-              <li key={a.id} className="card card-body card--flat">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {a.image && <img src={a.image} alt="" className="complete__img" loading="lazy" />}
-                <div>
-                  <Link href={`/produits/${a.slug}`}>{a.name}</Link>
-                  <div className="small muted">
-                    <Price amountHT={a.dailyPrice} />
-                    {a.isConsumable ? '' : ` ${t('perDay')}`}
-                  </div>
-                </div>
-                <AddToCartButton productId={a.id} small />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {consumables.length > 0 && (
-        <section className="complete reveal">
-          <span className="eyebrow">{t('consumablesKicker')}</span>
-          <h2>{t('consumables')}</h2>
-          <p className="muted">{t('consumablesHint')}</p>
-          <ul className="complete__grid">
-            {consumables.map((c) => (
-              <li key={c.id} className="card card-body card--flat">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {c.image && <img src={c.image} alt="" className="complete__img" loading="lazy" />}
-                <div>
-                  <span className="parts-list__name">
-                    {c.brand && <strong>{c.brand} · </strong>}
-                    {c.name}
-                  </span>
-                  {c.shortDescription && (
-                    <div className="small muted">{c.shortDescription}</div>
-                  )}
-                  <div className="small muted">
-                    <Price amountHT={c.dailyPrice} /> {t('perUnit')}
-                  </div>
-                </div>
-                <AddToCartButton productId={c.id} small />
-              </li>
-            ))}
-          </ul>
         </section>
       )}
 
@@ -300,12 +273,22 @@ export default async function ProductPage({
           <h2>{t('similar')}</h2>
           <div className="grid grid-cards carousel">
             {product.complementary.map((c) => (
-              <div key={c.id} className="card card-body">
-                <Link href={`/produits/${c.slug}`}>{c.name}</Link>
-                <div className="small muted">
-                  <Price amountHT={c.dailyPrice} /> {t('perDay')}
+              <article key={c.id} className="pcard">
+                <Link href={`/produits/${c.slug}`} className="pcard__media">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.image || PLACEHOLDER_IMG} alt={c.name} loading="lazy" />
+                  {c.brand ? <span className="pcard__brand">{c.brand}</span> : null}
+                </Link>
+                <div className="pcard__body">
+                  <h3 className="pcard__name">
+                    <Link href={`/produits/${c.slug}`}>{c.name}</Link>
+                  </h3>
+                  <div className="pcard__price">
+                    <Price amountHT={c.dailyPrice} />
+                    <small>{c.isConsumable ? t('perUnit') : ` ${t('perDay')}`}</small>
+                  </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </section>

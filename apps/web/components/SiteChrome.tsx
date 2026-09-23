@@ -4,6 +4,7 @@ import { usePathname } from '@/i18n/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { DateRangeBar } from '@/components/DateRangeBar';
+import { CartDrawer } from '@/components/CartDrawer';
 import { KioskShell } from '@/components/kiosk/KioskShell';
 import { Reveal } from '@/components/Reveal';
 
@@ -50,6 +51,7 @@ export function SiteChrome({
       <main>{children}</main>
       <Footer />
       <Reveal />
+      <CartDrawer />
     </>
   );
 }

@@ -1294,27 +1294,31 @@ button { font-family: inherit; }
 @media (prefers-reduced-motion: reduce) { .brandstrip span { animation: none; } .brandstrip { flex-wrap: wrap; white-space: normal; mask-image: none; } }
 
 /* =========================================================================
-   FICHE PRODUIT (Lot 2)
+   FICHE PRODUIT (Lot 2 → Lot 3 : recomposition pleine largeur, concept 2026)
    ========================================================================= */
 .breadcrumb { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
 .breadcrumb a:hover { color: var(--primary); }
 .breadcrumb span { color: var(--ink); }
 
+/* Zone produit élargie (~1300px de contenu) — page dédiée uniquement, le
+   reste du site garde --maxw pour ne rien perturber ailleurs. */
+.pdetail-page { max-width: 1340px; }
+
 .pdetail {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  grid-template-areas: 'media head' 'media buy' 'body buy';
-  gap: 12px 40px;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
+  grid-template-areas: 'media head' 'media buy';
+  gap: 24px 72px;
   align-items: start;
 }
-.pdetail__media { grid-area: media; position: sticky; top: 90px; }
+.pdetail__media { grid-area: media; position: sticky; top: 100px; }
 .pdetail__head { grid-area: head; }
 .pdetail__buy { grid-area: buy; }
-.pdetail__body { grid-area: body; margin-top: var(--sp-5); display: flex; flex-direction: column; gap: 8px; }
 @media (max-width: 940px) {
   .pdetail {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'media' 'head' 'buy' 'body';
+    grid-template-areas: 'media' 'head' 'buy';
+    gap: 20px;
   }
   .pdetail__media { position: static; }
 }
@@ -1324,10 +1328,13 @@ button { font-family: inherit; }
 .pdetail__rating { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; margin-bottom: 10px; }
 .pdetail__partner { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: var(--fs-sm); color: var(--muted-fg); }
 
-.pdetail__trust {
-  display: flex; align-items: flex-start; gap: 10px; margin: 14px 2px 0; color: var(--ink);
-}
-.pdetail__trust-icon { font-size: 1.2rem; line-height: 1.3; }
+/* Texte long + contenu additionnel (description, contenu du pack) — pleine
+   largeur, sous le bloc à deux colonnes : jamais coincé à côté du panneau
+   d'achat (qui peut être bien plus haut que ce texte). */
+.pdetail-extra { margin-top: var(--sp-7); display: flex; flex-direction: column; gap: 12px; max-width: 900px; }
+
+/* Ancre de repli pour « Continuer mes achats » */
+#accessoires { scroll-margin-top: 110px; }
 
 /* L'essentiel — fiche technique en cartes (pas d'accordéon) */
 .pessential { margin-top: var(--sp-8); }
@@ -1344,24 +1351,42 @@ button { font-family: inherit; }
 .pessential__specs dt { color: var(--muted-fg); }
 .pessential__specs dd { margin: 0; font-weight: 700; color: var(--navy-deep); }
 
-/* Galerie */
+/* Galerie — grande carte crème, image jamais rognée ni déformée (contain),
+   favori + badge catégorie sur l'image, confiance intégrée en bas de carte. */
+.pgallery {
+  border: 1px solid var(--border); border-radius: 26px; background: var(--surface);
+  padding: 24px; box-shadow: var(--shadow-md);
+}
 .pgallery__main {
-  border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden;
-  background: var(--surface); aspect-ratio: 4 / 3; position: relative;
-  box-shadow: var(--shadow-md);
+  border-radius: 18px; overflow: hidden; background: var(--surface-2);
+  aspect-ratio: 1.05 / 1; position: relative;
 }
-.pgallery__main img { width: 100%; height: 100%; object-fit: cover; }
+.pgallery__main img { width: 100%; height: 100%; object-fit: contain; padding: 24px; }
 .pgallery__tag {
-  position: absolute; top: 16px; left: 16px; background: var(--surface-2); color: var(--muted-fg);
+  position: absolute; top: 16px; left: 16px; background: var(--surface); color: var(--muted-fg);
   font-size: var(--fs-xs); font-weight: 700; padding: 6px 14px; border-radius: var(--r-pill);
+  box-shadow: var(--shadow-sm);
 }
-.pgallery__thumbs { list-style: none; margin: 10px 0 0; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.pgallery__fav {
+  position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface); color: var(--navy);
+  display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.pgallery__fav svg { width: 19px; height: 19px; }
+.pgallery__fav:hover { border-color: var(--primary); color: var(--primary); }
+.pgallery__fav.is-active { color: var(--primary); border-color: var(--primary); }
+.pgallery__thumbs { list-style: none; margin: 16px 0 0; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
 .pgallery__thumbs button {
-  width: 66px; height: 66px; padding: 0; border: 1px solid var(--border); border-radius: var(--r-xs);
+  width: 72px; height: 72px; padding: 0; border: 1px solid var(--border); border-radius: var(--r-xs);
   overflow: hidden; cursor: pointer; background: var(--surface-2);
 }
 .pgallery__thumbs button.is-active { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent); }
-.pgallery__thumbs img { width: 100%; height: 100%; object-fit: cover; }
+.pgallery__thumbs img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+.pgallery__trust {
+  display: flex; align-items: flex-start; gap: 12px; margin: 20px 0 0; padding-top: 20px;
+  border-top: 1px solid var(--border); color: var(--ink);
+}
+.pgallery__trust svg { width: 22px; height: 22px; color: var(--ok); flex-shrink: 0; margin-top: 2px; }
 
 /* Prix unique, mis en avant (le détail des paliers vit dans le panneau d'achat) */
 .pdetail__price { margin: 16px 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
@@ -1372,12 +1397,16 @@ button { font-family: inherit; }
 }
 .pdetail__price-unit { font-size: var(--fs-sm); color: var(--muted-fg); }
 
-/* Tarifs dégressifs + upsell — panneau d'achat produit */
+/* Panneau d'achat — pas de carte englobante : les contrôles (dates, mode,
+   quantité) portent chacun leur propre bordure, comme la référence. */
+.ppanel { display: flex; flex-direction: column; gap: 20px; }
+
+/* Tarifs dégressifs + upsell */
 .ppanel__tierbadge {
   display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: var(--r-pill);
   background: var(--red-tint); color: var(--primary); font-size: 0.75rem; font-weight: 800; vertical-align: middle;
 }
-.ppanel__tiers { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.ppanel__tiers { display: flex; flex-wrap: wrap; gap: 6px; }
 .ppanel__tier {
   border: 1px solid var(--border); border-radius: var(--r-pill); padding: 4px 10px;
   font-size: var(--fs-xs); color: var(--muted-fg); background: var(--surface);
@@ -1386,33 +1415,32 @@ button { font-family: inherit; }
 .ppanel__tier.is-active { background: var(--navy); border-color: var(--navy); color: rgba(255,255,255,0.75); }
 .ppanel__tier.is-active strong { color: #fff; }
 
-/* Quantité — stepper rond */
-.ppanel__qty { display: inline-flex; align-items: center; gap: 14px; }
-.ppanel__qty button {
-  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
-  color: var(--navy); font-size: 1.1rem; line-height: 1; cursor: pointer; display: grid; place-items: center;
-}
-.ppanel__qty button:hover { border-color: var(--navy); }
-.ppanel__qty span { min-width: 1.5em; text-align: center; font-weight: 800; color: var(--navy-deep); font-size: 1.05rem; }
-
 /* Quand en avez-vous besoin ? — déclenche le calendrier existant du site */
 .ppanel__datebtn {
-  width: 100%; text-align: left; border: 1px solid var(--border); border-radius: var(--r-xs);
-  background: var(--surface); color: var(--ink); padding: 10px 14px; font-size: var(--fs-sm);
-  font-weight: 700; cursor: pointer;
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--ink);
+  padding: 14px 16px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
 }
+.ppanel__datebtn svg { width: 20px; height: 20px; color: var(--navy); flex-shrink: 0; }
 .ppanel__datebtn:hover { border-color: var(--navy); }
 
-/* Comment souhaitez-vous le recevoir ? — Click & Collect / Livraison */
-.ppanel__mode { display: flex; gap: 8px; }
-.ppanel__modebtn {
-  flex: 1; display: flex; flex-direction: column; gap: 2px; text-align: left; cursor: pointer;
-  border: 1px solid var(--border); border-radius: var(--r-xs); background: var(--surface);
-  padding: 10px 12px; position: relative;
+/* Comment souhaitez-vous le recevoir ? — deux grandes cartes sélectionnables */
+.ppanel__mode { display: flex; gap: 12px; }
+@media (max-width: 560px) { .ppanel__mode { flex-direction: column; } }
+.ppanel__modecard {
+  flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; cursor: pointer;
+  border: 1.5px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--ink);
+  padding: 15px 16px; min-height: 88px; position: relative; transition: border-color 0.15s, background 0.15s;
 }
-.ppanel__modebtn strong { color: var(--navy-deep); font-size: var(--fs-sm); }
-.ppanel__modebtn.is-active { border-color: var(--navy); background: var(--surface-2); box-shadow: 0 0 0 1px var(--navy) inset; }
-.ppanel__modebtn.is-active::after { content: '✓'; position: absolute; top: 8px; right: 10px; color: var(--navy); font-weight: 900; }
+.ppanel__modecard svg { width: 22px; height: 22px; color: var(--muted-fg); margin-bottom: 2px; }
+.ppanel__modecard strong { color: var(--navy-deep); font-size: 0.95rem; }
+.ppanel__modecard.is-active {
+  border-color: var(--navy); border-width: 2px; background: var(--surface-2); padding: 14px 15px;
+}
+.ppanel__modecard.is-active svg { color: var(--navy); }
+.ppanel__modecard.is-active::after {
+  content: '✓'; position: absolute; top: 12px; right: 14px; color: var(--navy); font-weight: 900;
+}
 
 /* Total estimé */
 .ppanel__total {
@@ -1424,14 +1452,14 @@ button { font-family: inherit; }
 
 /* Confirmation « ajouté au panier » */
 .ppanel__done {
-  margin-top: 10px; padding: 16px; border-radius: var(--r-md);
+  margin-top: -6px; padding: 16px; border-radius: var(--r-md);
   background: var(--ok-bg); border: 1px solid color-mix(in srgb, var(--ok) 35%, var(--surface));
 }
 .ppanel__done-title { margin: 0; font-weight: 800; color: var(--navy-deep); }
 .ppanel__upsell {
   display: block; width: 100%; text-align: left; border: 1px dashed var(--primary); border-radius: var(--r-xs);
   background: var(--red-tint-2); color: var(--primary-strong); font-weight: 700; font-size: var(--fs-sm);
-  padding: 10px 12px; margin: 4px 0 12px; cursor: pointer;
+  padding: 10px 12px; cursor: pointer;
 }
 .ppanel__upsell:hover { background: var(--red-tint); }
 .ppanel__upsell:disabled { opacity: 0.6; cursor: default; }
@@ -1449,13 +1477,67 @@ button { font-family: inherit; }
 .pacc ul { margin: 0; padding-left: 18px; }
 .pacc table { margin-bottom: 14px; }
 
-/* Complétez votre location */
+/* Accessoires & consommables — facultatifs, stepper individuel une fois ajoutés */
 .complete { margin-top: var(--sp-7); }
-.complete__grid { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.complete__grid li { display: grid; grid-template-columns: 56px 1fr; grid-template-areas: 'img txt' 'btn btn'; gap: 8px 10px; align-items: center; }
-.complete__img { grid-area: img; width: 56px; height: 56px; object-fit: cover; border-radius: var(--r-xs); background: var(--surface-2); }
-.complete__grid li > div { grid-area: txt; }
-.complete__grid li > .btn, .complete__grid li button { grid-area: btn; }
+.complete__grid { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 340px)); gap: 14px; justify-content: start; }
+.acard {
+  display: grid; grid-template-columns: 56px 1fr minmax(92px, auto); gap: 10px; align-items: center;
+  border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); padding: 12px 14px;
+}
+.acard__img { width: 56px; height: 56px; object-fit: contain; border-radius: var(--r-xs); background: var(--surface-2); padding: 5px; }
+.acard__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.acard__name { font-weight: 700; color: var(--navy-deep); font-size: 0.92rem; }
+.acard__utility { font-size: var(--fs-xs); color: var(--muted-fg); }
+.acard__price { font-size: var(--fs-sm); font-weight: 700; color: var(--ink); margin-top: 2px; }
+.acard__addbtn {
+  width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--primary); color: #fff;
+  font-size: 1.3rem; line-height: 1; cursor: pointer; display: grid; place-items: center; flex-shrink: 0;
+}
+.acard__addbtn:hover { background: var(--primary-strong); }
+.acard__added { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.acard__addedlabel { font-size: 0.7rem; color: var(--ok); font-weight: 700; text-align: right; line-height: 1.2; }
+
+/* Carrousel mobile : la carte est trop étroite pour 3 colonnes — on empile. */
+@media (max-width: 640px) {
+  .complete__grid > li.acard { flex: 0 0 82%; }
+  .acard {
+    grid-template-columns: 56px 1fr; grid-template-areas: 'img body' 'action action'; row-gap: 10px;
+  }
+  .acard__img { grid-area: img; }
+  .acard__body { grid-area: body; }
+  .acard__addbtn { grid-area: action; justify-self: end; }
+  .acard__added { grid-area: action; flex-direction: row; justify-content: space-between; align-items: center; width: 100%; }
+}
+
+/* Panier latéral */
+.cartdrawer-overlay { position: fixed; inset: 0; background: rgba(8, 6, 93, 0.45); z-index: 300; display: flex; justify-content: flex-end; }
+.cartdrawer {
+  width: 480px; max-width: 100%; height: 100%; background: var(--surface); box-shadow: -30px 0 80px rgba(0, 0, 0, 0.2);
+  padding: 30px; display: flex; flex-direction: column; overflow-y: auto; animation: cartdrawer-in 0.25s var(--ease-out);
+}
+@keyframes cartdrawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .cartdrawer { animation: none; } }
+.cartdrawer__head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.cartdrawer__head strong { display: block; font-size: 1.3rem; color: var(--navy-deep); }
+.cartdrawer__close {
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+  cursor: pointer; font-size: 1rem; flex-shrink: 0;
+}
+.cartdrawer__close:hover { border-color: var(--navy); }
+.cartdrawer__body { display: flex; flex-direction: column; gap: 16px; flex: 1; }
+.cartdrawer__period { margin: 0; font-size: var(--fs-sm); color: var(--muted-fg); }
+.cartdrawer__group { display: flex; flex-direction: column; gap: 10px; }
+.cartdrawer__grouplabel { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; color: var(--muted-fg); }
+.cartdrawer__line { display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; align-items: center; }
+.cartdrawer__line img { width: 52px; height: 52px; object-fit: contain; background: var(--surface-2); border-radius: var(--r-xs); padding: 4px; }
+.cartdrawer__lineinfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cartdrawer__lineinfo a { font-weight: 700; color: var(--navy-deep); font-size: 0.9rem; }
+.cartdrawer__note { font-size: var(--fs-sm); color: var(--muted-fg); background: var(--surface-2); border-radius: var(--r-xs); padding: 10px 12px; margin: 0; }
+.cartdrawer__total { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--border); padding-top: 12px; }
+.cartdrawer__total strong { font-size: 1.3rem; color: var(--navy-deep); }
+.cartdrawer__foot { display: flex; gap: 10px; margin-top: 20px; }
+.cartdrawer__foot .btn { flex: 1; text-align: center; }
+@media (max-width: 560px) { .cartdrawer { width: 100%; padding: 20px; } }
 
 /* =========================================================================
    Parcours réservation (panier → checkout) — cartes sans bordure + ombre

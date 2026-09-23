@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { formatEUR, formatDateBE } from '@bricoloc/shared';
-import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { durationLabel } from '@/lib/dates';
 import type { Availability, ProductDetail } from '@/lib/types';
@@ -11,6 +10,7 @@ import { usePriceDisplay } from '@/lib/usePriceDisplay';
 import { AvailabilityBadge } from './AvailabilityBadge';
 import { WeekendOfferNote } from './WeekendOfferNote';
 import { DateRangePicker } from './DateRangePicker';
+import { CalendarClock, Home, Truck } from './icons';
 
 function daysBetween(startIso: string, endIso: string): number {
   const ms = new Date(endIso).getTime() - new Date(startIso).getTime();
@@ -18,7 +18,7 @@ function daysBetween(startIso: string, endIso: string): number {
 }
 
 export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
-  const { cart, addItem, setPeriod, setFulfilment } = useCart();
+  const { cart, addItem, setPeriod, setFulfilment, openDrawer } = useCart();
   const { isPro, display } = usePriceDisplay();
   const t = useTranslations('product');
   const tBar = useTranslations('dateBar');
@@ -69,6 +69,11 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
     }
   }
 
+  function continueShopping() {
+    setDone(false);
+    document.getElementById('accessoires')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   const sortedTiers = [...product.tiers].sort((a, b) => a.minDays - b.minDays);
   const billedDays = cart?.period ? daysBetween(cart.period.start, cart.period.end) : null;
   const currentTier =
@@ -94,167 +99,167 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
   }
 
   return (
-    <div className="card card-pad summary card--flat">
-      <div className="stack" style={{ gap: 16 }}>
-        <div className="field">
-          <label>{t('whenNeeded')}</label>
-          <button type="button" className="ppanel__datebtn" onClick={() => setPicking(true)}>
-            📅{' '}
-            {cart?.period
-              ? `${formatDateBE(cart.period.start)} → ${formatDateBE(cart.period.end)} (${durationLabel(cart.period.start, cart.period.end)})`
-              : tBar('chooseDates')}
-          </button>
-          {picking && (
-            <DateRangePicker
-              initialStart={cart?.period ? new Date(cart.period.start) : undefined}
-              initialEnd={cart?.period ? new Date(cart.period.end) : undefined}
-              onClose={() => setPicking(false)}
-              onApply={async (s, e) => {
-                await setPeriod({ start: s.toISOString(), end: e.toISOString() });
-                setPicking(false);
-              }}
-            />
-          )}
-        </div>
-
-        {!product.isConsumable && (
-          <WeekendOfferNote start={cart?.period?.start} end={cart?.period?.end} />
-        )}
-
-        {sortedTiers.length > 0 && (
-          <div className="ppanel__tiers">
-            {sortedTiers.map((tier) => (
-              <span
-                key={tier.minDays}
-                className={`ppanel__tier${currentTier?.minDays === tier.minDays ? ' is-active' : ''}`}
-              >
-                {tier.minDays}j <strong>{formatEUR(display(tier.perDay))}</strong>
-              </span>
-            ))}
-          </div>
-        )}
-
-        {nextTier && billedDays != null && (
-          <button
-            type="button"
-            className="ppanel__upsell"
-            onClick={extendToNextTier}
-            disabled={extending}
-          >
-            🔥 {extending ? '…' : (
-              <>
-                +{nextTier.minDays - billedDays} jour(s) → {formatEUR(display(nextTier.perDay))}/jour
-                <span className="ppanel__upsell-was"> au lieu de {formatEUR(display(currentPerDay))}</span>
-              </>
-            )}
-          </button>
-        )}
-
-        <AvailabilityBadge a={avail} />
-
-        <div className="field">
-          <label>{t('howReceive')}</label>
-          <div className="ppanel__mode">
-            <button
-              type="button"
-              className={`ppanel__modebtn${!isDelivery ? ' is-active' : ''}`}
-              onClick={() => setFulfilment({ mode: 'PICKUP' })}
-            >
-              <strong>{t('pickupMode')}</strong>
-              <span className="small muted">{t('pickupModeHint')}</span>
-            </button>
-            <button
-              type="button"
-              className={`ppanel__modebtn${isDelivery ? ' is-active' : ''}`}
-              onClick={() => setFulfilment({ mode: 'DELIVERY' })}
-            >
-              <strong>{t('deliveryMode')}</strong>
-              <span className="small muted">{t('deliveryModeHint')}</span>
-            </button>
-          </div>
-          {isDelivery && (
-            <p className="small muted" style={{ margin: 0 }}>
-              {t('deliveryDetailsAtCheckout')}
-            </p>
-          )}
-        </div>
-
-        <div className="field">
-          <label>{t('quantity')}</label>
-          <div className="ppanel__qty">
-            <button
-              type="button"
-              aria-label="Retirer une unité"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-            >
-              −
-            </button>
-            <span>{qty}</span>
-            <button type="button" aria-label="Ajouter une unité" onClick={() => setQty((q) => q + 1)}>
-              +
-            </button>
-          </div>
-        </div>
-
-        {linked.length > 0 && (
-          <div>
-            <strong style={{ color: 'var(--navy)', fontSize: '0.9rem' }}>Ajouter en un geste</strong>
-            <div className="stack" style={{ gap: 6, marginTop: 8 }}>
-              {linked.map((l) => (
-                <label key={l.id} className="row" style={{ gap: 8, fontSize: '0.88rem' }}>
-                  <input
-                    type="checkbox"
-                    checked={!!extras[l.id]}
-                    onChange={(e) => setExtras((s) => ({ ...s, [l.id]: e.target.checked }))}
-                  />
-                  <span>
-                    {l.name}{' '}
-                    <span className="muted">
-                      ({l.group} · {formatEUR(display(l.dailyPrice))})
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="ppanel__total">
-          <span>{t('estimatedTotal')}</span>
-          <strong>
-            {formatEUR(display(estimatedTotal))} <small className="muted">{isPro ? t('vatExcl') : t('vatIncl')}</small>
-          </strong>
-        </div>
-
-        <button
-          className={`btn btn-block${done ? ' btn-secondary' : ' btn-primary'}`}
-          onClick={addAll}
-          disabled={busy || done || avail?.status === 'UNAVAILABLE'}
-        >
-          {busy ? '…' : done ? `✓ ${t('addedToCart')}` : 'Ajouter au panier'}
+    <div className="ppanel">
+      <div className="field">
+        <label>{t('whenNeeded')}</label>
+        <button type="button" className="ppanel__datebtn" onClick={() => setPicking(true)}>
+          <CalendarClock />
+          {cart?.period
+            ? `${formatDateBE(cart.period.start)} → ${formatDateBE(cart.period.end)} (${durationLabel(cart.period.start, cart.period.end)})`
+            : tBar('chooseDates')}
         </button>
-        {msg && (
-          <p className="small" style={{ margin: 0, color: 'var(--err)' }}>
-            {msg}
-          </p>
-        )}
-        {done && (
-          <div className="ppanel__done">
-            <p className="ppanel__done-title">✓ {t('addedTitle')}</p>
-            <p className="small muted" style={{ margin: '4px 0 12px' }}>
-              {t('addedHint')}
-            </p>
-            <div className="row" style={{ gap: 8 }}>
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => setDone(false)}>
-                {t('continueShopping')}
-              </button>
-              <Link href="/panier" className="btn btn-secondary btn-sm">
-                {t('viewCart', { count: cart?.itemCount ?? 1 })}
-              </Link>
-            </div>
-          </div>
+        {picking && (
+          <DateRangePicker
+            initialStart={cart?.period ? new Date(cart.period.start) : undefined}
+            initialEnd={cart?.period ? new Date(cart.period.end) : undefined}
+            onClose={() => setPicking(false)}
+            onApply={async (s, e) => {
+              await setPeriod({ start: s.toISOString(), end: e.toISOString() });
+              setPicking(false);
+            }}
+          />
         )}
       </div>
+
+      <AvailabilityBadge a={avail} />
+
+      {!product.isConsumable && (
+        <WeekendOfferNote start={cart?.period?.start} end={cart?.period?.end} />
+      )}
+
+      {sortedTiers.length > 0 && (
+        <div className="ppanel__tiers">
+          {sortedTiers.map((tier) => (
+            <span
+              key={tier.minDays}
+              className={`ppanel__tier${currentTier?.minDays === tier.minDays ? ' is-active' : ''}`}
+            >
+              {tier.minDays}j <strong>{formatEUR(display(tier.perDay))}</strong>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {nextTier && billedDays != null && (
+        <button
+          type="button"
+          className="ppanel__upsell"
+          onClick={extendToNextTier}
+          disabled={extending}
+        >
+          🔥 {extending ? '…' : (
+            <>
+              +{nextTier.minDays - billedDays} jour(s) → {formatEUR(display(nextTier.perDay))}/jour
+              <span className="ppanel__upsell-was"> au lieu de {formatEUR(display(currentPerDay))}</span>
+            </>
+          )}
+        </button>
+      )}
+
+      <div className="field">
+        <label>{t('howReceive')}</label>
+        <div className="ppanel__mode">
+          <button
+            type="button"
+            className={`ppanel__modecard${!isDelivery ? ' is-active' : ''}`}
+            onClick={() => setFulfilment({ mode: 'PICKUP' })}
+          >
+            <Home />
+            <strong>{t('pickupMode')}</strong>
+            <span className="small muted">{t('pickupModeHint')}</span>
+          </button>
+          <button
+            type="button"
+            className={`ppanel__modecard${isDelivery ? ' is-active' : ''}`}
+            onClick={() => setFulfilment({ mode: 'DELIVERY' })}
+          >
+            <Truck />
+            <strong>{t('deliveryMode')}</strong>
+            <span className="small muted">{t('deliveryModeHint')}</span>
+          </button>
+        </div>
+        {isDelivery && (
+          <p className="small muted" style={{ margin: 0 }}>
+            {t('deliveryDetailsAtCheckout')}
+          </p>
+        )}
+      </div>
+
+      <div className="field">
+        <label>{t('quantity')}</label>
+        <div className="qty">
+          <button
+            type="button"
+            aria-label="Retirer une unité"
+            onClick={() => setQty((q) => Math.max(1, q - 1))}
+          >
+            −
+          </button>
+          <output>{qty}</output>
+          <button type="button" aria-label="Ajouter une unité" onClick={() => setQty((q) => q + 1)}>
+            +
+          </button>
+        </div>
+      </div>
+
+      {linked.length > 0 && (
+        <div>
+          <strong style={{ color: 'var(--navy)', fontSize: '0.9rem' }}>Ajouter en un geste</strong>
+          <div className="stack" style={{ gap: 6, marginTop: 8 }}>
+            {linked.map((l) => (
+              <label key={l.id} className="row" style={{ gap: 8, fontSize: '0.88rem' }}>
+                <input
+                  type="checkbox"
+                  checked={!!extras[l.id]}
+                  onChange={(e) => setExtras((s) => ({ ...s, [l.id]: e.target.checked }))}
+                />
+                <span>
+                  {l.name}{' '}
+                  <span className="muted">
+                    ({l.group} · {formatEUR(display(l.dailyPrice))})
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="ppanel__total">
+        <span>{t('estimatedTotal')}</span>
+        <strong>
+          {formatEUR(display(estimatedTotal))} <small className="muted">{isPro ? t('vatExcl') : t('vatIncl')}</small>
+        </strong>
+      </div>
+
+      <button
+        className={`btn btn-block btn-lg${done ? ' btn-secondary' : ' btn-primary'}`}
+        onClick={addAll}
+        disabled={busy || done || avail?.status === 'UNAVAILABLE'}
+      >
+        {busy ? '…' : done ? `✓ ${t('addedToCart')}` : t('addToCartCta')}
+      </button>
+      {msg && (
+        <p className="small" style={{ margin: 0, color: 'var(--err)' }}>
+          {msg}
+        </p>
+      )}
+      {done && (
+        <div className="ppanel__done">
+          <p className="ppanel__done-title">✓ {t('addedTitle')}</p>
+          <p className="small muted" style={{ margin: '4px 0 12px' }}>
+            {t('addedHint')}
+          </p>
+          <div className="row" style={{ gap: 8 }}>
+            <button type="button" className="btn btn-outline btn-sm" onClick={continueShopping}>
+              {t('continueShopping')}
+            </button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={openDrawer}>
+              {t('viewCart', { count: cart?.itemCount ?? 1 })}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
