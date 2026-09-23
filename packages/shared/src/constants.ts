@@ -74,8 +74,10 @@ export const DEFAULT_SETTINGS = {
     depotAddress: 'Gieterijstraat 49, 1601 Ruisbroek (Sint-Pieters-Leeuw)',
     depotLat: 50.7921009,
     depotLng: 4.2967424,
-    /** BRACKETS = tranches de km ; PER_KM = forfait de base + N EUR/km. */
-    mode: 'BRACKETS' as 'BRACKETS' | 'PER_KM',
+    /** BRACKETS = tranches de km ; PER_KM = forfait de base + N EUR/km ;
+     * TIME_DISTANCE = forfait calcule selon le temps et la distance (voir
+     * `delivery.timeDistance` ci-dessous). */
+    mode: 'BRACKETS' as 'BRACKETS' | 'PER_KM' | 'TIME_DISTANCE',
     /** Tranches : jusqu'a maxKm -> feeHT. Trie par maxKm croissant. */
     brackets: [
       { maxKm: 15, feeHT: 25 },
@@ -91,9 +93,41 @@ export const DEFAULT_SETTINGS = {
     freeThresholdHT: 350,
     /** Facteur applique a la distance a vol d'oiseau si le routage echoue. */
     detourFactor: 1.3,
+    /** Vitesse (km/h) utilisee pour estimer le temps de trajet si le routage echoue. */
+    detourSpeedKmh: 40,
     /** Supplement pour une livraison le samedi (0 = pas de livraison le samedi
      * factureee a part / pas de supplement). Jamais annule par la franchise. */
     saturdaySurchargeHT: 25,
+    /**
+     * Mode TIME_DISTANCE : forfait livraison + reprise selon le temps et la
+     * distance routiere ALLER simple depuis le depot (voir `computeTimeDistanceDelivery`).
+     * Facture UNE fois pour la commande (jamais multiplie par le nombre de
+     * machines ni de jours de location). Pas de franchise automatique dans ce
+     * mode (`freeThresholdHT` du bloc ci-dessus n'est pas applique ici).
+     * Valeurs de lancement (hypotheses) — a ajuster apres les premieres tournees.
+     */
+    timeDistance: {
+      hourlyRateHT: 12.5,
+      perKmHT: 0.4,
+      handlingMinutes: 30,
+      fixedFeeHT: 3.75,
+      groupingDiscountPct: 0.3,
+      marginPct: 0.2,
+      minFeeTVAC: 39,
+      premiumFeeTVACPerLeg: 25,
+      maxKmOneWay: 50,
+      saturdaySurchargeTVAC: 0,
+      /** Heure limite de commande pour une livraison des le lendemain. */
+      orderCutoffHour: 16,
+      /** Profil de trajet utilise pour le calcul distance/temps. D'autres
+       * profils (scooter, velo cargo) pourront etre ajoutes plus tard, chacun
+       * avec ses propres couts/regles d'eligibilite. */
+      transportProfile: 'driving' as 'driving' | 'scooter' | 'cargo-bike',
+      /** Horaire de reference (HH:mm) pour un temps de trajet reproductible —
+       * sans effet avec le fournisseur d'itineraire actuel (pas de trafic en
+       * direct), prevu pour un futur fournisseur sensible a l'heure. */
+      referenceDepartureTime: '08:00',
+    },
   },
   /**
    * Points d'enlèvement (Click & Collect). Le stock reste au point principal

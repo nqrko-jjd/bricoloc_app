@@ -47,11 +47,48 @@ export function CartSummary({ quote, title = 'Récapitulatif' }: { quote: Quote 
           {Math.round(quote.composedPack.next.pct * 100)} %
         </p>
       )}
-      {t.deliveryFeeHT > 0 && (
-        <div className="line">
-          <span>Livraison HTVA</span>
-          <span>{formatEUR(t.deliveryFeeHT)}</span>
-        </div>
+      {quote.deliveryQuote ? (
+        <>
+          <div className="line">
+            <span>Livraison + reprise standard</span>
+            <span>{formatEUR(quote.deliveryQuote.breakdown.standardPriceTVAC)} TVAC</span>
+          </div>
+          {quote.deliveryQuote.breakdown.premiumFeeTVAC > 0 && (
+            <div className="line">
+              <span>
+                Supplément premium
+                {quote.deliveryQuote.premiumOut && quote.deliveryQuote.premiumReturn
+                  ? ' (aller + retour)'
+                  : quote.deliveryQuote.premiumOut
+                    ? ' (aller)'
+                    : ' (retour)'}
+              </span>
+              <span>{formatEUR(quote.deliveryQuote.breakdown.premiumFeeTVAC)} TVAC</span>
+            </div>
+          )}
+          {quote.deliveryQuote.breakdown.saturdaySurchargeTVAC > 0 && (
+            <div className="line">
+              <span>Supplément samedi</span>
+              <span>{formatEUR(quote.deliveryQuote.breakdown.saturdaySurchargeTVAC)} TVAC</span>
+            </div>
+          )}
+          <div className="line" style={{ fontWeight: 700 }}>
+            <span>Total transport TVAC</span>
+            <span>{formatEUR(quote.deliveryQuote.breakdown.finalPriceTVAC)}</span>
+          </div>
+          {quote.deliveryQuote.breakdown.minApplied && (
+            <p className="small muted" style={{ margin: 0 }}>
+              Minimum de livraison appliqué.
+            </p>
+          )}
+        </>
+      ) : (
+        t.deliveryFeeHT > 0 && (
+          <div className="line">
+            <span>Livraison HTVA</span>
+            <span>{formatEUR(t.deliveryFeeHT)}</span>
+          </div>
+        )
       )}
       {quote.deliveryReason && (
         <p className="small muted" style={{ margin: 0 }}>

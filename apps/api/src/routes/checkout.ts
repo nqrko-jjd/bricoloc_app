@@ -103,9 +103,19 @@ checkoutRouter.post(
         `Le retrait doit etre planifie au moins ${settings.minLeadTimeHours}h a l'avance.`,
       );
     }
-    // Livraison : jamais le jour meme (deliveryMinLeadDays jours pleins d'avance).
+    // Livraison : jamais le jour meme (deliveryMinLeadDays jours pleins d'avance). Mode
+    // TIME_DISTANCE : au-dela de l'heure limite de commande, un jour supplementaire s'ajoute
+    // (la tournee du lendemain est deja organisee).
     if (data.fulfilment.mode === 'DELIVERY') {
-      const leadDays = Number(settings.deliveryMinLeadDays ?? 1);
+      let leadDays = Number(settings.deliveryMinLeadDays ?? 1);
+      const deliveryMode = (settings.delivery as Record<string, unknown>)?.mode;
+      if (deliveryMode === 'TIME_DISTANCE') {
+        const cutoffHour = Number(
+          ((settings.delivery as Record<string, unknown>).timeDistance as Record<string, unknown>)
+            ?.orderCutoffHour ?? 16,
+        );
+        if (new Date().getHours() >= cutoffHour) leadDays += 1;
+      }
       if (leadDays > 0) {
         const earliest = new Date();
         earliest.setHours(0, 0, 0, 0);
@@ -203,10 +213,15 @@ checkoutRouter.post(
           contactPhone: a.contactPhone ?? undefined,
         };
     }
+    let deliveryQuoteSnapshot: Awaited<ReturnType<typeof computeDeliveryFee>>['deliveryQuote'];
     if (data.fulfilment.mode === 'DELIVERY') {
       if (!deliveryAddress?.postalCode) throw badRequest('Adresse de livraison requise');
-      const d = await computeDeliveryFee(deliveryAddress, 0, settings);
+      const d = await computeDeliveryFee(deliveryAddress, 0, settings, start, {
+        premiumOut: data.fulfilment.deliveryPremiumOut,
+        premiumReturn: data.fulfilment.deliveryPremiumReturn,
+      });
       if (!d.served) throw badRequest(d.reason);
+      deliveryQuoteSnapshot = d.deliveryQuote;
     }
 
     // Point d'enlèvement (Click & Collect).
@@ -248,6 +263,11 @@ checkoutRouter.post(
       customerType,
       fulfilmentMode: data.fulfilment.mode,
       deliveryAddress: deliveryAddress ?? null,
+      deliveryPremiumOut: data.fulfilment.deliveryPremiumOut,
+      deliveryPremiumReturn: data.fulfilment.deliveryPremiumReturn,
+      // Reutilise le devis deja calcule au pre-check ci-dessus (meme distance/temps/prix,
+      // pas un second appel de geocodage/routage).
+      existingDeliveryQuote: deliveryQuoteSnapshot,
       promoCode: data.promoCode ?? cart.promoCode,
     });
 
@@ -268,6 +288,11 @@ checkoutRouter.post(
         address: deliveryAddress as never,
         pickupPoint: pickupPointSnap as never,
         slot: data.fulfilment.slot ?? null,
+        deliveryPremiumOut: data.fulfilment.deliveryPremiumOut ?? false,
+        deliveryPremiumReturn: data.fulfilment.deliveryPremiumReturn ?? false,
+        // Instantane fige : distance/temps/parametres/prix du devis TIME_DISTANCE, jamais
+        // recalcule par un changement de reglages admin ou de trafic ulterieur.
+        deliveryQuote: (quote.deliveryQuote ?? null) as never,
         contact: (data.contact ?? null) as never,
         promoCode: quote.promoCode,
         totals: quote.totals as never,

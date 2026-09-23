@@ -97,21 +97,47 @@ export async function geocode(a: AddressInput): Promise<GeoPoint | null> {
 
 /** Distance routière (km) via OSRM ; repli vol d'oiseau × detourFactor. */
 export async function roadDistanceKm(from: GeoPoint, to: GeoPoint): Promise<number> {
+  const r = await routeInfo(from, to);
+  return r.distanceKm;
+}
+
+/**
+ * Distance ET temps de trajet routiers (aller simple), via OSRM. Le serveur
+ * public OSRM calcule la duree a partir des vitesses statiques du reseau
+ * routier (pas de trafic en temps reel) : c'est deja une reference reproductible,
+ * comme demande pour le mode de livraison « temps + distance ».
+ * Repli vol d'oiseau x detourFactor si le routage echoue (temps estime a
+ * `detourSpeedKmh` km/h, egalement configurable).
+ */
+export async function routeInfo(
+  from: GeoPoint,
+  to: GeoPoint,
+): Promise<{ distanceKm: number; minutes: number; routed: boolean }> {
   const s = await getSettings();
-  const factor = Number((s.delivery as { detourFactor?: number })?.detourFactor ?? 1.3);
+  const d = s.delivery as { detourFactor?: number; detourSpeedKmh?: number };
+  const factor = Number(d?.detourFactor ?? 1.3);
+  const detourSpeedKmh = Number(d?.detourSpeedKmh ?? 40);
   try {
     const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=false`;
     const res = await fetch(url, { headers: { 'User-Agent': UA } });
     if (res.ok) {
-      const json = (await res.json()) as { code: string; routes?: { distance: number }[] };
+      const json = (await res.json()) as {
+        code: string;
+        routes?: { distance: number; duration: number }[];
+      };
       if (json.code === 'Ok' && json.routes?.[0]) {
-        return Math.round((json.routes[0].distance / 1000) * 10) / 10;
+        return {
+          distanceKm: Math.round((json.routes[0].distance / 1000) * 10) / 10,
+          minutes: Math.round(json.routes[0].duration / 60),
+          routed: true,
+        };
       }
     }
   } catch {
     /* repli */
   }
-  return Math.round(haversineKm(from, to) * factor * 10) / 10;
+  const km = Math.round(haversineKm(from, to) * factor * 10) / 10;
+  return { distanceKm: km, minutes: Math.round((km / detourSpeedKmh) * 60), routed: false };
 }
 
 /** Position du dépôt (Setting delivery.depotLat/Lng). */

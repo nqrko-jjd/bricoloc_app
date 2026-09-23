@@ -97,6 +97,8 @@ export async function serializeCart(sessionKey: string, userId?: string) {
       customerType,
       fulfilmentMode: (cart.fulfilmentMode as 'PICKUP' | 'DELIVERY') ?? 'PICKUP',
       deliveryAddress: (cart.address as Record<string, string> | null) ?? null,
+      deliveryPremiumOut: cart.deliveryPremiumOut,
+      deliveryPremiumReturn: cart.deliveryPremiumReturn,
       promoCode: cart.promoCode,
     });
   }
@@ -114,6 +116,8 @@ export async function serializeCart(sessionKey: string, userId?: string) {
     fulfilmentMode: cart.fulfilmentMode,
     address: cart.address,
     slot: cart.slot,
+    deliveryPremiumOut: cart.deliveryPremiumOut,
+    deliveryPremiumReturn: cart.deliveryPremiumReturn,
     promoCode: cart.promoCode,
     itemCount: cart.items.reduce((a, i) => a + i.quantity, 0),
     items: itemsOut,

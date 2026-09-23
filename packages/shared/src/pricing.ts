@@ -301,6 +301,121 @@ export function computeDeliveryFee(
   return { served: true, distanceKm: km, feeHT: round2(feeHT + surcharge), free: false, reason: 'OK', saturdaySurchargeHT: surcharge };
 }
 
+/* --------------- Livraison « forfait temps + distance » --------------- */
+
+/**
+ * Parametres du mode TIME_DISTANCE, editables en admin (voir DEFAULT_SETTINGS
+ * `delivery.timeDistance`). Couvre l'aller-retour (livraison + reprise),
+ * facture une seule fois pour la commande.
+ */
+export interface TimeDistanceDeliveryConfig {
+  /** H — cout horaire du livreur, HT/h. */
+  hourlyRateHT: number;
+  /** K — cout du vehicule par km, HT/km. */
+  perKmHT: number;
+  /** M — manutention totale livraison + reprise, en minutes. */
+  handlingMinutes: number;
+  /** F — frais fixes d'organisation par commande, HT. */
+  fixedFeeHT: number;
+  /** G — economie de regroupement des tournees (0.30 = 30 %). Ne s'applique qu'au cout de route. */
+  groupingDiscountPct: number;
+  /** R — marge souhaitee sur le prix de vente HT (0.20 = 20 % -> diviser par (1-R), jamais multiplier). */
+  marginPct: number;
+  /** Minimum facture pour livraison + reprise, TVAC. */
+  minFeeTVAC: number;
+  /** Supplement premium (creneau de 2h choisi), TVAC, par passage (aller OU retour). */
+  premiumFeeTVACPerLeg: number;
+  /** Distance routiere aller maximale desservie par ce mode (au-dela : sur devis). */
+  maxKmOneWay: number;
+  /** Supplement livraison le samedi, TVAC (0 = pas de supplement). */
+  saturdaySurchargeTVAC: number;
+}
+
+export interface TimeDistanceDeliveryInput {
+  /** D — distance routiere ALLER simple, km. */
+  distanceKmOneWay: number;
+  /** T — temps de trajet ALLER simple, minutes (horaire de reference, pas le trafic en direct). */
+  minutesOneWay: number;
+  premiumOut: boolean;
+  premiumReturn: boolean;
+  isSaturday?: boolean;
+}
+
+export interface TimeDistanceDeliveryBreakdown {
+  distanceKmOneWay: number;
+  minutesOneWay: number;
+  /** Cout de route HT (4 trajets : depot-client-depot x2), apres economie de regroupement. */
+  routeCostHT: number;
+  /** Cout fixe HT : manutention + frais fixes (jamais reduit par le regroupement). */
+  fixedCostHT: number;
+  totalCostHT: number;
+  /** Cout total HT / (1-marge) — deja arrondi au centime. */
+  standardPriceHT: number;
+  /** max(minimum, standardPriceHT x (1+TVA)) — deja arrondi au centime. */
+  standardPriceTVAC: number;
+  premiumFeeTVAC: number;
+  saturdaySurchargeTVAC: number;
+  /** Prix final TVAC = standardPriceTVAC + supplements, arrondi au centime. */
+  finalPriceTVAC: number;
+  minApplied: boolean;
+  /** true si distanceKmOneWay > maxKmOneWay : hors zone, transport sur devis. */
+  outOfRange: boolean;
+}
+
+/**
+ * Forfait livraison + reprise selon le temps et la distance (aller simple).
+ * Formule validee (voir simulateur admin) :
+ *   coutRouteHT = [(4×D×K) + (4×T/60×H)] × (1-G)
+ *   coutFixeHT  = (M/60×H) + F
+ *   prixStandardHT   = round2(coutTotalHT / (1-R))        <- arrondi ICI
+ *   prixStandardTVAC = round2(max(minTVAC, prixStandardHT × (1+TVA)))
+ * Le facteur 4 = 2 trajets aller-retour (livraison, puis reprise).
+ * L'economie de regroupement (G) ne porte QUE sur le cout de route, jamais
+ * sur la manutention ni les frais fixes. Les supplements premium/samedi
+ * s'ajoutent APRES le calcul du prix standard et du minimum.
+ */
+export function computeTimeDistanceDelivery(
+  input: TimeDistanceDeliveryInput,
+  cfg: TimeDistanceDeliveryConfig,
+  vatRate: number,
+): TimeDistanceDeliveryBreakdown {
+  const D = Math.max(0, input.distanceKmOneWay);
+  const T = Math.max(0, input.minutesOneWay);
+  const outOfRange = cfg.maxKmOneWay > 0 && D > cfg.maxKmOneWay;
+
+  const routeCostHT = (4 * D * cfg.perKmHT + (4 * T) / 60 * cfg.hourlyRateHT) * (1 - cfg.groupingDiscountPct);
+  const fixedCostHT = (cfg.handlingMinutes / 60) * cfg.hourlyRateHT + cfg.fixedFeeHT;
+  const totalCostHT = routeCostHT + fixedCostHT;
+
+  const standardPriceHT = round2(totalCostHT / (1 - cfg.marginPct));
+  const rawTVAC = standardPriceHT * (1 + vatRate);
+  const standardPriceTVAC = round2(Math.max(cfg.minFeeTVAC, rawTVAC));
+  const minApplied = rawTVAC < cfg.minFeeTVAC;
+
+  const premiumFeeTVAC = round2(
+    (input.premiumOut ? cfg.premiumFeeTVACPerLeg : 0) + (input.premiumReturn ? cfg.premiumFeeTVACPerLeg : 0),
+  );
+  const saturdaySurchargeTVAC = input.isSaturday ? Math.max(0, round2(cfg.saturdaySurchargeTVAC)) : 0;
+  const finalPriceTVAC = outOfRange
+    ? 0
+    : round2(standardPriceTVAC + premiumFeeTVAC + saturdaySurchargeTVAC);
+
+  return {
+    distanceKmOneWay: round2(D),
+    minutesOneWay: Math.round(T),
+    routeCostHT: round2(routeCostHT),
+    fixedCostHT: round2(fixedCostHT),
+    totalCostHT: round2(totalCostHT),
+    standardPriceHT,
+    standardPriceTVAC,
+    premiumFeeTVAC,
+    saturdaySurchargeTVAC,
+    finalPriceTVAC,
+    minApplied,
+    outOfRange,
+  };
+}
+
 /** Distance a vol d'oiseau (km) entre deux points WGS84. */
 export function haversineKm(
   a: { lat: number; lng: number },

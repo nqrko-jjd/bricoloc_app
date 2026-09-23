@@ -445,6 +445,9 @@ model Cart {
   address        Json?
   slot           String?
   promoCode      String?
+  /// Creneau de 2h choisi (mode livraison TIME_DISTANCE uniquement) — independants aller/retour.
+  deliveryPremiumOut    Boolean  @default(false)
+  deliveryPremiumReturn Boolean  @default(false)
   updatedAt      DateTime  @updatedAt
   createdAt      DateTime  @default(now())
 
@@ -477,6 +480,15 @@ model Reservation {
   /// Point d'enlèvement choisi (snapshot { id, name, line1, postalCode, city, transferHours }).
   pickupPoint    Json?
   slot           String?
+  /// Creneau de 2h choisi (mode livraison TIME_DISTANCE uniquement) — independants aller/retour.
+  deliveryPremiumOut    Boolean @default(false)
+  deliveryPremiumReturn Boolean @default(false)
+  /// Instantane fige au moment de la quotation TIME_DISTANCE : distance/temps routiers,
+  /// parametres tarifaires utilises, decomposition du calcul, prix. Jamais recalcule
+  /// automatiquement par un changement de reglages admin ou de trafic ulterieur — seul un
+  /// changement d'adresse (avant confirmation) ou une action explicite de l'equipe en
+  /// declenche un nouveau.
+  deliveryQuote  Json?
   contact        Json?
   promoCode      String?
   totals         Json // snapshot CartTotals

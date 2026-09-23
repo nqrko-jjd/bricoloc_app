@@ -18,7 +18,10 @@ import {
 import { prisma } from '../db.js';
 import { badRequest, forbidden, h, notFound } from '../lib/http.js';
 import { attachPrincipal, hashPassword, requireStaff } from '../lib/auth.js';
-import { setSetting, getSettings } from '../lib/settings.js';
+import { setSetting, getSettings, vatRate } from '../lib/settings.js';
+import { quoteTimeDistanceDelivery } from '../lib/delivery.js';
+import { geocode, routeInfo, depotPoint } from '../lib/geo.js';
+import { computeTimeDistanceDelivery, type TimeDistanceDeliveryConfig } from '@bricoloc/shared';
 import { newQrToken, qrDataUrl } from '../lib/qr.js';
 import { productInclude, serializeProductDetail } from '../lib/serialize.js';
 import { generateInvoice } from '../lib/invoice.js';
@@ -1591,6 +1594,72 @@ adminRouter.put(
     const data = upsertSettingSchema.parse(req.body);
     await setSetting(data.key, data.value);
     res.json({ settings: await getSettings(true) });
+  }),
+);
+
+/**
+ * Simulateur « forfait temps + distance » : distance/temps (saisis directement, ou
+ * calcules depuis une adresse comme en production), decomposition complete du calcul,
+ * prix client. Sert a calibrer les parametres et a verifier le tableau de reference —
+ * les couts (H, K) et l'economie de regroupement (G) restent des ESTIMATIONS de
+ * lancement, a ajuster apres les premieres tournees reelles.
+ */
+adminRouter.post(
+  '/delivery/simulate',
+  requireStaff('RESPONSABLE', 'COMPTOIR'),
+  h(async (req, res) => {
+    const body = req.body ?? {};
+    const s = await getSettings();
+    const rate = vatRate(s);
+    const d = ((s.delivery as Record<string, unknown>)?.timeDistance ?? {}) as Record<string, unknown>;
+    const cfg: TimeDistanceDeliveryConfig = {
+      hourlyRateHT: Number(body.hourlyRateHT ?? d.hourlyRateHT ?? 12.5),
+      perKmHT: Number(body.perKmHT ?? d.perKmHT ?? 0.4),
+      handlingMinutes: Number(body.handlingMinutes ?? d.handlingMinutes ?? 30),
+      fixedFeeHT: Number(body.fixedFeeHT ?? d.fixedFeeHT ?? 3.75),
+      groupingDiscountPct: Number(body.groupingDiscountPct ?? d.groupingDiscountPct ?? 0.3),
+      marginPct: Number(body.marginPct ?? d.marginPct ?? 0.2),
+      minFeeTVAC: Number(body.minFeeTVAC ?? d.minFeeTVAC ?? 39),
+      premiumFeeTVACPerLeg: Number(body.premiumFeeTVACPerLeg ?? d.premiumFeeTVACPerLeg ?? 25),
+      maxKmOneWay: Number(body.maxKmOneWay ?? d.maxKmOneWay ?? 50),
+      saturdaySurchargeTVAC: Number(body.saturdaySurchargeTVAC ?? d.saturdaySurchargeTVAC ?? 0),
+    };
+
+    let distanceKmOneWay: number;
+    let minutesOneWay: number;
+    let address: string | undefined;
+    let routed = true;
+    if (body.distanceKm != null && body.minutesOneWay != null) {
+      distanceKmOneWay = Number(body.distanceKm);
+      minutesOneWay = Number(body.minutesOneWay);
+    } else {
+      const point = await geocode({
+        line1: body.line1,
+        postalCode: body.postalCode,
+        city: body.city,
+        country: body.country,
+      });
+      if (!point) return res.status(422).json({ error: { code: 'ADDRESS_NOT_FOUND', message: 'Adresse introuvable' } });
+      const depot = await depotPoint();
+      const route = await routeInfo(depot, point);
+      distanceKmOneWay = route.distanceKm;
+      minutesOneWay = route.minutes;
+      routed = route.routed;
+      address = point.displayName;
+    }
+
+    const breakdown = computeTimeDistanceDelivery(
+      {
+        distanceKmOneWay,
+        minutesOneWay,
+        premiumOut: !!body.premiumOut,
+        premiumReturn: !!body.premiumReturn,
+        isSaturday: !!body.isSaturday,
+      },
+      cfg,
+      rate,
+    );
+    res.json({ address, routed, vatRate: rate, params: cfg, breakdown });
   }),
 );
 

@@ -84,6 +84,9 @@ export const cartFulfilmentSchema = z.object({
   pickupNote: z.string().optional(),
   /** Point d'enlèvement choisi (Click & Collect). Défaut = point principal. */
   pickupPointId: z.string().optional(),
+  /** Créneau de 2h (mode livraison TIME_DISTANCE) — indépendants aller/retour. */
+  deliveryPremiumOut: z.boolean().optional(),
+  deliveryPremiumReturn: z.boolean().optional(),
 });
 
 export const applyPromoSchema = z.object({ code: z.string().min(1) });

@@ -193,11 +193,34 @@ export interface ComposedPack {
   next: { minMachines: number; pct: number } | null;
 }
 
+export interface TimeDistanceBreakdown {
+  distanceKmOneWay: number;
+  minutesOneWay: number;
+  routeCostHT: number;
+  fixedCostHT: number;
+  totalCostHT: number;
+  standardPriceHT: number;
+  standardPriceTVAC: number;
+  premiumFeeTVAC: number;
+  saturdaySurchargeTVAC: number;
+  finalPriceTVAC: number;
+  minApplied: boolean;
+  outOfRange: boolean;
+}
+export interface DeliveryQuoteSnapshot {
+  mode: 'TIME_DISTANCE';
+  address?: string;
+  premiumOut: boolean;
+  premiumReturn: boolean;
+  breakdown: TimeDistanceBreakdown;
+}
+
 export interface Quote {
   lines: QuoteLine[];
   totals: CartTotals;
   deliveryFeeHT: number;
   deliveryReason?: string;
+  deliveryQuote?: DeliveryQuoteSnapshot;
   discountHT: number;
   promoCode?: string | null;
   promoLabel?: string | null;
@@ -243,6 +266,8 @@ export interface Cart {
   fulfilmentMode: 'PICKUP' | 'DELIVERY' | null;
   address: Record<string, unknown> | null;
   slot: string | null;
+  deliveryPremiumOut: boolean;
+  deliveryPremiumReturn: boolean;
   promoCode: string | null;
   itemCount: number;
   items: CartItem[];
@@ -339,6 +364,14 @@ export interface PublicConfig {
   deliveryBaseFee: number;
   deliveryFreeThreshold: number;
   deliverySaturdaySurchargeHT?: number;
+  deliveryMode?: 'BRACKETS' | 'PER_KM' | 'TIME_DISTANCE';
+  deliveryTimeDistance?: {
+    minFeeTVAC: number;
+    premiumFeeTVACPerLeg: number;
+    maxKmOneWay: number;
+    orderCutoffHour: number;
+    saturdaySurchargeTVAC: number;
+  };
   demo: boolean;
   homeShowBrand?: boolean;
   homeShowBadges?: boolean;

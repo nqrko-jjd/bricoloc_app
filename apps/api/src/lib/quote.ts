@@ -9,10 +9,12 @@ import {
   type ComposedPackResult,
   type CustomerType,
   type ProductPricing,
+  computeTimeDistanceDelivery,
+  type TimeDistanceDeliveryBreakdown,
 } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { getSettings, pricingSettings, vatRate, type AppSettings } from './settings.js';
-import { quoteDelivery } from './delivery.js';
+import { quoteDelivery, quoteTimeDistanceDelivery } from './delivery.js';
 
 export interface QuoteLineInput {
   product: Product;
@@ -50,6 +52,12 @@ export interface QuoteInput {
     city?: string;
     country?: string;
   } | null;
+  /** Creneau de 2h (mode livraison TIME_DISTANCE) — independants aller/retour. */
+  deliveryPremiumOut?: boolean;
+  deliveryPremiumReturn?: boolean;
+  /** Instantane fige a reutiliser (edition d'une reservation deja confirmee) au lieu de
+   * regeocoder/reroute et relire les reglages en direct — voir `computeDeliveryFee`. */
+  existingDeliveryQuote?: FrozenDeliveryQuote | null;
   promoCode?: string | null;
 }
 
@@ -58,6 +66,8 @@ export interface Quote {
   totals: CartTotals;
   deliveryFeeHT: number;
   deliveryReason?: string;
+  /** Present uniquement en mode TIME_DISTANCE : decomposition complete + a figer a la confirmation. */
+  deliveryQuote?: FrozenDeliveryQuote;
   discountHT: number;
   promoCode?: string | null;
   promoLabel?: string | null;
@@ -79,23 +89,66 @@ function toPricing(p: Product): ProductPricing {
   };
 }
 
+/** Instantane fige d'un devis TIME_DISTANCE : distance/temps routiers, parametres tarifaires
+ * utilises, decomposition, prix, selections premium — a stocker tel quel sur la reservation. */
+export interface FrozenDeliveryQuote {
+  mode: 'TIME_DISTANCE';
+  address?: string;
+  /** Adresse structuree brute utilisee pour ce devis — sert a detecter un changement
+   * d'adresse (auquel cas l'instantane est ignore et un nouveau devis est calcule). */
+  addressInput?: QuoteInput['deliveryAddress'];
+  premiumOut: boolean;
+  premiumReturn: boolean;
+  params: {
+    hourlyRateHT: number;
+    perKmHT: number;
+    handlingMinutes: number;
+    fixedFeeHT: number;
+    groupingDiscountPct: number;
+    marginPct: number;
+    minFeeTVAC: number;
+    premiumFeeTVACPerLeg: number;
+    maxKmOneWay: number;
+    saturdaySurchargeTVAC: number;
+  };
+  vatRate: number;
+  breakdown: TimeDistanceDeliveryBreakdown;
+  computedAt: string;
+}
+
 /**
- * Frais de livraison géolocalisés : distance routière depuis le dépôt -> tarif
- * (tranches de km ou au km, config admin). Repli sur le forfait de base si
- * l'adresse ne peut pas être géocodée.
+ * Frais de livraison : geolocalises (tranches de km / au km, config admin) ou
+ * « temps + distance » (mode TIME_DISTANCE — voir `quoteTimeDistanceDelivery`).
+ * Repli sur le forfait de base si l'adresse ne peut pas etre geocodee (modes
+ * geolocalises classiques) — le mode TIME_DISTANCE, lui, bloque explicitement
+ * sur une adresse introuvable (jamais interpretee comme 0 km).
  */
 export async function computeDeliveryFee(
   address: QuoteInput['deliveryAddress'],
   rentalHT: number,
   settings: AppSettings,
   deliveryDate?: Date | null,
+  opts: {
+    premiumOut?: boolean;
+    premiumReturn?: boolean;
+    /** Reutilise un instantane deja fige (reservation confirmee, adresse inchangee) plutot que
+     * de regeocoder/reroute et relire les reglages admin en direct. */
+    existingQuote?: FrozenDeliveryQuote | null;
+  } = {},
 ): Promise<{
   feeHT: number;
   reason: string;
   served: boolean;
   distanceKm?: number;
   saturdaySurchargeHT?: number;
+  deliveryQuote?: FrozenDeliveryQuote;
 }> {
+  const mode = (settings.delivery as Record<string, unknown>)?.mode;
+
+  if (mode === 'TIME_DISTANCE') {
+    return computeTimeDistanceFee(address, settings, deliveryDate, opts);
+  }
+
   const base = Number(settings.deliveryBaseFee ?? 25);
   const isSaturday = deliveryDate != null && new Date(deliveryDate).getDay() === 6;
   const satSurcharge = isSaturday
@@ -137,6 +190,107 @@ export async function computeDeliveryFee(
     distanceKm: q.distanceKm,
     reason: `Livraison ${q.distanceKm} km depuis le dépôt${satTxt}`,
     saturdaySurchargeHT: q.saturdaySurchargeHT,
+  };
+}
+
+/**
+ * Frais de livraison mode TIME_DISTANCE. `feeHT` renvoye est le montant HT
+ * "equivalent" (prix TVAC final / (1+TVA)) qui, une fois repasse par le calcul
+ * de TVA global du panier, redonne le prix TVAC voulu (minimum/suppléments
+ * inclus) — le reste du pipeline (`computeCartTotals`) reste HT -> TVA -> TVAC
+ * en une seule fois, comme pour tous les autres postes.
+ */
+async function computeTimeDistanceFee(
+  address: QuoteInput['deliveryAddress'],
+  settings: AppSettings,
+  deliveryDate: Date | string | null | undefined,
+  opts: { premiumOut?: boolean; premiumReturn?: boolean; existingQuote?: FrozenDeliveryQuote | null },
+): Promise<{
+  feeHT: number;
+  reason: string;
+  served: boolean;
+  distanceKm?: number;
+  deliveryQuote?: FrozenDeliveryQuote;
+}> {
+  const rate = vatRate(settings);
+
+  // Reservation deja confirmee, adresse inchangee : on reutilise la distance/temps/parametres
+  // figes (jamais recalcules par un changement de reglages ou de trafic ulterieur), on ne
+  // reapplique que ce qui depend du contenu actuel de la commande (premium, samedi).
+  if (opts.existingQuote) {
+    const isSaturday = deliveryDate != null && new Date(deliveryDate).getDay() === 6;
+    const breakdown = computeTimeDistanceDelivery(
+      {
+        distanceKmOneWay: opts.existingQuote.breakdown.distanceKmOneWay,
+        minutesOneWay: opts.existingQuote.breakdown.minutesOneWay,
+        premiumOut: !!opts.premiumOut,
+        premiumReturn: !!opts.premiumReturn,
+        isSaturday,
+      },
+      opts.existingQuote.params,
+      opts.existingQuote.vatRate,
+    );
+    const snapshot: FrozenDeliveryQuote = {
+      ...opts.existingQuote,
+      premiumOut: !!opts.premiumOut,
+      premiumReturn: !!opts.premiumReturn,
+      breakdown,
+    };
+    return {
+      feeHT: round2(breakdown.finalPriceTVAC / (1 + opts.existingQuote.vatRate)),
+      served: true,
+      distanceKm: breakdown.distanceKmOneWay,
+      reason: `Forfait temps + distance — ${breakdown.distanceKmOneWay} km, ${breakdown.minutesOneWay} min (figé à la confirmation)`,
+      deliveryQuote: snapshot,
+    };
+  }
+
+  if (!address || (!address.postalCode && !address.line1)) {
+    return { feeHT: 0, reason: 'Adresse requise pour ce mode de livraison', served: false };
+  }
+
+  const q = await quoteTimeDistanceDelivery(address, {
+    premiumOut: opts.premiumOut,
+    premiumReturn: opts.premiumReturn,
+    deliveryDate: deliveryDate ?? undefined,
+  });
+  if (!q.served || !q.breakdown) {
+    return {
+      feeHT: 0,
+      served: false,
+      distanceKm: q.breakdown?.distanceKmOneWay,
+      reason: q.message ?? "Devis livraison indisponible",
+    };
+  }
+  const d = (settings.delivery as Record<string, unknown>).timeDistance as Record<string, unknown>;
+  const snapshot: FrozenDeliveryQuote = {
+    mode: 'TIME_DISTANCE',
+    address: q.address,
+    addressInput: address,
+    premiumOut: !!opts.premiumOut,
+    premiumReturn: !!opts.premiumReturn,
+    params: {
+      hourlyRateHT: Number(d.hourlyRateHT),
+      perKmHT: Number(d.perKmHT),
+      handlingMinutes: Number(d.handlingMinutes),
+      fixedFeeHT: Number(d.fixedFeeHT),
+      groupingDiscountPct: Number(d.groupingDiscountPct),
+      marginPct: Number(d.marginPct),
+      minFeeTVAC: Number(d.minFeeTVAC),
+      premiumFeeTVACPerLeg: Number(d.premiumFeeTVACPerLeg),
+      maxKmOneWay: Number(d.maxKmOneWay),
+      saturdaySurchargeTVAC: Number(d.saturdaySurchargeTVAC),
+    },
+    vatRate: rate,
+    breakdown: q.breakdown,
+    computedAt: new Date().toISOString(),
+  };
+  return {
+    feeHT: round2(q.breakdown.finalPriceTVAC / (1 + rate)),
+    served: true,
+    distanceKm: q.breakdown.distanceKmOneWay,
+    reason: `Forfait temps + distance — ${q.breakdown.distanceKmOneWay} km, ${q.breakdown.minutesOneWay} min`,
+    deliveryQuote: snapshot,
   };
 }
 
@@ -273,10 +427,16 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
 
   let deliveryFeeHT = 0;
   let deliveryReason: string | undefined;
+  let deliveryQuote: FrozenDeliveryQuote | undefined;
   if (input.fulfilmentMode === 'DELIVERY') {
-    const d = await computeDeliveryFee(input.deliveryAddress, rentalHT, settings, input.periodStart);
+    const d = await computeDeliveryFee(input.deliveryAddress, rentalHT, settings, input.periodStart, {
+      premiumOut: input.deliveryPremiumOut,
+      premiumReturn: input.deliveryPremiumReturn,
+      existingQuote: input.existingDeliveryQuote,
+    });
     deliveryFeeHT = d.feeHT;
     deliveryReason = d.reason;
+    deliveryQuote = d.deliveryQuote;
   }
 
   let promoDiscountHT = 0;
@@ -319,6 +479,7 @@ export async function buildQuote(input: QuoteInput): Promise<Quote> {
     totals,
     deliveryFeeHT,
     deliveryReason,
+    deliveryQuote,
     discountHT,
     promoCode: input.promoCode ?? null,
     promoLabel,
@@ -434,14 +595,29 @@ export async function recomputeReservation(
   depositsTotal = round2(depositsTotal);
 
   let deliveryFeeHT = 0;
+  let deliveryQuote: FrozenDeliveryQuote | undefined;
   if (r.fulfilmentMode === 'DELIVERY') {
+    const frozen = r.deliveryQuote as FrozenDeliveryQuote | null;
+    // Un instantane fige n'est reutilise QUE si l'adresse n'a pas change depuis —
+    // sinon (edition d'adresse en admin) un nouveau devis est necessaire.
+    const addressUnchanged =
+      frozen != null && JSON.stringify(frozen.addressInput ?? null) === JSON.stringify(r.address ?? null);
     const d = await computeDeliveryFee(
       r.address as QuoteInput['deliveryAddress'],
       rentalHT,
       settings,
       r.periodStart,
+      {
+        premiumOut: r.deliveryPremiumOut,
+        premiumReturn: r.deliveryPremiumReturn,
+        // Reservation deja confirmee, adresse inchangee : on reutilise l'instantane fige
+        // tel quel (distance/temps/parametres) — un changement de reglages admin ou de
+        // trafic ne doit jamais modifier une reservation deja confirmee.
+        existingQuote: addressUnchanged ? frozen : null,
+      },
     );
     deliveryFeeHT = d.feeHT;
+    deliveryQuote = d.deliveryQuote;
   }
 
   const prev =
@@ -489,6 +665,9 @@ export async function recomputeReservation(
 
   await prisma.reservation.update({
     where: { id: reservationId },
-    data: { totals: totals as never },
+    data: {
+      totals: totals as never,
+      ...(deliveryQuote ? { deliveryQuote: deliveryQuote as never } : {}),
+    },
   });
 }

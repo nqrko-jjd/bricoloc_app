@@ -136,6 +136,8 @@ cartRouter.put(
         fulfilmentMode: data.mode,
         address: address as never,
         slot: data.slot ?? null,
+        deliveryPremiumOut: data.deliveryPremiumOut ?? false,
+        deliveryPremiumReturn: data.deliveryPremiumReturn ?? false,
       },
     });
     res.json(await serializeCart(key, userId(req)));

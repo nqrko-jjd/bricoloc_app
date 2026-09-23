@@ -147,6 +147,22 @@ export default function CommandePage() {
     geocoded: boolean;
     saturdaySurchargeHT?: number;
   } | null>(null);
+  const [deliveryMode, setDeliveryMode] = useState<'BRACKETS' | 'PER_KM' | 'TIME_DISTANCE'>('BRACKETS');
+  const [tdQuote, setTdQuote] = useState<{
+    served: boolean;
+    geocoded: boolean;
+    reason?: 'ADDRESS_NOT_FOUND' | 'OUT_OF_RANGE';
+    message?: string;
+    breakdown?: {
+      distanceKmOneWay: number;
+      minutesOneWay: number;
+      finalPriceTVAC: number;
+      minApplied: boolean;
+      outOfRange: boolean;
+    };
+  } | null>(null);
+  const [premiumOut, setPremiumOut] = useState(false);
+  const [premiumReturn, setPremiumReturn] = useState(false);
   const [quoting, setQuoting] = useState(false);
 
   const [authMode, setAuthMode] = useState<'login' | 'create'>('create');
@@ -173,6 +189,8 @@ export default function CommandePage() {
       pickup?: typeof pickupCfg;
       minLeadTimeHours?: number;
       deliveryMinLeadDays?: number;
+      deliveryMode?: 'BRACKETS' | 'PER_KM' | 'TIME_DISTANCE';
+      deliveryTimeDistance?: { orderCutoffHour: number };
     }>('/api/public/config')
       .then((c) => {
         const pts = c.pickupPoints ?? [];
@@ -181,40 +199,66 @@ export default function CommandePage() {
         setPayProvider(c.paymentProvider === 'mollie' ? 'mollie' : 'mock');
         if (c.pickup) setPickupCfg(c.pickup);
         if (typeof c.minLeadTimeHours === 'number') setMinLeadHours(c.minLeadTimeHours);
-        if (typeof c.deliveryMinLeadDays === 'number') setDeliveryLeadDays(c.deliveryMinLeadDays);
+        let leadDays = typeof c.deliveryMinLeadDays === 'number' ? c.deliveryMinLeadDays : 1;
+        if (c.deliveryMode === 'TIME_DISTANCE') {
+          setDeliveryMode('TIME_DISTANCE');
+          const cutoff = c.deliveryTimeDistance?.orderCutoffHour ?? 16;
+          if (new Date().getHours() >= cutoff) leadDays += 1;
+        } else if (c.deliveryMode) {
+          setDeliveryMode(c.deliveryMode);
+        }
+        setDeliveryLeadDays(leadDays);
       })
       .catch(() => undefined);
   }, []);
 
-  // Devis livraison géolocalisé dès que l'adresse est complète.
+  // Devis livraison géolocalisé dès que l'adresse est complète (ou que le choix premium change).
   useEffect(() => {
     if (mode !== 'DELIVERY' || !addr.postalCode || !addr.city) {
       setDelivQuote(null);
+      setTdQuote(null);
       return;
     }
     const id = setTimeout(async () => {
       setQuoting(true);
       try {
-        const q = await api<typeof delivQuote & object>('/api/public/delivery/quote', {
-          method: 'POST',
-          body: {
-            line1: addr.line1,
-            postalCode: addr.postalCode,
-            city: addr.city,
-            country: 'BE',
-            rentalHT: cart?.quote?.totals?.rentalHT ?? 0,
-            date: fromLocalInput(start),
-          },
-        });
-        setDelivQuote(q as typeof delivQuote);
+        if (deliveryMode === 'TIME_DISTANCE') {
+          const q = await api<typeof tdQuote & object>('/api/public/delivery/quote', {
+            method: 'POST',
+            body: {
+              line1: addr.line1,
+              postalCode: addr.postalCode,
+              city: addr.city,
+              country: 'BE',
+              date: fromLocalInput(start),
+              premiumOut,
+              premiumReturn,
+            },
+          });
+          setTdQuote(q as typeof tdQuote);
+        } else {
+          const q = await api<typeof delivQuote & object>('/api/public/delivery/quote', {
+            method: 'POST',
+            body: {
+              line1: addr.line1,
+              postalCode: addr.postalCode,
+              city: addr.city,
+              country: 'BE',
+              rentalHT: cart?.quote?.totals?.rentalHT ?? 0,
+              date: fromLocalInput(start),
+            },
+          });
+          setDelivQuote(q as typeof delivQuote);
+        }
       } catch {
         setDelivQuote(null);
+        setTdQuote(null);
       } finally {
         setQuoting(false);
       }
     }, 500);
     return () => clearTimeout(id);
-  }, [mode, addr.line1, addr.postalCode, addr.city, cart?.quote?.totals?.rentalHT, start]);
+  }, [mode, deliveryMode, addr.line1, addr.postalCode, addr.city, cart?.quote?.totals?.rentalHT, start, premiumOut, premiumReturn]);
 
   // Étape identité : passe directement à la vérif si la pièce est déjà fournie.
   // (doit rester AVANT les `return` conditionnels ci-dessous — règle des Hooks :
@@ -336,24 +380,45 @@ export default function CommandePage() {
           setBusy(false);
           return;
         }
-        if (!slot) {
+        if (deliveryMode !== 'TIME_DISTANCE' && !slot) {
           setError('Choisissez un créneau de livraison.');
           setBusy(false);
           return;
         }
-        const q = await api<{ served: boolean; distanceKm: number }>(
-          '/api/public/delivery/quote',
-          {
+        if (deliveryMode === 'TIME_DISTANCE') {
+          const q = await api<typeof tdQuote & object>('/api/public/delivery/quote', {
             method: 'POST',
-            body: { line1: addr.line1, postalCode: addr.postalCode, city: addr.city, country: 'BE' },
-          },
-        );
-        if (!q.served) {
-          setError(
-            `Adresse hors de la zone de livraison (${q.distanceKm} km du dépôt). Contactez-nous pour un devis.`,
+            body: {
+              line1: addr.line1,
+              postalCode: addr.postalCode,
+              city: addr.city,
+              country: 'BE',
+              date: fromLocalInput(start),
+              premiumOut,
+              premiumReturn,
+            },
+          });
+          setTdQuote(q as typeof tdQuote);
+          if (!q.served) {
+            setError(q.message || 'Adresse hors de la zone de livraison. Contactez-nous pour un devis.');
+            setBusy(false);
+            return;
+          }
+        } else {
+          const q = await api<{ served: boolean; distanceKm: number }>(
+            '/api/public/delivery/quote',
+            {
+              method: 'POST',
+              body: { line1: addr.line1, postalCode: addr.postalCode, city: addr.city, country: 'BE' },
+            },
           );
-          setBusy(false);
-          return;
+          if (!q.served) {
+            setError(
+              `Adresse hors de la zone de livraison (${q.distanceKm} km du dépôt). Contactez-nous pour un devis.`,
+            );
+            setBusy(false);
+            return;
+          }
         }
       }
       if (mode === 'PICKUP' && !kiosk && pickupCfg) {
@@ -372,7 +437,12 @@ export default function CommandePage() {
       }
       await setFulfilment(
         mode === 'DELIVERY'
-          ? { mode, address: { ...addr, country: 'BE' }, slot }
+          ? {
+              mode,
+              address: { ...addr, country: 'BE' },
+              slot,
+              ...(deliveryMode === 'TIME_DISTANCE' ? { deliveryPremiumOut: premiumOut, deliveryPremiumReturn: premiumReturn } : {}),
+            }
           : { mode, slot: pickupSlots.includes(slot) ? slot : undefined },
       );
       // Borne : coordonnées invité simples, ni compte ni pièce d'identité.
@@ -703,7 +773,7 @@ export default function CommandePage() {
                     </div>
                   </div>
                   {quoting && <p className="small muted">Calcul du tarif de livraison…</p>}
-                  {delivQuote && !quoting && (
+                  {deliveryMode !== 'TIME_DISTANCE' && delivQuote && !quoting && (
                     <div
                       className={`alert ${delivQuote.served ? (delivQuote.free ? 'alert-ok' : 'alert-info') : 'alert-warn'}`}
                     >
@@ -726,6 +796,47 @@ export default function CommandePage() {
                       )}
                     </div>
                   )}
+                  {deliveryMode === 'TIME_DISTANCE' && tdQuote && !quoting && (
+                    <div className={`alert ${tdQuote.served ? 'alert-info' : 'alert-warn'}`}>
+                      {!tdQuote.served ? (
+                        <>{tdQuote.message || 'Hors zone de livraison. Contactez-nous pour un devis.'}</>
+                      ) : tdQuote.breakdown ? (
+                        <>
+                          Livraison + reprise{premiumOut || premiumReturn ? ' premium' : ' standard'} :{' '}
+                          <strong>{formatEUR(tdQuote.breakdown.finalPriceTVAC)}</strong> TVAC —{' '}
+                          {tdQuote.breakdown.distanceKmOneWay} km / {tdQuote.breakdown.minutesOneWay} min
+                          (aller)
+                          {tdQuote.breakdown.minApplied ? <> · minimum appliqué</> : null}
+                        </>
+                      ) : null}
+                    </div>
+                  )}
+                  {deliveryMode === 'TIME_DISTANCE' && tdQuote?.served && (
+                    <div className="field">
+                      <label>Livraison premium (créneau de 2h garanti)</label>
+                      <div className="stack" style={{ gap: 8 }}>
+                        <label className="row" style={{ gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            checked={premiumOut}
+                            onChange={(e) => setPremiumOut(e.target.checked)}
+                          />
+                          <span className="small">Aller (livraison) — +25 € TVAC</span>
+                        </label>
+                        <label className="row" style={{ gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            checked={premiumReturn}
+                            onChange={(e) => setPremiumReturn(e.target.checked)}
+                          />
+                          <span className="small">Retour (reprise) — +25 € TVAC</span>
+                        </label>
+                      </div>
+                      <p className="small muted" style={{ margin: 0 }}>
+                        Sans option premium, BRICOLOC organise la tournée et vous informe du créneau.
+                      </p>
+                    </div>
+                  )}
                   <label className="row" style={{ gap: 8 }}>
                     <input
                       type="checkbox"
@@ -736,18 +847,22 @@ export default function CommandePage() {
                     />
                     <span className="small">Adresse de chantier</span>
                   </label>
-                  <div className="field">
-                    <label>Créneau souhaité</label>
-                    <select value={slot} onChange={(e) => setSlot(e.target.value)}>
-                      <option value="">— Choisir un créneau —</option>
-                      <option>Matin (8h-12h)</option>
-                      <option>Après-midi (13h-17h)</option>
-                    </select>
-                  </div>
-                  <p className="small muted">
-                    Zones desservies (démo) : Bruxelles, Brabant wallon et flamand. Livraison
-                    offerte dès 250 € HTVA de location.
-                  </p>
+                  {deliveryMode !== 'TIME_DISTANCE' && (
+                    <>
+                      <div className="field">
+                        <label>Créneau souhaité</label>
+                        <select value={slot} onChange={(e) => setSlot(e.target.value)}>
+                          <option value="">— Choisir un créneau —</option>
+                          <option>Matin (8h-12h)</option>
+                          <option>Après-midi (13h-17h)</option>
+                        </select>
+                      </div>
+                      <p className="small muted">
+                        Zones desservies (démo) : Bruxelles, Brabant wallon et flamand. Livraison
+                        offerte dès 250 € HTVA de location.
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
               <div className="row">

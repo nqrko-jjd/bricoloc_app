@@ -4,7 +4,7 @@ import { prisma } from '../db.js';
 import { createTicket } from '../lib/tickets.js';
 import { h, notFound, badRequest } from '../lib/http.js';
 import { getSettings } from '../lib/settings.js';
-import { quoteDelivery } from '../lib/delivery.js';
+import { quoteDelivery, quoteTimeDistanceDelivery } from '../lib/delivery.js';
 import { serializeProductSummary, productInclude } from '../lib/serialize.js';
 import { mollieEnabled, mollieTestMode } from '../lib/mollie.js';
 
@@ -44,6 +44,24 @@ publicRouter.get(
       deliverySaturdaySurchargeHT: Number(
         (s.delivery as Record<string, unknown>)?.saturdaySurchargeHT ?? 0,
       ),
+      deliveryMode: (s.delivery as Record<string, unknown>)?.mode ?? 'BRACKETS',
+      /** Mode TIME_DISTANCE : ce que le client doit connaître avant de demander un devis. */
+      deliveryTimeDistance:
+        (s.delivery as Record<string, unknown>)?.mode === 'TIME_DISTANCE'
+          ? (() => {
+              const d = ((s.delivery as Record<string, unknown>).timeDistance ?? {}) as Record<
+                string,
+                unknown
+              >;
+              return {
+                minFeeTVAC: Number(d.minFeeTVAC ?? 39),
+                premiumFeeTVACPerLeg: Number(d.premiumFeeTVACPerLeg ?? 25),
+                maxKmOneWay: Number(d.maxKmOneWay ?? 50),
+                orderCutoffHour: Number(d.orderCutoffHour ?? 16),
+                saturdaySurchargeTVAC: Number(d.saturdaySurchargeTVAC ?? 0),
+              };
+            })()
+          : undefined,
       pickupPoints: (Array.isArray(s.pickupPoints) ? s.pickupPoints : [])
         .filter((p: { active?: boolean }) => p.active !== false)
         .map((p: Record<string, unknown>) => ({
@@ -201,12 +219,28 @@ publicRouter.get(
 
 /**
  * Devis de livraison géolocalisé : adresse client -> distance depuis le dépôt ->
- * tarif (tranches de km ou au km, config admin). `rentalHT` applique la franchise.
+ * tarif. Mode TIME_DISTANCE : distance + temps de trajet réel -> forfait
+ * livraison + reprise (voir `quoteTimeDistanceDelivery`) ; sinon tranches de
+ * km / au km classiques. `rentalHT` applique la franchise (modes classiques
+ * uniquement — pas de franchise automatique en mode TIME_DISTANCE).
  */
 publicRouter.post(
   '/delivery/quote',
   h(async (req, res) => {
-    const { line1, line2, postalCode, city, country, rentalHT, date } = req.body ?? {};
+    const { line1, line2, postalCode, city, country, rentalHT, date, premiumOut, premiumReturn } =
+      req.body ?? {};
+    const settings = await getSettings();
+    if ((settings.delivery as Record<string, unknown>)?.mode === 'TIME_DISTANCE') {
+      const quote = await quoteTimeDistanceDelivery(
+        { line1, line2, postalCode, city, country },
+        {
+          premiumOut: !!premiumOut,
+          premiumReturn: !!premiumReturn,
+          deliveryDate: typeof date === 'string' && date ? date : undefined,
+        },
+      );
+      return res.json(quote);
+    }
     const quote = await quoteDelivery(
       { line1, line2, postalCode, city, country },
       Number(rentalHT) || 0,
