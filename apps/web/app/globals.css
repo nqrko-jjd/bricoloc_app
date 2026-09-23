@@ -1347,9 +1347,8 @@ button { font-family: inherit; }
 .pessential__card li { margin-bottom: 4px; }
 /* Description : une carte du même alignement que les autres, mais plus
    large pour rester lisible (paragraphe, pas une liste courte). */
-.pessential__card--intro { grid-column: span 2; background: var(--surface-2); border-color: transparent; }
+.pessential__card--intro { background: var(--surface-2); border-color: transparent; }
 .pessential__card--intro p { margin: 0; color: var(--ink); line-height: 1.6; }
-@media (max-width: 640px) { .pessential__card--intro { grid-column: span 1; } }
 .pessential__specs { margin: 0; display: grid; gap: 8px; }
 .pessential__specs > div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
 .pessential__specs > div:last-child { border-bottom: none; padding-bottom: 0; }
