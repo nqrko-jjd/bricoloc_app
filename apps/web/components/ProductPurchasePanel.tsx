@@ -121,23 +121,10 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
         )}
       </div>
 
-      <AvailabilityBadge a={avail} />
+      {cart?.period && <AvailabilityBadge a={avail} />}
 
       {!product.isConsumable && (
         <WeekendOfferNote start={cart?.period?.start} end={cart?.period?.end} />
-      )}
-
-      {sortedTiers.length > 0 && (
-        <div className="ppanel__tiers">
-          {sortedTiers.map((tier) => (
-            <span
-              key={tier.minDays}
-              className={`ppanel__tier${currentTier?.minDays === tier.minDays ? ' is-active' : ''}`}
-            >
-              {tier.minDays}j <strong>{formatEUR(display(tier.perDay))}</strong>
-            </span>
-          ))}
-        </div>
       )}
 
       {nextTier && billedDays != null && (

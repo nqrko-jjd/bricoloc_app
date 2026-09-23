@@ -1401,20 +1401,6 @@ button { font-family: inherit; }
    quantité) portent chacun leur propre bordure, comme la référence. */
 .ppanel { display: flex; flex-direction: column; gap: 20px; }
 
-/* Tarifs dégressifs + upsell */
-.ppanel__tierbadge {
-  display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: var(--r-pill);
-  background: var(--red-tint); color: var(--primary); font-size: 0.75rem; font-weight: 800; vertical-align: middle;
-}
-.ppanel__tiers { display: flex; flex-wrap: wrap; gap: 6px; }
-.ppanel__tier {
-  border: 1px solid var(--border); border-radius: var(--r-pill); padding: 4px 10px;
-  font-size: var(--fs-xs); color: var(--muted-fg); background: var(--surface);
-}
-.ppanel__tier strong { color: var(--ink); font-weight: 700; margin-left: 3px; }
-.ppanel__tier.is-active { background: var(--navy); border-color: var(--navy); color: rgba(255,255,255,0.75); }
-.ppanel__tier.is-active strong { color: #fff; }
-
 /* Quand en avez-vous besoin ? — déclenche le calendrier existant du site */
 .ppanel__datebtn {
   width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
@@ -3714,11 +3700,18 @@ button { font-family: inherit; }
 .cart-dates { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
 .cart-dates strong { display: block; font-size: 1.05rem; color: var(--navy); }
 .cart-dates--empty { border: 2px dashed var(--primary); background: color-mix(in srgb, var(--primary) 5%, var(--surface)); }
-.qty { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--r-pill); background: var(--surface); }
-.qty button { width: 34px; height: 34px; border: 0; background: transparent; font-size: 1.15rem; font-weight: 800; color: var(--navy); cursor: pointer; border-radius: var(--r-pill); }
-.qty button:hover:not(:disabled) { background: var(--surface-2); }
+.qty {
+  display: inline-flex; align-items: center; gap: 2px; padding: 4px;
+  border: 1.5px solid var(--border); border-radius: var(--r-pill); background: var(--surface);
+}
+.qty button {
+  width: 38px; height: 38px; border: 0; background: var(--surface-2); font-size: 1.3rem; font-weight: 800;
+  color: var(--navy); cursor: pointer; border-radius: 50%; line-height: 1; display: grid; place-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+.qty button:hover:not(:disabled) { background: var(--navy); color: #fff; }
 .qty button:disabled { opacity: 0.35; cursor: default; }
-.qty output { min-width: 28px; text-align: center; font-weight: 800; }
+.qty output { min-width: 36px; text-align: center; font-weight: 900; font-size: 1.05rem; color: var(--navy-deep); }
 .cart-line-total { font-weight: 800; color: var(--navy); white-space: nowrap; }
 .checkout-recap { display: flex; flex-direction: column; gap: 6px; }
 .checkout-recap__row { display: flex; justify-content: space-between; gap: 10px; font-size: 0.92rem; }
