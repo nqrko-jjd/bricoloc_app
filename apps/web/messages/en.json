@@ -272,7 +272,17 @@
     "addedHint": "You can keep shopping or go ahead and finish your booking.",
     "addedToCart": "Added — view cart",
     "continueShopping": "Continue shopping",
-    "viewCart": "View cart ({count})"
+    "viewCart": "View cart ({count})",
+    "startingFrom": "Starting from",
+    "whenNeeded": "When do you need it?",
+    "howReceive": "How would you like to receive it?",
+    "pickupMode": "Click & Collect",
+    "pickupModeHint": "Pick up at the depot",
+    "deliveryMode": "Delivery",
+    "deliveryModeHint": "Home or job site",
+    "deliveryDetailsAtCheckout": "The address and time slot are set at the next step.",
+    "quantity": "Quantity",
+    "estimatedTotal": "Estimated total"
   },
   "catalogue": {
     "title": "Every tool,",

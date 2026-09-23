@@ -1363,19 +1363,14 @@ button { font-family: inherit; }
 .pgallery__thumbs button.is-active { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent); }
 .pgallery__thumbs img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Paliers de prix — carte « meilleur tarif » mise en avant (pas forcément la 1re). */
-.ptiers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
-@media (max-width: 560px) { .ptiers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 380px) { .ptier__price { font-size: 1.15rem; } }
-.ptier {
-  border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 14px 12px; text-align: center;
-  background: var(--surface2); display: grid; gap: 3px;
+/* Prix unique, mis en avant (le détail des paliers vit dans le panneau d'achat) */
+.pdetail__price { margin: 16px 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.pdetail__price-label { display: block; width: 100%; font-size: var(--fs-sm); color: var(--muted-fg); }
+.pdetail__price strong {
+  font-family: var(--font-display); font-weight: 900; font-size: 2.5rem; letter-spacing: -0.02em;
+  color: var(--navy-deep);
 }
-.ptier.is-best { border-color: var(--navy); background: var(--navy); }
-.ptier.is-best .ptier__label, .ptier.is-best .ptier__vat { color: rgba(255,255,255,0.7); }
-.ptier.is-best .ptier__price { color: #fff; }
-.ptier__label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; color: var(--muted-fg); }
-.ptier__price { font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; letter-spacing: -0.03em; color: var(--navy-deep); }
+.pdetail__price-unit { font-size: var(--fs-sm); color: var(--muted-fg); }
 
 /* Tarifs dégressifs + upsell — panneau d'achat produit */
 .ppanel__tierbadge {
@@ -1399,6 +1394,33 @@ button { font-family: inherit; }
 }
 .ppanel__qty button:hover { border-color: var(--navy); }
 .ppanel__qty span { min-width: 1.5em; text-align: center; font-weight: 800; color: var(--navy-deep); font-size: 1.05rem; }
+
+/* Quand en avez-vous besoin ? — déclenche le calendrier existant du site */
+.ppanel__datebtn {
+  width: 100%; text-align: left; border: 1px solid var(--border); border-radius: var(--r-xs);
+  background: var(--surface); color: var(--ink); padding: 10px 14px; font-size: var(--fs-sm);
+  font-weight: 700; cursor: pointer;
+}
+.ppanel__datebtn:hover { border-color: var(--navy); }
+
+/* Comment souhaitez-vous le recevoir ? — Click & Collect / Livraison */
+.ppanel__mode { display: flex; gap: 8px; }
+.ppanel__modebtn {
+  flex: 1; display: flex; flex-direction: column; gap: 2px; text-align: left; cursor: pointer;
+  border: 1px solid var(--border); border-radius: var(--r-xs); background: var(--surface);
+  padding: 10px 12px; position: relative;
+}
+.ppanel__modebtn strong { color: var(--navy-deep); font-size: var(--fs-sm); }
+.ppanel__modebtn.is-active { border-color: var(--navy); background: var(--surface-2); box-shadow: 0 0 0 1px var(--navy) inset; }
+.ppanel__modebtn.is-active::after { content: '✓'; position: absolute; top: 8px; right: 10px; color: var(--navy); font-weight: 900; }
+
+/* Total estimé */
+.ppanel__total {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  padding-top: 12px; border-top: 1px solid var(--border);
+}
+.ppanel__total > span { color: var(--muted-fg); font-size: var(--fs-sm); }
+.ppanel__total strong { font-family: var(--font-display); font-weight: 900; font-size: 1.5rem; color: var(--navy-deep); }
 
 /* Confirmation « ajouté au panier » */
 .ppanel__done {

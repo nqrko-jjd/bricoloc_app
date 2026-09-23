@@ -7,7 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
 import type { ProductDetail, ProductSummary } from '@/lib/types';
 import { ProductPurchasePanel } from '@/components/ProductPurchasePanel';
-import { PriceTiersHead } from '@/components/PriceTiersHead';
+import { ProductPriceHead } from '@/components/ProductPriceHead';
 import { Price } from '@/components/Price';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductGallery } from '@/components/ProductGallery';
@@ -152,7 +152,7 @@ export default async function ProductPage({
           )}
           {product.shortDescription && <p className="pdetail__lead">{product.shortDescription}</p>}
 
-          <PriceTiersHead product={product} />
+          <ProductPriceHead product={product} />
           {product.deposit > 0 && (
             <p className="small muted">
               {t('deposit')} : <strong>{formatEUR(product.deposit)}</strong> — {t('depositHint')}

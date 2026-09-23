@@ -272,7 +272,17 @@
     "addedHint": "U kunt verder winkelen of uw reservering afronden.",
     "addedToCart": "Toegevoegd — bekijk winkelwagen",
     "continueShopping": "Verder winkelen",
-    "viewCart": "Bekijk winkelwagen ({count})"
+    "viewCart": "Bekijk winkelwagen ({count})",
+    "startingFrom": "Vanaf",
+    "whenNeeded": "Wanneer heeft u het nodig?",
+    "howReceive": "Hoe wilt u het ontvangen?",
+    "pickupMode": "Click & Collect",
+    "pickupModeHint": "Afhalen op het depot",
+    "deliveryMode": "Levering",
+    "deliveryModeHint": "Thuis of op de werf",
+    "deliveryDetailsAtCheckout": "Het adres en tijdslot worden in de volgende stap bepaald.",
+    "quantity": "Aantal",
+    "estimatedTotal": "Geschat totaal"
   },
   "catalogue": {
     "title": "Al het gereedschap,",

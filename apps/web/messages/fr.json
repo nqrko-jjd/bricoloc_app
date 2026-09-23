@@ -155,7 +155,17 @@
     "addedHint": "Vous pouvez continuer vos achats ou finaliser votre location.",
     "addedToCart": "Ajouté — voir mon panier",
     "continueShopping": "Continuer mes achats",
-    "viewCart": "Voir le panier ({count})"
+    "viewCart": "Voir le panier ({count})",
+    "startingFrom": "À partir de",
+    "whenNeeded": "Quand en avez-vous besoin ?",
+    "howReceive": "Comment souhaitez-vous le recevoir ?",
+    "pickupMode": "Click & Collect",
+    "pickupModeHint": "Retrait au dépôt",
+    "deliveryMode": "Livraison",
+    "deliveryModeHint": "Domicile ou chantier",
+    "deliveryDetailsAtCheckout": "L’adresse et le créneau se précisent à l’étape suivante.",
+    "quantity": "Quantité",
+    "estimatedTotal": "Total estimé"
   },
   "search": {
     "title": "Je connais mes dates",
