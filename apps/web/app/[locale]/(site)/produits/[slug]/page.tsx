@@ -69,6 +69,9 @@ export default async function ProductPage({
   const accessories = [...product.recommendedAccessories, ...product.ppe];
   // Uniquement les consommables réellement mis en vente (prix client renseigné).
   const consumables = product.consumables.filter((c) => c.dailyPrice > 0);
+  const specsEntries = Object.entries(product.specs);
+  const hasEssential =
+    product.recommendedUses.length > 0 || specsEntries.length > 0 || product.includedAccessories.length > 0;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -118,6 +121,16 @@ export default async function ProductPage({
       <div className="pdetail">
         <div className="pdetail__media">
           <ProductGallery images={product.images} alt={product.name} tag={product.category?.name} />
+          <p className="pdetail__trust">
+            <span className="pdetail__trust-icon" aria-hidden>
+              🛡️
+            </span>
+            <span>
+              <strong>{t('trustTitle')}</strong>
+              <br />
+              <span className="small muted">{t('trustHint')}</span>
+            </span>
+          </p>
         </div>
 
         <div className="pdetail__head">
@@ -154,44 +167,6 @@ export default async function ProductPage({
         <div className="pdetail__body">
           {product.description && <p className="measure">{product.description}</p>}
 
-          {product.recommendedUses.length > 0 && (
-            <details className="pacc" open>
-              <summary>{t('recommendedUses')}</summary>
-              <ul>
-                {product.recommendedUses.map((u) => (
-                  <li key={u}>{u}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-
-          {Object.keys(product.specs).length > 0 && (
-            <details className="pacc" open>
-              <summary>{t('specs')}</summary>
-              <table className="table">
-                <tbody>
-                  {Object.entries(product.specs).map(([k, v]) => (
-                    <tr key={k}>
-                      <th>{k}</th>
-                      <td>{v}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </details>
-          )}
-
-          {product.includedAccessories.length > 0 && (
-            <details className="pacc">
-              <summary>{t('included')}</summary>
-              <ul>
-                {product.includedAccessories.map((a) => (
-                  <li key={a}>{a}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-
           {product.packItems.length > 0 && (
             <details className="pacc" open>
               <summary>{t('packContent')}</summary>
@@ -223,8 +198,52 @@ export default async function ProductPage({
         </div>
       </div>
 
+      {hasEssential && (
+        <section className="pessential reveal">
+          <span className="eyebrow">{t('essentialKicker')}</span>
+          <h2>{t('essentialTitle')}</h2>
+          <p className="muted measure">{t('essentialHint')}</p>
+          <div className="pessential__grid">
+            {product.recommendedUses.length > 0 && (
+              <article className="pessential__card">
+                <h3>{t('recommendedUses')}</h3>
+                <ul>
+                  {product.recommendedUses.map((u) => (
+                    <li key={u}>{u}</li>
+                  ))}
+                </ul>
+              </article>
+            )}
+            {specsEntries.length > 0 && (
+              <article className="pessential__card">
+                <h3>{t('specs')}</h3>
+                <dl className="pessential__specs">
+                  {specsEntries.map(([k, v]) => (
+                    <div key={k}>
+                      <dt>{k}</dt>
+                      <dd>{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </article>
+            )}
+            {product.includedAccessories.length > 0 && (
+              <article className="pessential__card">
+                <h3>{t('included')}</h3>
+                <ul>
+                  {product.includedAccessories.map((a) => (
+                    <li key={a}>{a}</li>
+                  ))}
+                </ul>
+              </article>
+            )}
+          </div>
+        </section>
+      )}
+
       {accessories.length > 0 && (
         <section className="complete reveal">
+          <span className="eyebrow">{t('completeKicker')}</span>
           <h2>{t('complete')}</h2>
           <p className="muted">{t('completeHint')}</p>
           <ul className="complete__grid">
@@ -248,6 +267,7 @@ export default async function ProductPage({
 
       {consumables.length > 0 && (
         <section className="complete reveal">
+          <span className="eyebrow">{t('consumablesKicker')}</span>
           <h2>{t('consumables')}</h2>
           <p className="muted">{t('consumablesHint')}</p>
           <ul className="complete__grid">
@@ -276,6 +296,7 @@ export default async function ProductPage({
 
       {product.complementary.length > 0 && (
         <section className="section reveal">
+          <span className="eyebrow">{t('similarKicker')}</span>
           <h2>{t('similar')}</h2>
           <div className="grid grid-cards carousel">
             {product.complementary.map((c) => (
@@ -292,6 +313,7 @@ export default async function ProductPage({
 
       {similar.length > 0 && (
         <section className="section reveal">
+          <span className="eyebrow">{t('similarKicker')}</span>
           <h2>{t('similar')}</h2>
           <div className="grid grid-cards carousel">
             {similar.map((s) => (

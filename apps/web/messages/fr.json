@@ -142,7 +142,20 @@
     "partsPrice": "prix indicatif",
     "partsBuyAt": "Voir chez {shop}",
     "perUnit": "/ pièce",
-    "consumablesHint": "Pensez-y : disques, mèches, abrasifs… adaptés à cette machine."
+    "consumablesHint": "Pensez-y : disques, mèches, abrasifs… adaptés à cette machine.",
+    "trustTitle": "Contrôlé avant chaque départ",
+    "trustHint": "Propre, testé et prêt à travailler.",
+    "essentialKicker": "L’essentiel",
+    "essentialTitle": "Prêt pour votre chantier.",
+    "essentialHint": "La machine est fournie avec l’essentiel pour être utilisée tout de suite. Les consommables restent séparés pour ne payer que ce dont vous avez besoin.",
+    "completeKicker": "Pour travailler sans interruption",
+    "consumablesKicker": "Pensez-y aussi",
+    "similarKicker": "À voir aussi",
+    "addedTitle": "L’outil est dans votre panier.",
+    "addedHint": "Vous pouvez continuer vos achats ou finaliser votre location.",
+    "addedToCart": "Ajouté — voir mon panier",
+    "continueShopping": "Continuer mes achats",
+    "viewCart": "Voir le panier ({count})"
   },
   "search": {
     "title": "Je connais mes dates",

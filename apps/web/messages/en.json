@@ -259,7 +259,20 @@
     "partsPrice": "indicative price",
     "partsBuyAt": "View at {shop}",
     "perUnit": "/ unit",
-    "consumablesHint": "Don’t forget: discs, bits, abrasives… matched to this machine."
+    "consumablesHint": "Don’t forget: discs, bits, abrasives… matched to this machine.",
+    "trustTitle": "Checked before every rental",
+    "trustHint": "Clean, tested and ready to work.",
+    "essentialKicker": "The essentials",
+    "essentialTitle": "Ready for your job.",
+    "essentialHint": "The machine comes with everything needed to start straight away. Consumables stay separate, so you only pay for what you need.",
+    "completeKicker": "To keep working without interruption",
+    "consumablesKicker": "Don’t forget",
+    "similarKicker": "You may also like",
+    "addedTitle": "This tool is in your cart.",
+    "addedHint": "You can keep shopping or go ahead and finish your booking.",
+    "addedToCart": "Added — view cart",
+    "continueShopping": "Continue shopping",
+    "viewCart": "View cart ({count})"
   },
   "catalogue": {
     "title": "Every tool,",

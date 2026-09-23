@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { formatEUR } from '@bricoloc/shared';
+import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import type { Availability, ProductDetail } from '@/lib/types';
 import { useCart } from '@/lib/providers';
@@ -16,11 +18,13 @@ function daysBetween(startIso: string, endIso: string): number {
 export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
   const { cart, addItem, setPeriod } = useCart();
   const { isPro, display } = usePriceDisplay();
+  const t = useTranslations('product');
   const [qty, setQty] = useState(1);
   const [avail, setAvail] = useState<Availability | null>(product.availability ?? null);
   const [extras, setExtras] = useState<Record<string, boolean>>({});
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
   const [extending, setExtending] = useState(false);
 
   useEffect(() => {
@@ -53,8 +57,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
       for (const l of linked) {
         if (extras[l.id]) await addItem(l.id, l.quantity || 1);
       }
-      const n = Object.values(extras).filter(Boolean).length;
-      setMsg(`Ajouté au panier${n ? ` avec ${n} article(s) associé(s)` : ''}.`);
+      setDone(true);
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
     } finally {
@@ -140,14 +143,21 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
         <AvailabilityBadge a={avail} />
       </div>
 
-      <div className="field" style={{ maxWidth: 120 }}>
+      <div className="field">
         <label>Quantité</label>
-        <input
-          type="number"
-          min={1}
-          value={qty}
-          onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
-        />
+        <div className="ppanel__qty">
+          <button
+            type="button"
+            aria-label="Retirer une unité"
+            onClick={() => setQty((q) => Math.max(1, q - 1))}
+          >
+            −
+          </button>
+          <span>{qty}</span>
+          <button type="button" aria-label="Ajouter une unité" onClick={() => setQty((q) => q + 1)}>
+            +
+          </button>
+        </div>
       </div>
 
       {linked.length > 0 && (
@@ -176,16 +186,32 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
       )}
 
       <button
-        className="btn btn-primary btn-block"
+        className={`btn btn-block${done ? ' btn-secondary' : ' btn-primary'}`}
         onClick={addAll}
-        disabled={busy || avail?.status === 'UNAVAILABLE'}
+        disabled={busy || done || avail?.status === 'UNAVAILABLE'}
       >
-        {busy ? '…' : 'Ajouter au panier'}
+        {busy ? '…' : done ? `✓ ${t('addedToCart')}` : 'Ajouter au panier'}
       </button>
       {msg && (
-        <p className="small" style={{ marginTop: 8, color: 'var(--ok)' }}>
-          {msg} <a href="/panier">Voir le panier →</a>
+        <p className="small" style={{ marginTop: 8, color: 'var(--err)' }}>
+          {msg}
         </p>
+      )}
+      {done && (
+        <div className="ppanel__done">
+          <p className="ppanel__done-title">✓ {t('addedTitle')}</p>
+          <p className="small muted" style={{ margin: '4px 0 12px' }}>
+            {t('addedHint')}
+          </p>
+          <div className="row" style={{ gap: 8 }}>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => setDone(false)}>
+              {t('continueShopping')}
+            </button>
+            <Link href="/panier" className="btn btn-secondary btn-sm">
+              {t('viewCart', { count: cart?.itemCount ?? 1 })}
+            </Link>
+          </div>
+        </div>
       )}
       {!cart?.period && (
         <p className="small muted" style={{ marginTop: 8 }}>

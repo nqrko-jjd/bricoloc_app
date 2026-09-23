@@ -259,7 +259,20 @@
     "partsPrice": "richtprijs",
     "partsBuyAt": "Bekijk bij {shop}",
     "perUnit": "/ stuk",
-    "consumablesHint": "Denk eraan: schijven, boren, schuurpapier… geschikt voor deze machine."
+    "consumablesHint": "Denk eraan: schijven, boren, schuurpapier… geschikt voor deze machine.",
+    "trustTitle": "Gecontroleerd voor elke verhuur",
+    "trustHint": "Schoon, getest en klaar voor gebruik.",
+    "essentialKicker": "Het essentiële",
+    "essentialTitle": "Klaar voor uw klus.",
+    "essentialHint": "De machine wordt geleverd met alles om meteen te starten. Verbruiksartikelen blijven apart, zo betaalt u enkel wat u nodig heeft.",
+    "completeKicker": "Om zonder onderbreking te werken",
+    "consumablesKicker": "Denk er ook aan",
+    "similarKicker": "Ook interessant",
+    "addedTitle": "Dit gereedschap zit in uw winkelwagen.",
+    "addedHint": "U kunt verder winkelen of uw reservering afronden.",
+    "addedToCart": "Toegevoegd — bekijk winkelwagen",
+    "continueShopping": "Verder winkelen",
+    "viewCart": "Bekijk winkelwagen ({count})"
   },
   "catalogue": {
     "title": "Al het gereedschap,",
