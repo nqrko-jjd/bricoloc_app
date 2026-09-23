@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { staffApi } from '@/lib/staff';
 import { usePriceDisplay } from '@/lib/usePriceDisplay';
+import { TvacPriceField, useTvacPriceField } from '@/components/admin/TvacPriceField';
 import { formatEUR } from '@bricoloc/shared';
 import { API_URL } from '@/lib/api';
 import { ImageDropzone } from '@/components/admin/ImageDropzone';
@@ -442,7 +443,7 @@ function PackEditor({
   onUnpublish: () => void;
 }) {
   const { vatRate } = usePriceDisplay();
-  const vatHint = (v: number | null | undefined) => (v && v > 0 ? `≈ ${formatEUR(v * (1 + vatRate))} TVAC` : null);
+  const dailyPriceField = useTvacPriceField(pack.dailyPrice, (ht) => patch({ dailyPrice: ht }), vatRate);
   const [pickOpen, setPickOpen] = useState(false);
   const [pickQ, setPickQ] = useState('');
   const [pickRes, setPickRes] = useState<Machine[]>([]);
@@ -707,13 +708,13 @@ function PackEditor({
         </p>
         <div className="field-2">
           <div className="field">
-            <label>Prix / jour du pack (HTVA)</label>
+            <label>Prix / jour du pack (TVAC)</label>
             <div className="row" style={{ gap: 8 }}>
               <input
                 type="number"
                 step="0.01"
-                value={pack.dailyPrice}
-                onChange={(e) => patch({ dailyPrice: Number(e.target.value) || 0 })}
+                value={dailyPriceField.text}
+                onChange={(e) => dailyPriceField.onChange(e.target.value)}
               />
               <button
                 className="btn btn-outline btn-sm"
@@ -729,7 +730,7 @@ function PackEditor({
                 Appliquer
               </button>
             </div>
-            {vatHint(pack.dailyPrice) && <span className="small muted">{vatHint(pack.dailyPrice)}</span>}
+            {dailyPriceField.hint && <span className="small muted">{dailyPriceField.hint}</span>}
           </div>
           <div className="field">
             <label>Caution</label>
@@ -752,24 +753,20 @@ function PackEditor({
         </div>
         <div className="field-2">
           <div className="field">
-            <label>Prix semaine (HTVA)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={pack.weekPrice ?? ''}
-              onChange={(e) => patch({ weekPrice: e.target.value ? Number(e.target.value) : null })}
+            <label>Prix semaine (TVAC)</label>
+            <TvacPriceField
+              htValue={pack.weekPrice ?? 0}
+              onHtChange={(ht) => patch({ weekPrice: ht || null })}
+              vatRate={vatRate}
             />
-            {vatHint(pack.weekPrice) && <span className="small muted">{vatHint(pack.weekPrice)}</span>}
           </div>
           <div className="field">
-            <label>Prix mois (HTVA)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={pack.monthPrice ?? ''}
-              onChange={(e) => patch({ monthPrice: e.target.value ? Number(e.target.value) : null })}
+            <label>Prix mois (TVAC)</label>
+            <TvacPriceField
+              htValue={pack.monthPrice ?? 0}
+              onHtChange={(ht) => patch({ monthPrice: ht || null })}
+              vatRate={vatRate}
             />
-            {vatHint(pack.monthPrice) && <span className="small muted">{vatHint(pack.monthPrice)}</span>}
           </div>
         </div>
       </div>

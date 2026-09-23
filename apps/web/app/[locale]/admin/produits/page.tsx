@@ -1,8 +1,9 @@
 'use client';
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { formatEUR, suggestDegressivePricing } from '@bricoloc/shared';
+import { formatEUR, round2, suggestDegressivePricing } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { usePriceDisplay } from '@/lib/usePriceDisplay';
+import { TvacPriceField } from '@/components/admin/TvacPriceField';
 import { ImageDropzone } from '@/components/admin/ImageDropzone';
 import { DocumentUploader } from '@/components/admin/DocumentUploader';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
@@ -196,12 +197,6 @@ export default function AdminProduits() {
   }, []);
 
   const set = (k: string, v: unknown) => setForm((s) => ({ ...s, [k]: v }));
-
-  /** Aperçu du prix client (TVAC) pendant la saisie du prix HTVA. */
-  const vatHint = (v: unknown) => {
-    const n = Number(v);
-    return n > 0 ? `≈ ${formatEUR(n * (1 + vatRate))} TVAC` : null;
-  };
 
   const dailyNum = Number(form.dailyPrice);
   const autoPricing =
@@ -689,16 +684,12 @@ export default function AdminProduits() {
           {isConsumableMode && (
             <div className="field-2">
               <div className="field">
-                <label>Prix unitaire (HTVA)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.dailyPrice}
-                  onChange={(e) => set('dailyPrice', e.target.value)}
+                <label>Prix unitaire (TVAC)</label>
+                <TvacPriceField
+                  htValue={Number(form.dailyPrice) || 0}
+                  onHtChange={(ht) => set('dailyPrice', String(ht))}
+                  vatRate={vatRate}
                 />
-                {vatHint(form.dailyPrice) && (
-                  <span className="small muted">{vatHint(form.dailyPrice)}</span>
-                )}
               </div>
               <div className="field">
                 <label>Caution</label>
@@ -732,16 +723,12 @@ export default function AdminProduits() {
               )}
               <div className="field-2">
                 <div className="field">
-                  <label>Prix jour (HTVA)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.dailyPrice}
-                    onChange={(e) => set('dailyPrice', e.target.value)}
+                  <label>Prix jour (TVAC)</label>
+                  <TvacPriceField
+                    htValue={Number(form.dailyPrice) || 0}
+                    onHtChange={(ht) => set('dailyPrice', String(ht))}
+                    vatRate={vatRate}
                   />
-                  {vatHint(form.dailyPrice) && (
-                    <span className="small muted">{vatHint(form.dailyPrice)}</span>
-                  )}
                 </div>
                 <div className="field">
                   <label>Caution</label>
@@ -755,42 +742,30 @@ export default function AdminProduits() {
               </div>
               <div className="field-3">
                 <div className="field">
-                  <label>Prix week-end (HTVA)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.weekendPrice}
-                    onChange={(e) => set('weekendPrice', e.target.value)}
+                  <label>Prix week-end (TVAC)</label>
+                  <TvacPriceField
+                    htValue={Number(form.weekendPrice) || 0}
+                    onHtChange={(ht) => set('weekendPrice', ht ? String(ht) : '')}
+                    vatRate={vatRate}
                   />
-                  {vatHint(form.weekendPrice) && (
-                    <span className="small muted">{vatHint(form.weekendPrice)}</span>
-                  )}
                 </div>
                 <div className="field">
-                  <label>Prix semaine (7 j, HTVA)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.weekPrice}
-                    onChange={(e) => set('weekPrice', e.target.value)}
-                    placeholder={autoPricing ? String(autoPricing.weekPrice) : ''}
+                  <label>Prix semaine (7 j, TVAC)</label>
+                  <TvacPriceField
+                    htValue={Number(form.weekPrice) || 0}
+                    onHtChange={(ht) => set('weekPrice', ht ? String(ht) : '')}
+                    vatRate={vatRate}
+                    placeholder={autoPricing ? String(round2(autoPricing.weekPrice * (1 + vatRate))) : ''}
                   />
-                  {vatHint(form.weekPrice || autoPricing?.weekPrice) && (
-                    <span className="small muted">{vatHint(form.weekPrice || autoPricing?.weekPrice)}</span>
-                  )}
                 </div>
                 <div className="field">
-                  <label>Prix mois (30 j, HTVA)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.monthPrice}
-                    onChange={(e) => set('monthPrice', e.target.value)}
-                    placeholder={autoPricing ? String(autoPricing.monthPrice) : ''}
+                  <label>Prix mois (30 j, TVAC)</label>
+                  <TvacPriceField
+                    htValue={Number(form.monthPrice) || 0}
+                    onHtChange={(ht) => set('monthPrice', ht ? String(ht) : '')}
+                    vatRate={vatRate}
+                    placeholder={autoPricing ? String(round2(autoPricing.monthPrice * (1 + vatRate))) : ''}
                   />
-                  {vatHint(form.monthPrice || autoPricing?.monthPrice) && (
-                    <span className="small muted">{vatHint(form.monthPrice || autoPricing?.monthPrice)}</span>
-                  )}
                 </div>
               </div>
             </>
@@ -802,8 +777,9 @@ export default function AdminProduits() {
                 prix jour (semaine −50 %, mois −60 %, palier dès le 3<sup>e</sup> jour).
                 {autoPricing && (
                   <>
-                    {' '}Pour {formatEUR(Number(form.dailyPrice))}/j : semaine{' '}
-                    {formatEUR(autoPricing.weekPrice)} · mois {formatEUR(autoPricing.monthPrice)}.{' '}
+                    {' '}Pour {formatEUR(Number(form.dailyPrice) * (1 + vatRate))}/j TVAC : semaine{' '}
+                    {formatEUR(autoPricing.weekPrice * (1 + vatRate))} · mois{' '}
+                    {formatEUR(autoPricing.monthPrice * (1 + vatRate))} (TVAC).{' '}
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm"
