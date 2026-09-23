@@ -42,9 +42,9 @@ export function CartSummary({ quote, title = 'Récapitulatif' }: { quote: Quote 
       )}
       {quote.composedPack?.next && (
         <p className="small" style={{ margin: '2px 0 6px', color: 'var(--primary)', fontWeight: 700 }}>
-          + {quote.composedPack.next.minMachines - quote.composedPack.machineCount} machine
-          {quote.composedPack.next.minMachines - quote.composedPack.machineCount > 1 ? 's' : ''} → −
-          {Math.round(quote.composedPack.next.pct * 100)} %
+          Ajoutez {quote.composedPack.next.minMachines - quote.composedPack.machineCount} machine
+          {quote.composedPack.next.minMachines - quote.composedPack.machineCount > 1 ? 's' : ''} de plus pour
+          −{Math.round(quote.composedPack.next.pct * 100)} % sur la location
         </p>
       )}
       {quote.deliveryQuote ? (
