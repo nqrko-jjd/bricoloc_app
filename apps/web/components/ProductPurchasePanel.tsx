@@ -24,7 +24,6 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
   const tBar = useTranslations('dateBar');
   const [qty, setQty] = useState(1);
   const [avail, setAvail] = useState<Availability | null>(product.availability ?? null);
-  const [extras, setExtras] = useState<Record<string, boolean>>({});
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -45,22 +44,11 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
     ).then((r) => setAvail(r.results[0] as unknown as Availability));
   }, [cart?.period, qty, product.id]);
 
-  const linked = [
-    ...product.recommendedAccessories.map((x) => ({ ...x, group: 'Accessoire' })),
-    ...product.consumables
-      .filter((x) => x.dailyPrice > 0)
-      .map((x) => ({ ...x, group: 'Consommable' })),
-    ...product.ppe.map((x) => ({ ...x, group: 'Protection' })),
-  ];
-
   async function addAll() {
     setBusy(true);
     setMsg('');
     try {
       await addItem(product.id, qty);
-      for (const l of linked) {
-        if (extras[l.id]) await addItem(l.id, l.quantity || 1);
-      }
       setDone(true);
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
@@ -172,7 +160,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
         )}
       </div>
 
-      <div className="field">
+      <div className="field ppanel__qtyfield">
         <label>{t('quantity')}</label>
         <div className="qty">
           <button
@@ -188,29 +176,6 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
           </button>
         </div>
       </div>
-
-      {linked.length > 0 && (
-        <div>
-          <strong style={{ color: 'var(--navy)', fontSize: '0.9rem' }}>Ajouter en un geste</strong>
-          <div className="stack" style={{ gap: 6, marginTop: 8 }}>
-            {linked.map((l) => (
-              <label key={l.id} className="row" style={{ gap: 8, fontSize: '0.88rem' }}>
-                <input
-                  type="checkbox"
-                  checked={!!extras[l.id]}
-                  onChange={(e) => setExtras((s) => ({ ...s, [l.id]: e.target.checked }))}
-                />
-                <span>
-                  {l.name}{' '}
-                  <span className="muted">
-                    ({l.group} · {formatEUR(display(l.dailyPrice))})
-                  </span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="ppanel__total">
         <span>{t('estimatedTotal')}</span>
@@ -246,6 +211,11 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
             </button>
           </div>
         </div>
+      )}
+      {product.deposit > 0 && (
+        <p className="small muted ppanel__footnote">
+          {t('deposit')} : <strong>{formatEUR(product.deposit)}</strong> — {t('depositHint')}
+        </p>
       )}
     </div>
   );

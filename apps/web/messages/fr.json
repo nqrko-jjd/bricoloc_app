@@ -109,6 +109,8 @@
     "specs": "Caractéristiques techniques",
     "recommendedUses": "Utilisations conseillées",
     "included": "Accessoires inclus",
+    "includedDefaultControl": "Machine contrôlée avant chaque départ",
+    "includedDefaultBasic": "Accessoires de base fournis",
     "packContent": "Contenu du pack",
     "complete": "Complétez votre location",
     "completeHint": "Les accessoires et consommables adaptés à cette machine.",

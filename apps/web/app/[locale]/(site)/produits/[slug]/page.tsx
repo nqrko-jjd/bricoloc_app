@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { redirect } from '@/i18n/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { formatEUR } from '@bricoloc/shared';
 import { Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
 import type { ProductDetail, ProductSummary } from '@/lib/types';
@@ -72,12 +71,14 @@ export default async function ProductPage({
   const consumables = product.consumables.filter((c) => c.dailyPrice > 0);
   const specsEntries = Object.entries(product.specs);
   const hasDocs = !!product.manualUrl || product.documents.length > 0;
-  const hasEssential =
-    product.recommendedUses.length > 0 ||
-    specsEntries.length > 0 ||
-    product.includedAccessories.length > 0 ||
-    hasDocs;
-  const hasExtra = !!product.description || product.packItems.length > 0;
+  const hasExtra = product.packItems.length > 0;
+  // « Compris avec l'outil » : contenu réel si renseigné, sinon les deux
+  // garanties valables pour toute location (jamais un contenu inventé).
+  const includedList =
+    product.includedAccessories.length > 0
+      ? product.includedAccessories
+      : [t('includedDefaultControl'), t('includedDefaultBasic')];
+  const essentialIntro = product.description || t('essentialHint');
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -151,11 +152,6 @@ export default async function ProductPage({
           {product.shortDescription && <p className="pdetail__lead">{product.shortDescription}</p>}
 
           <ProductPriceHead product={product} />
-          {product.deposit > 0 && (
-            <p className="small muted">
-              {t('deposit')} : <strong>{formatEUR(product.deposit)}</strong> — {t('depositHint')}
-            </p>
-          )}
         </div>
 
         <div className="pdetail__buy">
@@ -165,19 +161,16 @@ export default async function ProductPage({
 
       {hasExtra && (
         <div className="pdetail-extra">
-          {product.description && <p className="measure">{product.description}</p>}
-          {product.packItems.length > 0 && (
-            <details className="pacc" open>
-              <summary>{t('packContent')}</summary>
-              <ul>
-                {product.packItems.map((pi) => (
-                  <li key={pi.id}>
-                    {pi.quantity} × <Link href={`/produits/${pi.slug}`}>{pi.name}</Link>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
+          <details className="pacc" open>
+            <summary>{t('packContent')}</summary>
+            <ul>
+              {product.packItems.map((pi) => (
+                <li key={pi.id}>
+                  {pi.quantity} × <Link href={`/produits/${pi.slug}`}>{pi.name}</Link>
+                </li>
+              ))}
+            </ul>
+          </details>
         </div>
       )}
 
@@ -211,61 +204,57 @@ export default async function ProductPage({
         </section>
       )}
 
-      {hasEssential && (
-        <section className="pessential reveal">
-          <span className="eyebrow">{t('essentialKicker')}</span>
-          <h2>{t('essentialTitle')}</h2>
-          <p className="muted measure">{t('essentialHint')}</p>
-          <div className="pessential__grid">
-            {product.recommendedUses.length > 0 && (
-              <article className="pessential__card">
-                <h3>{t('recommendedUses')}</h3>
-                <ul>
-                  {product.recommendedUses.map((u) => (
-                    <li key={u}>{u}</li>
-                  ))}
-                </ul>
-              </article>
-            )}
-            {specsEntries.length > 0 && (
-              <article className="pessential__card">
-                <h3>{t('specs')}</h3>
-                <dl className="pessential__specs">
-                  {specsEntries.map(([k, v]) => (
-                    <div key={k}>
-                      <dt>{k}</dt>
-                      <dd>{v}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </article>
-            )}
-            {product.includedAccessories.length > 0 && (
-              <article className="pessential__card">
-                <h3>{t('included')}</h3>
-                <ul>
-                  {product.includedAccessories.map((a) => (
-                    <li key={a}>{a}</li>
-                  ))}
-                </ul>
-              </article>
-            )}
-            {hasDocs && (
-              <article className="pessential__card">
-                <h3>{t('documents')}</h3>
-                <p className="small muted">
-                  {product.manualUrl ? <a href={product.manualUrl}>{t('manual')}</a> : t('noManual')}
-                </p>
-                {product.documents.map((d) => (
-                  <p key={d.url} className="small">
-                    <a href={d.url}>{d.label}</a>
-                  </p>
+      <section className="pessential reveal">
+        <span className="eyebrow">{t('essentialKicker')}</span>
+        <h2>{t('essentialTitle')}</h2>
+        <p className="muted measure">{essentialIntro}</p>
+        <div className="pessential__grid">
+          {product.recommendedUses.length > 0 && (
+            <article className="pessential__card">
+              <h3>{t('recommendedUses')}</h3>
+              <ul>
+                {product.recommendedUses.map((u) => (
+                  <li key={u}>{u}</li>
                 ))}
-              </article>
-            )}
-          </div>
-        </section>
-      )}
+              </ul>
+            </article>
+          )}
+          {specsEntries.length > 0 && (
+            <article className="pessential__card">
+              <h3>{t('specs')}</h3>
+              <dl className="pessential__specs">
+                {specsEntries.map(([k, v]) => (
+                  <div key={k}>
+                    <dt>{k}</dt>
+                    <dd>{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          )}
+          <article className="pessential__card">
+            <h3>{t('included')}</h3>
+            <ul>
+              {includedList.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          </article>
+          {hasDocs && (
+            <article className="pessential__card">
+              <h3>{t('documents')}</h3>
+              <p className="small muted">
+                {product.manualUrl ? <a href={product.manualUrl}>{t('manual')}</a> : t('noManual')}
+              </p>
+              {product.documents.map((d) => (
+                <p key={d.url} className="small">
+                  <a href={d.url}>{d.label}</a>
+                </p>
+              ))}
+            </article>
+          )}
+        </div>
+      </section>
 
       {product.complementary.length > 0 && (
         <section className="section reveal">

@@ -240,6 +240,8 @@
     "specs": "Technische specificaties",
     "recommendedUses": "Aanbevolen toepassingen",
     "included": "Meegeleverde accessoires",
+    "includedDefaultControl": "Machine gecontroleerd voor elk vertrek",
+    "includedDefaultBasic": "Standaard accessoires inbegrepen",
     "packContent": "Inhoud van het pakket",
     "complete": "Maak uw reservering compleet",
     "completeHint": "De accessoires en verbruiksartikelen die geschikt zijn voor deze machine.",

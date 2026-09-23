@@ -240,6 +240,8 @@
     "specs": "Technical specifications",
     "recommendedUses": "Recommended uses",
     "included": "Accessories included",
+    "includedDefaultControl": "Machine checked before every departure",
+    "includedDefaultBasic": "Basic accessories included",
     "packContent": "Contents of the pack",
     "complete": "Complete your booking",
     "completeHint": "Accessories and consumables suitable for this machine.",
