@@ -1,15 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { formatEUR } from '@bricoloc/shared';
+import { formatEUR, formatDateBE } from '@bricoloc/shared';
 import { api } from '@/lib/api';
-import { toLocalInput, fromLocalInput } from '@/lib/dates';
+import { durationLabel } from '@/lib/dates';
 import type { Availability, ProductDetail } from '@/lib/types';
 import { useCart } from '@/lib/providers';
 import { usePriceDisplay } from '@/lib/usePriceDisplay';
 import { AvailabilityBadge } from './AvailabilityBadge';
 import { WeekendOfferNote } from './WeekendOfferNote';
-import { Home, Truck } from './icons';
+import { DateRangePicker } from './DateRangePicker';
+import { CalendarClock, Home, Truck } from './icons';
 
 function daysBetween(startIso: string, endIso: string): number {
   const ms = new Date(endIso).getTime() - new Date(startIso).getTime();
@@ -28,18 +29,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [extending, setExtending] = useState(false);
-  const [localStart, setLocalStart] = useState(cart?.period ? toLocalInput(cart.period.start) : '');
-  const [localEnd, setLocalEnd] = useState(cart?.period ? toLocalInput(cart.period.end) : '');
-
-  useEffect(() => {
-    setLocalStart(cart?.period ? toLocalInput(cart.period.start) : '');
-    setLocalEnd(cart?.period ? toLocalInput(cart.period.end) : '');
-  }, [cart?.period]);
-
-  function applyDates(start: string, end: string) {
-    if (!start || !end) return;
-    setPeriod({ start: fromLocalInput(start), end: fromLocalInput(end) });
-  }
+  const [picking, setPicking] = useState(false);
 
   useEffect(() => {
     if (!cart?.period) {
@@ -112,31 +102,23 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
     <div className="ppanel">
       <div className="field">
         <label>{t('whenNeeded')}</label>
-        <div className="field-2">
-          <div className="field">
-            <label className="small muted">{tBar('start')}</label>
-            <input
-              type="datetime-local"
-              value={localStart}
-              onChange={(e) => {
-                setLocalStart(e.target.value);
-                applyDates(e.target.value, localEnd);
-              }}
-            />
-          </div>
-          <div className="field">
-            <label className="small muted">{tBar('return')}</label>
-            <input
-              type="datetime-local"
-              value={localEnd}
-              min={localStart || undefined}
-              onChange={(e) => {
-                setLocalEnd(e.target.value);
-                applyDates(localStart, e.target.value);
-              }}
-            />
-          </div>
-        </div>
+        <button type="button" className="ppanel__datebtn" onClick={() => setPicking(true)}>
+          <CalendarClock />
+          {cart?.period
+            ? `${formatDateBE(cart.period.start)} → ${formatDateBE(cart.period.end)} (${durationLabel(cart.period.start, cart.period.end)})`
+            : tBar('chooseDates')}
+        </button>
+        {picking && (
+          <DateRangePicker
+            initialStart={cart?.period ? new Date(cart.period.start) : undefined}
+            initialEnd={cart?.period ? new Date(cart.period.end) : undefined}
+            onClose={() => setPicking(false)}
+            onApply={async (s, e) => {
+              await setPeriod({ start: s.toISOString(), end: e.toISOString() });
+              setPicking(false);
+            }}
+          />
+        )}
       </div>
 
       {cart?.period && <AvailabilityBadge a={avail} />}
