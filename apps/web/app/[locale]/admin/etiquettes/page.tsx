@@ -7,8 +7,13 @@ import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 interface Label {
   unitId: string;
   assetTag: string;
+  ref: string;
   barcode: string;
   productName: string;
+  machineName: string;
+  ficheName: string | null;
+  rank: number;
+  count: number;
   serialNumber: string | null;
   storageLocation: string | null;
   qrDataUrl: string;
@@ -19,6 +24,10 @@ interface StockRow {
   category: string | null;
   image: string | null;
   total: number;
+  ref: string | null;
+  brand: string | null;
+  model: string | null;
+  parentName: string | null;
 }
 interface ZoneLabel {
   code: string;
@@ -98,14 +107,20 @@ function MachineLabels() {
     );
   }, []);
 
-  const shown = useMemo(
-    () => machines.filter((m) => !filter || m.name.toLowerCase().includes(filter.toLowerCase())),
-    [machines, filter],
-  );
+  // Recherche sur le O-, la marque/modèle, le nom brut ou la fiche produit.
+  const shown = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    return machines.filter(
+      (m) =>
+        !q ||
+        [m.name, m.ref, m.brand, m.model, m.parentName].some((s) => s?.toLowerCase().includes(q)),
+    );
+  }, [machines, filter]);
+  // Groupé par fiche produit (ce que le client voit), les machines O-XXXX dessous.
   const byCat = useMemo(() => {
     const map = new Map<string, StockRow[]>();
     for (const m of shown) {
-      const k = m.category ?? 'Sans catégorie';
+      const k = m.parentName ?? `${m.category ?? 'Sans catégorie'} — sans fiche produit`;
       map.set(k, [...(map.get(k) ?? []), m]);
     }
     return map;
@@ -132,8 +147,10 @@ function MachineLabels() {
   return (
     <>
       <p className="muted small no-print">
-        Une étiquette par exemplaire : QR (scan smartphone / Zebra) + code-barres Code 128 + nom
-        de la machine. Cliquez les vignettes voulues, ou imprimez tout le parc. Format prévu pour
+        Une étiquette par exemplaire : le O- de la machine en gros, le n° de série dessous (ou
+        « Ex. 2/3 » tant qu&apos;il n&apos;est pas saisi) pour distinguer deux machines identiques,
+        QR propre à l&apos;exemplaire (scan smartphone / Zebra) + code-barres. « Générer TOUT le
+        parc » sort toutes les étiquettes d&apos;un coup pour l&apos;inventaire. Format prévu pour
         la Brother QL-700 chargée en DK-22205 (bande continue 62 mm) — chaque étiquette est
         imprimée comme sa propre page, le rouleau se découpe automatiquement entre chacune.
       </p>
@@ -185,7 +202,10 @@ function MachineLabels() {
                   />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={m.image || PLACEHOLDER_IMG} alt="" />
-                  <span className="etq-card__name">{m.name}</span>
+                  <span className="etq-card__name">
+                    {m.ref && <strong>{m.ref} · </strong>}
+                    {m.brand && m.model ? `${m.brand} ${m.model}` : m.name}
+                  </span>
                   <span className="etq-card__qty">×{m.total}</span>
                 </label>
               ))}
@@ -216,10 +236,12 @@ function MachineLabels() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={l.qrDataUrl} alt="" className="label__qr" />
             <div className="label__body">
-              <strong className="label__tag">{l.assetTag}</strong>
-              {l.serialNumber && <span className="label__serial">SN {l.serialNumber}</span>}
+              <strong className="label__tag">{l.ref}</strong>
+              <span className="label__serial">
+                {l.serialNumber ? `SN ${l.serialNumber}` : `Ex. ${l.rank}/${l.count}`}
+              </span>
               <span className="label__name">
-                {l.productName}
+                {l.machineName}
                 {l.storageLocation ? ` · 📍 ${l.storageLocation}` : ''}
               </span>
               <span className="label__code">

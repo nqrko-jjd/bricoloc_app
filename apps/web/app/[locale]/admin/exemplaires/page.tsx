@@ -15,6 +15,11 @@ interface StockRow {
   category: string | null;
   published: boolean;
   technical: boolean;
+  ref: string | null;
+  brand: string | null;
+  model: string | null;
+  parentId: string | null;
+  parentName: string | null;
   total: number;
   availableNow: number;
   reserved: number;
@@ -301,7 +306,9 @@ function MachineRow({
           />
         </td>
         <td>
-          <span className="stock-row__caret">{open ? '▾' : '▸'}</span> {r.name}
+          <span className="stock-row__caret">{open ? '▾' : '▸'}</span>{' '}
+          {r.ref && <strong style={{ color: 'var(--primary)' }}>{r.ref}</strong>}{' '}
+          {r.brand && r.model ? `${r.brand} ${r.model}` : r.name}
           {!r.published && !r.technical && (
             <span className="badge" style={{ marginLeft: 6 }}>hors ligne</span>
           )}
@@ -343,38 +350,28 @@ function MachineRow({
             {mine.length > 0 && (
               <table className="table table--tight">
                 <tbody>
-                  {mine.map((u) => (
+                  {mine.map((u, idx) => (
                     <Fragment key={u.id}>
                       <tr>
                         <td>
-                          <div className="row" style={{ gap: 4, alignItems: 'center' }}>
-                            {canManage ? (
-                              <input
-                                key={u.assetTag}
-                                defaultValue={u.assetTag}
-                                style={{ width: 90, fontWeight: 700 }}
-                                onBlur={(e) => {
-                                  if (e.target.value.trim() && e.target.value !== u.assetTag)
-                                    renameTag(u.id, e.target.value.trim(), u.assetTag);
-                                }}
-                              />
-                            ) : (
-                              <span
-                                className="small"
-                                style={{ width: 90, fontWeight: 700 }}
-                                title="Identifiant imprimé sur l'étiquette — modifiable uniquement par un responsable"
-                              >
-                                {u.assetTag}
-                              </span>
-                            )}
-                            <span className="small muted">SN</span>
+                          <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                            <span
+                              className="badge"
+                              title="Étiquette collée sur la machine : le O- est celui de la machine (le même pour tous les exemplaires identiques), le n° de série distingue chaque exemplaire."
+                              style={{ whiteSpace: 'nowrap' }}
+                            >
+                              🏷 {r.ref ?? u.assetTag} · Ex. {idx + 1}/{mine.length}
+                            </span>
+                            <label className="small muted" style={{ whiteSpace: 'nowrap' }}>
+                              N° de série
+                            </label>
                             {canManage ? (
                               <input
                                 key={u.serialNumber ?? ''}
                                 defaultValue={u.serialNumber ?? ''}
-                                placeholder="n° de série"
-                                title="Distingue 2 exemplaires de la même référence (ex. 2 Makita DBO)"
-                                style={{ width: 110 }}
+                                placeholder="à saisir"
+                                title="Distingue 2 exemplaires de la même machine (ex. 2 Makita DBO) — imprimé sur l'étiquette"
+                                style={{ width: 130, fontWeight: 700 }}
                                 onBlur={(e) => {
                                   if (e.target.value.trim() !== (u.serialNumber ?? ''))
                                     setSerial(u.id, e.target.value.trim(), u.serialNumber ?? '');
@@ -384,10 +381,25 @@ function MachineRow({
                               <span
                                 className="small"
                                 title="N° de série — modifiable uniquement par un responsable"
-                                style={{ width: 110, color: u.serialNumber ? 'inherit' : 'var(--muted)' }}
+                                style={{ width: 130, color: u.serialNumber ? 'inherit' : 'var(--muted)' }}
                               >
                                 {u.serialNumber || '—'}
                               </span>
+                            )}
+                            {canManage && (
+                              <details className="small muted">
+                                <summary style={{ cursor: 'pointer' }}>code interne</summary>
+                                <input
+                                  key={u.assetTag}
+                                  defaultValue={u.assetTag}
+                                  title="Code interne unique de l'exemplaire (les scans utilisent le QR, pas ce code)"
+                                  style={{ width: 150 }}
+                                  onBlur={(e) => {
+                                    if (e.target.value.trim() && e.target.value !== u.assetTag)
+                                      renameTag(u.id, e.target.value.trim(), u.assetTag);
+                                  }}
+                                />
+                              </details>
                             )}
                           </div>
                         </td>
@@ -566,11 +578,31 @@ export default function AdminExemplaires() {
 
   const machines = stock.machines
     .filter((m) => (tab === 'accessories' ? m.kind !== 'MACHINE' : m.kind === 'MACHINE'))
-    .filter((m) => !filter || m.name.toLowerCase().includes(filter.toLowerCase()));
+    .filter((m) => {
+      const q = filter.trim().toLowerCase();
+      if (!q) return true;
+      // Recherche par O-, marque/modèle, fiche produit… ou n° de série d'un exemplaire.
+      return (
+        [m.name, m.ref, m.brand, m.model, m.parentName].some((s) => s?.toLowerCase().includes(q)) ||
+        units.some((u) => u.product.id === m.id && u.serialNumber?.toLowerCase().includes(q))
+      );
+    });
   const byCat = new Map<string, StockRow[]>();
   for (const m of machines) {
     const k = m.category ?? 'Sans catégorie';
     byCat.set(k, [...(byCat.get(k) ?? []), m]);
+  }
+  // Dans chaque catégorie : rangé par fiche produit (ce que voit le client),
+  // ses machines O-XXXX dessous, triées par O-.
+  for (const [k, rows] of byCat) {
+    byCat.set(
+      k,
+      [...rows].sort(
+        (a, b) =>
+          (a.parentName ?? a.name).localeCompare(b.parentName ?? b.name, 'fr') ||
+          (a.ref ?? '').localeCompare(b.ref ?? '', 'fr', { numeric: true }),
+      ),
+    );
   }
 
   const totAvail = machines.reduce((a, m) => a + m.availableNow, 0);
@@ -624,10 +656,14 @@ export default function AdminExemplaires() {
             <span className="stockbar__key is-hs">HS / retiré</span>
           </div>
           <input
-            placeholder={tab === 'machines' ? 'Filtrer une machine…' : 'Filtrer un accessoire…'}
+            placeholder={
+              tab === 'machines'
+                ? 'Filtrer : O-, marque, fiche produit, n° de série…'
+                : 'Filtrer : réf., nom, n° de série…'
+            }
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            style={{ maxWidth: 320 }}
+            style={{ maxWidth: 380 }}
           />
           {[...byCat.entries()].map(([cat, rows]) => (
             <div key={cat} className="card card-body table-wrap">
@@ -644,17 +680,36 @@ export default function AdminExemplaires() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
-                    <MachineRow
-                      key={r.id}
-                      r={r}
-                      units={units}
-                      onReload={load}
-                      setMsg={setMsg}
-                      autoOpen={!!initialQuery && r.name.toLowerCase() === initialQuery.toLowerCase()}
-                      canManage={canManage}
-                    />
-                  ))}
+                  {rows.map((r, i) => {
+                    const fiche = r.parentName ?? null;
+                    const newFiche = !!fiche && fiche !== (rows[i - 1]?.parentName ?? null);
+                    const sisters = fiche ? rows.filter((x) => x.parentName === fiche) : [];
+                    return (
+                      <Fragment key={r.id}>
+                        {newFiche && (
+                          <tr className="stock-fiche">
+                            <td colSpan={6} style={{ background: 'var(--surface-2)', fontWeight: 800 }}>
+                              {fiche}
+                              <span className="small muted" style={{ fontWeight: 500 }}>
+                                {' '}
+                                — fiche produit · {sisters.length} machine(s) ·{' '}
+                                {sisters.reduce((a, x) => a + x.availableNow, 0)} /{' '}
+                                {sisters.reduce((a, x) => a + x.total, 0)} dispo
+                              </span>
+                            </td>
+                          </tr>
+                        )}
+                        <MachineRow
+                          r={r}
+                          units={units}
+                          onReload={load}
+                          setMsg={setMsg}
+                          autoOpen={!!initialQuery && r.name.toLowerCase() === initialQuery.toLowerCase()}
+                          canManage={canManage}
+                        />
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

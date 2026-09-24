@@ -595,6 +595,7 @@ adminRouter.get(
         include: {
           category: { select: { name: true, slug: true } },
           variants: { select: { id: true } },
+          parentProduct: { select: { id: true, name: true } },
         },
         orderBy: [{ category: { position: 'asc' } }, { name: 'asc' }],
       }),
@@ -664,6 +665,14 @@ adminRouter.get(
           // rien dire de l'afficher "hors ligne" pour elle. Seule une fiche
           // sans machine rattachée (technical=false) a un statut pertinent.
           technical: p.technical,
+          // Référence parc (O-XXXX pour une machine, réf. fournisseur pour un
+          // accessoire/EPI) + fiche produit à laquelle la machine est rattachée :
+          // sert à grouper « fiche produit → machines → exemplaires » côté admin.
+          ref: p.internalRef ?? p.supplierRef ?? null,
+          brand: p.brand ?? null,
+          model: p.model ?? null,
+          parentId: p.parentProduct?.id ?? null,
+          parentName: p.parentProduct?.name ?? null,
           total,
           availableNow,
           reserved,
@@ -818,20 +827,61 @@ adminRouter.post(
             : { id: 'none' };
     const units = await prisma.productUnit.findMany({
       where,
-      include: { product: { select: { name: true, slug: true } } },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            brand: true,
+            model: true,
+            internalRef: true,
+            supplierRef: true,
+            parentProduct: { select: { name: true } },
+          },
+        },
+      },
       orderBy: [{ product: { name: 'asc' } }, { assetTag: 'asc' }],
     });
+    // Rang de l'exemplaire parmi ceux de la même machine (« 2 / 3 ») : deux
+    // machines identiques partagent le même O-XXXX, ce rang (et le n° de
+    // série) les distingue — plus besoin de suffixer l'O- à la main.
+    const siblings = await prisma.productUnit.findMany({
+      where: { productId: { in: [...new Set(units.map((u) => u.productId))] } },
+      select: { id: true, productId: true },
+      orderBy: { assetTag: 'asc' },
+    });
+    const rankOf = new Map<string, number>();
+    const totalByProduct = new Map<string, number>();
+    for (const s of siblings) {
+      const n = (totalByProduct.get(s.productId) ?? 0) + 1;
+      totalByProduct.set(s.productId, n);
+      rankOf.set(s.id, n);
+    }
     const labels = await Promise.all(
-      units.map(async (u) => ({
-        unitId: u.id,
-        assetTag: u.assetTag,
-        barcode: u.barcode ?? u.assetTag,
-        productName: u.product.name,
-        serialNumber: u.serialNumber ?? null,
-        storageLocation: u.storageLocation ?? null,
-        qrToken: u.qrToken,
-        qrDataUrl: await qrDataUrl(u.qrToken),
-      })),
+      units.map(async (u) => {
+        const rank = rankOf.get(u.id) ?? 1;
+        const p = u.product;
+        // « Marque Modèle » seulement si les deux sont renseignés — une marque
+        // seule (« Makita ») serait plus pauvre que le nom de la machine.
+        const machineName = p.brand && p.model ? `${p.brand} ${p.model}` : p.name;
+        return {
+          unitId: u.id,
+          assetTag: u.assetTag,
+          // Identifiant lisible : O-XXXX de la machine, sinon l'ancien code.
+          ref: p.internalRef ?? p.supplierRef ?? u.assetTag,
+          barcode: u.barcode ?? u.assetTag,
+          productName: p.name,
+          machineName,
+          ficheName: p.parentProduct?.name ?? null,
+          rank,
+          count: totalByProduct.get(u.productId) ?? 1,
+          serialNumber: u.serialNumber ?? null,
+          storageLocation: u.storageLocation ?? null,
+          qrToken: u.qrToken,
+          qrDataUrl: await qrDataUrl(u.qrToken),
+        };
+      }),
     );
     res.json({ labels });
   }),
