@@ -837,7 +837,8 @@ adminRouter.post(
             model: true,
             internalRef: true,
             supplierRef: true,
-            parentProduct: { select: { name: true } },
+            images: true,
+            parentProduct: { select: { name: true, images: true } },
           },
         },
       },
@@ -874,6 +875,12 @@ adminRouter.post(
           productName: p.name,
           machineName,
           ficheName: p.parentProduct?.name ?? null,
+          // Photo de la machine, sinon celle de sa fiche produit (les machines
+          // du parc importées n'ont souvent pas de photo propre).
+          image:
+            (p.images as string[] | null)?.[0] ??
+            (p.parentProduct?.images as string[] | null)?.[0] ??
+            null,
           rank,
           count: totalByProduct.get(u.productId) ?? 1,
           serialNumber: u.serialNumber ?? null,

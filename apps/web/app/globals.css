@@ -825,57 +825,60 @@ button { font-family: inherit; }
 .io-table tr[data-k="update"] td:nth-child(2) { color: #9a7b12; font-weight: 700; }
 .io-table tr[data-k="error"] td:nth-child(2) { color: #c0392b; font-weight: 700; }
 
-/* Étiquettes imprimables — une étiquette par page, format bande continue
-   Brother QL-700 chargée en DK-22205 (rouleau continu 62 mm de large, longueur
-   découpée automatiquement à chaque étiquette). Aperçu écran : empilées avec
-   un léger cadre pour les distinguer ; à l'impression, chaque étiquette
-   devient sa propre page de 62 mm de large (le driver Brother la découpe). */
+/* Étiquettes imprimables — une étiquette par page, format découpé Brother QL
+   29 x 90 mm (DK-11201), à l'italienne : 90 mm de long, 29 mm de haut.
+   Aperçu écran : empilées avec un léger cadre ; à l'impression, chaque
+   étiquette devient sa propre page (le driver Brother la découpe). */
 .label-sheet, .zlabel-sheet { display: flex; flex-direction: column; gap: 3mm; }
 .label {
-  display: flex; gap: 3mm; align-items: center;
-  width: 62mm; height: 36mm; padding: 3mm; box-sizing: border-box; overflow: hidden;
+  display: flex; gap: 2mm; align-items: center;
+  width: 90mm; height: 29mm; padding: 2mm; box-sizing: border-box; overflow: hidden;
   border: 0.2mm solid #b9b9b9; border-radius: 1.5mm;
-  page: ql700-label; break-after: page;
+  page: ql-label; break-after: page;
 }
-.label__qr { width: 22mm; height: 22mm; flex: 0 0 auto; }
+/* Imprimante thermique noir & blanc : on force niveaux de gris + contraste
+   pour que la photo reste lisible une fois tramée par le driver. */
+.label__photo {
+  width: 22mm; height: 25mm; flex: 0 0 auto; object-fit: contain;
+  filter: grayscale(1) contrast(1.35);
+}
+.label__qr { width: 24mm; height: 24mm; flex: 0 0 auto; }
 .label__body {
   flex: 1; min-width: 0; height: 100%;
-  display: flex; flex-direction: column; justify-content: center; gap: 1mm; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center; gap: 0.6mm; overflow: hidden;
 }
 .label__tag {
-  font-family: monospace; font-size: 13pt; font-weight: 700; line-height: 1.1;
+  font-family: monospace; font-size: 15pt; font-weight: 700; line-height: 1.05;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .label__serial {
-  font-family: monospace; font-size: 7.5pt; color: #555; line-height: 1.1;
+  font-family: monospace; font-size: 8pt; font-weight: 700; color: #222; line-height: 1.1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .label__name {
-  font-size: 8pt; color: #333; line-height: 1.2; overflow: hidden;
-  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+  font-size: 7pt; color: #333; line-height: 1.15; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
-.label__code { height: 9mm; display: flex; align-items: center; overflow: hidden; }
+.label__code { height: 5.5mm; display: flex; align-items: center; overflow: hidden; }
 .label__code svg { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }
 .label__brand { font-family: var(--font-display); font-weight: 800; font-size: 7pt; color: var(--primary); }
 
-/* Étiquettes d'emplacement / rack (collées sur l'étagère) */
+/* Étiquettes d'emplacement / rack (collées sur l'étagère) — même rouleau 29 x 90 */
 .zlabel {
   display: flex; align-items: center; gap: 3mm;
-  width: 62mm; height: 32mm; padding: 3mm; box-sizing: border-box;
+  width: 90mm; height: 29mm; padding: 2mm 3mm; box-sizing: border-box;
   border: 1px dashed var(--border); border-radius: 8px;
-  page: ql700-zlabel; break-after: page;
+  page: ql-label; break-after: page;
 }
 .zlabel img { width: 24mm; height: 24mm; flex: 0 0 auto; }
 .zlabel__text { display: flex; flex-direction: column; gap: 1mm; overflow: hidden; }
-.zlabel__code { font-family: monospace; font-size: 18pt; font-weight: 800; letter-spacing: 0.5px; }
+.zlabel__code { font-family: monospace; font-size: 22pt; font-weight: 800; letter-spacing: 0.5px; }
 .zlabel__brand { font-family: var(--font-display); font-weight: 800; font-size: 7pt; color: var(--primary); }
 
-/* Taille de page par étiquette (bande continue 62 mm — la longueur suit le
-   contenu, pas un format A4). Repli par défaut sur le format machine si le
-   navigateur ignore les pages nommées. */
-@page { size: 62mm 36mm; margin: 0; }
-@page ql700-label { size: 62mm 36mm; margin: 0; }
-@page ql700-zlabel { size: 62mm 32mm; margin: 0; }
+/* Taille de page par étiquette : 90 x 29 mm (paysage). Repli par défaut sur
+   ce format si le navigateur ignore les pages nommées. */
+@page { size: 90mm 29mm; margin: 0; }
+@page ql-label { size: 90mm 29mm; margin: 0; }
 
 @media print {
   .no-print, .admin-side, .demo-ribbon { display: none !important; }

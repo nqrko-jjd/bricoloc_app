@@ -12,6 +12,7 @@ interface Label {
   productName: string;
   machineName: string;
   ficheName: string | null;
+  image: string | null;
   rank: number;
   count: number;
   serialNumber: string | null;
@@ -149,10 +150,10 @@ function MachineLabels() {
       <p className="muted small no-print">
         Une étiquette par exemplaire : le O- de la machine en gros, le n° de série dessous (ou
         « Ex. 2/3 » tant qu&apos;il n&apos;est pas saisi) pour distinguer deux machines identiques,
-        QR propre à l&apos;exemplaire (scan smartphone / Zebra) + code-barres. « Générer TOUT le
-        parc » sort toutes les étiquettes d&apos;un coup pour l&apos;inventaire. Format prévu pour
-        la Brother QL-700 chargée en DK-22205 (bande continue 62 mm) — chaque étiquette est
-        imprimée comme sa propre page, le rouleau se découpe automatiquement entre chacune.
+        photo de la machine, QR propre à l&apos;exemplaire (scan smartphone / Zebra) + code-barres.
+        « Générer TOUT le parc » sort toutes les étiquettes d&apos;un coup pour l&apos;inventaire.
+        Format prévu pour la Brother QL avec étiquettes découpées 29 × 90 mm (DK-11201) — chaque
+        étiquette est imprimée comme sa propre page.
       </p>
 
       <div className="card card-body stack no-print">
@@ -224,8 +225,8 @@ function MachineLabels() {
             Effacer
           </button>
           <span className="small muted">
-            Choisissez « Brother QL-700 » comme imprimante, échelle 100 % (pas d&apos;ajustement à la
-            page), sans marges.
+            Imprimante Brother QL, papier « 29 × 90 mm » (DK-11201), orientation paysage, échelle
+            100 % (pas d&apos;ajustement à la page), sans marges.
           </span>
         </div>
       )}
@@ -233,8 +234,10 @@ function MachineLabels() {
       <div className="label-sheet">
         {labels.map((l) => (
           <div key={l.unitId} className="label">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={l.qrDataUrl} alt="" className="label__qr" />
+            {l.image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={l.image} alt="" className="label__photo" />
+            )}
             <div className="label__body">
               <strong className="label__tag">{l.ref}</strong>
               <span className="label__serial">
@@ -245,10 +248,11 @@ function MachineLabels() {
                 {l.storageLocation ? ` · 📍 ${l.storageLocation}` : ''}
               </span>
               <span className="label__code">
-                <Barcode value={l.barcode} height={22} unit={0.9} showText={false} />
+                <Barcode value={l.barcode} height={16} unit={0.8} showText={false} />
               </span>
-              <span className="label__brand">BRICOLOC</span>
             </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={l.qrDataUrl} alt="" className="label__qr" />
           </div>
         ))}
         {labels.length === 0 && (
