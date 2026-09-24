@@ -840,28 +840,28 @@ button { font-family: inherit; }
 /* Imprimante thermique noir & blanc : on force niveaux de gris + contraste
    pour que la photo reste lisible une fois tramée par le driver. */
 .label__photo {
-  width: 22mm; height: calc(var(--label-h, 38mm) - 4mm); flex: 0 0 auto; object-fit: contain;
+  width: 24mm; height: calc(var(--label-h, 38mm) - 4mm); flex: 0 0 auto; object-fit: contain;
   filter: grayscale(1) contrast(1.35);
 }
-.label__qr { width: min(26mm, calc(var(--label-h, 38mm) - 5mm)); height: min(26mm, calc(var(--label-h, 38mm) - 5mm)); flex: 0 0 auto; }
+.label__qr { width: 30mm; height: 30mm; flex: 0 0 auto; }
 .label__body {
   flex: 1; min-width: 0; height: 100%;
   display: flex; flex-direction: column; justify-content: center; gap: 0.6mm; overflow: hidden;
 }
 .label__tag {
-  font-family: monospace; font-size: 15pt; font-weight: 700; line-height: 1.05;
+  font-family: monospace; font-size: 17pt; font-weight: 700; line-height: 1.05;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .label__serial {
-  font-family: monospace; font-size: 8pt; font-weight: 700; color: #222; line-height: 1.1;
+  font-family: monospace; font-size: 9pt; font-weight: 700; color: #222; line-height: 1.1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .label__name {
-  font-size: 7pt; color: #333; line-height: 1.15; overflow: hidden;
+  font-size: 8pt; color: #222; line-height: 1.15; overflow: hidden;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
-.label__code { height: 5.5mm; display: flex; align-items: center; overflow: hidden; }
-.label__code svg { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }
+.label__code { height: 7mm; width: 100%; display: block; overflow: hidden; margin-top: 0.8mm; }
+.label__code svg { width: 100%; height: 100%; display: block; }
 .label__brand { font-family: var(--font-display); font-weight: 800; font-size: 7pt; color: var(--primary); }
 
 /* Étiquettes d'emplacement / rack (collées sur l'étagère) — même rouleau 29 x 90 */
@@ -871,9 +871,9 @@ button { font-family: inherit; }
   border: 1px dashed var(--border); border-radius: 8px;
   page: ql-label; break-after: page;
 }
-.zlabel img { width: min(28mm, calc(var(--label-h, 38mm) - 5mm)); height: min(28mm, calc(var(--label-h, 38mm) - 5mm)); flex: 0 0 auto; }
+.zlabel img { width: 30mm; height: 30mm; flex: 0 0 auto; }
 .zlabel__text { display: flex; flex-direction: column; gap: 1mm; overflow: hidden; }
-.zlabel__code { font-family: monospace; font-size: 22pt; font-weight: 800; letter-spacing: 0.5px; }
+.zlabel__code { font-family: monospace; font-size: 26pt; font-weight: 800; letter-spacing: 0.5px; }
 .zlabel__brand { font-family: var(--font-display); font-weight: 800; font-size: 7pt; color: var(--primary); }
 
 /* Taille de page par étiquette : 90 x 29 mm (paysage). Repli par défaut sur
