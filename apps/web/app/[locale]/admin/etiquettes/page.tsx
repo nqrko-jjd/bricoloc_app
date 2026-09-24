@@ -242,10 +242,10 @@ function MachineLabels() {
             )}
             <div className="label__body">
               <strong className="label__tag">{l.ref}</strong>
+              <span className="label__name">{l.machineName}</span>
               <span className="label__serial">
                 {l.serialNumber ? `SN ${l.serialNumber}` : `Ex. ${l.rank}/${l.count}`}
               </span>
-              <span className="label__name">{l.machineName}</span>
               <span className="label__code">
                 <Barcode value={l.barcode} height={16} unit={0.8} showText={false} fluid />
               </span>
