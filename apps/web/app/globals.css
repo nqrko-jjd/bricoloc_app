@@ -826,23 +826,24 @@ button { font-family: inherit; }
 .io-table tr[data-k="error"] td:nth-child(2) { color: #c0392b; font-weight: 700; }
 
 /* Étiquettes imprimables — une étiquette par page, format découpé Brother QL
-   29 x 90 mm (DK-11201), à l'italienne : 90 mm de long, 29 mm de haut.
+   90 mm de long x 38 mm (DK-11208) ou 29 mm (DK-11201) de haut, réglable
+   via --label-h (défini par la page Étiquettes).
    Aperçu écran : empilées avec un léger cadre ; à l'impression, chaque
    étiquette devient sa propre page (le driver Brother la découpe). */
 .label-sheet, .zlabel-sheet { display: flex; flex-direction: column; gap: 3mm; }
 .label {
   display: flex; gap: 2mm; align-items: center;
-  width: 90mm; height: 29mm; padding: 2mm; box-sizing: border-box; overflow: hidden;
+  width: 90mm; height: var(--label-h, 38mm); padding: 2mm; box-sizing: border-box; overflow: hidden;
   border: 0.2mm solid #b9b9b9; border-radius: 1.5mm;
   page: ql-label; break-after: page;
 }
 /* Imprimante thermique noir & blanc : on force niveaux de gris + contraste
    pour que la photo reste lisible une fois tramée par le driver. */
 .label__photo {
-  width: 22mm; height: 25mm; flex: 0 0 auto; object-fit: contain;
+  width: 22mm; height: calc(var(--label-h, 38mm) - 4mm); flex: 0 0 auto; object-fit: contain;
   filter: grayscale(1) contrast(1.35);
 }
-.label__qr { width: 24mm; height: 24mm; flex: 0 0 auto; }
+.label__qr { width: min(26mm, calc(var(--label-h, 38mm) - 5mm)); height: min(26mm, calc(var(--label-h, 38mm) - 5mm)); flex: 0 0 auto; }
 .label__body {
   flex: 1; min-width: 0; height: 100%;
   display: flex; flex-direction: column; justify-content: center; gap: 0.6mm; overflow: hidden;
@@ -866,19 +867,19 @@ button { font-family: inherit; }
 /* Étiquettes d'emplacement / rack (collées sur l'étagère) — même rouleau 29 x 90 */
 .zlabel {
   display: flex; align-items: center; gap: 3mm;
-  width: 90mm; height: 29mm; padding: 2mm 3mm; box-sizing: border-box;
+  width: 90mm; height: var(--label-h, 38mm); padding: 2mm 3mm; box-sizing: border-box;
   border: 1px dashed var(--border); border-radius: 8px;
   page: ql-label; break-after: page;
 }
-.zlabel img { width: 24mm; height: 24mm; flex: 0 0 auto; }
+.zlabel img { width: min(28mm, calc(var(--label-h, 38mm) - 5mm)); height: min(28mm, calc(var(--label-h, 38mm) - 5mm)); flex: 0 0 auto; }
 .zlabel__text { display: flex; flex-direction: column; gap: 1mm; overflow: hidden; }
 .zlabel__code { font-family: monospace; font-size: 22pt; font-weight: 800; letter-spacing: 0.5px; }
 .zlabel__brand { font-family: var(--font-display); font-weight: 800; font-size: 7pt; color: var(--primary); }
 
 /* Taille de page par étiquette : 90 x 29 mm (paysage). Repli par défaut sur
    ce format si le navigateur ignore les pages nommées. */
-@page { size: 90mm 29mm; margin: 0; }
-@page ql-label { size: 90mm 29mm; margin: 0; }
+@page { size: 90mm 38mm; margin: 0; }
+@page ql-label { size: 90mm 38mm; margin: 0; }
 
 @media print {
   .no-print, .admin-side, .demo-ribbon { display: none !important; }

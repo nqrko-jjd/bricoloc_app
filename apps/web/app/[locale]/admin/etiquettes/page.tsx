@@ -68,13 +68,47 @@ function expandRange(from: string, to: string): string[] {
   return out;
 }
 
+const LABEL_H_KEY = 'bricoloc_label_h';
+
 export default function AdminEtiquettes() {
   const [tab, setTab] = useState<'machines' | 'zones'>('machines');
+  // Hauteur du rouleau d'étiquettes découpées (largeur fixe 90 mm) : 38 mm
+  // (DK-11208) ou 29 mm (DK-11201). Doit correspondre au rouleau réellement
+  // chargé, sinon la Brother QL refuse d'imprimer (« le rouleau ne correspond pas »).
+  const [labelH, setLabelH] = useState<29 | 38>(38);
+  useEffect(() => {
+    try {
+      const v = Number(localStorage.getItem(LABEL_H_KEY));
+      if (v === 29 || v === 38) setLabelH(v);
+    } catch {
+      /* navigation privée : on garde la valeur par défaut */
+    }
+  }, []);
+  function pickH(v: 29 | 38) {
+    setLabelH(v);
+    try {
+      localStorage.setItem(LABEL_H_KEY, String(v));
+    } catch {
+      /* ignore */
+    }
+  }
 
   return (
-    <div className="stack">
+    <div className="stack" style={{ ['--label-h' as string]: `${labelH}mm` }}>
+      <style>{`@page { size: 90mm ${labelH}mm; margin: 0; } @page ql-label { size: 90mm ${labelH}mm; margin: 0; }`}</style>
       <div className="no-print stack">
         <h1>Étiquettes QR &amp; code-barres</h1>
+        <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span className="small muted">Rouleau chargé dans l&apos;imprimante :</span>
+          <div className="chips">
+            <button className={`chip${labelH === 38 ? ' active' : ''}`} onClick={() => pickH(38)}>
+              38 × 90 mm
+            </button>
+            <button className={`chip${labelH === 29 ? ' active' : ''}`} onClick={() => pickH(29)}>
+              29 × 90 mm
+            </button>
+          </div>
+        </div>
         <div className="chips">
           <button
             className={`chip${tab === 'machines' ? ' active' : ''}`}
@@ -152,7 +186,7 @@ function MachineLabels() {
         « Ex. 2/3 » tant qu&apos;il n&apos;est pas saisi) pour distinguer deux machines identiques,
         photo de la machine, QR propre à l&apos;exemplaire (scan smartphone / Zebra) + code-barres.
         « Générer TOUT le parc » sort toutes les étiquettes d&apos;un coup pour l&apos;inventaire.
-        Format prévu pour la Brother QL avec étiquettes découpées 29 × 90 mm (DK-11201) — chaque
+        Format prévu pour la Brother QL avec étiquettes découpées 90 mm de long — chaque
         étiquette est imprimée comme sa propre page.
       </p>
 
@@ -225,7 +259,7 @@ function MachineLabels() {
             Effacer
           </button>
           <span className="small muted">
-            Imprimante Brother QL, papier « 29 × 90 mm » (DK-11201), orientation paysage, échelle
+            Imprimante Brother QL, papier au format du rouleau chargé (38 × 90 ou 29 × 90 mm), orientation paysage, échelle
             100 % (pas d&apos;ajustement à la page), sans marges.
           </span>
         </div>
