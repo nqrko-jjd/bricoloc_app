@@ -280,7 +280,7 @@ function ZoneLabels() {
       const list = [...new Set([...(r.declared ?? []), ...(r.used ?? [])])].sort();
       setZones(list);
       setUsed(r.used ?? []);
-      setPicked(Object.fromEntries(list.map((z) => [z, true])));
+      // Rien de coché au départ : on choisit les racks à imprimer un par un.
     });
   }, []);
 
@@ -413,6 +413,19 @@ function ZoneLabels() {
           </p>
         )}
 
+        {zones.length > 0 && (
+          <div className="row" style={{ gap: 8 }}>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setPicked(Object.fromEntries(zones.map((z) => [z, true])))}
+            >
+              Tout cocher
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setPicked({})}>
+              Tout décocher
+            </button>
+          </div>
+        )}
         <div className="etq-picker">
           {zones.length === 0 && <span className="muted small">Aucun emplacement pour l&apos;instant.</span>}
           {zones.map((z) => (
