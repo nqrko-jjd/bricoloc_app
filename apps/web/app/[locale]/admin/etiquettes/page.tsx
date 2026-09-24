@@ -152,7 +152,7 @@ function MachineLabels() {
       <p className="muted small no-print">
         Une étiquette par exemplaire : le O- de la machine en gros, le n° de série dessous (ou
         « Ex. 2/3 » tant qu&apos;il n&apos;est pas saisi) pour distinguer deux machines identiques,
-        photo de la machine, QR propre à l&apos;exemplaire (scan smartphone / Zebra) + code-barres.
+        photo de la machine (l’emplacement n’est pas imprimé), QR propre à l&apos;exemplaire (scan smartphone / Zebra) + code-barres.
         « Générer TOUT le parc » sort toutes les étiquettes d&apos;un coup pour l&apos;inventaire.
         Format prévu pour la Brother QL avec étiquettes découpées 38 × 90 mm (DK-11208) — chaque
         étiquette est imprimée comme sa propre page.
@@ -245,10 +245,7 @@ function MachineLabels() {
               <span className="label__serial">
                 {l.serialNumber ? `SN ${l.serialNumber}` : `Ex. ${l.rank}/${l.count}`}
               </span>
-              <span className="label__name">
-                {l.machineName}
-                {l.storageLocation ? ` · 📍 ${l.storageLocation}` : ''}
-              </span>
+              <span className="label__name">{l.machineName}</span>
               <span className="label__code">
                 <Barcode value={l.barcode} height={16} unit={0.8} showText={false} fluid />
               </span>
