@@ -882,9 +882,12 @@ button { font-family: inherit; }
 @page ql-label { size: 90mm 38mm; margin: 0; }
 
 @media print {
-  .no-print, .admin-side, .demo-ribbon { display: none !important; }
-  .admin-main { padding: 0 !important; }
-  .admin-shell { display: block !important; }
+  .no-print, .admin-side, .admin-topbar, .admin-side__backdrop, .demo-ribbon { display: none !important; }
+  .admin-main { padding: 0 !important; background: #fff !important; }
+  .admin-shell { display: block !important; min-height: 0 !important; }
+  html, body { margin: 0 !important; padding: 0 !important; min-height: 0 !important; height: auto !important; }
+  /* Pas de saut de page après la dernière étiquette (sinon feuille blanche en plus). */
+  .label-sheet > :last-child, .zlabel-sheet > :last-child { break-after: auto; }
   .label, .zlabel, .label__tag, .label__name, .label__brand, .zlabel__code, .zlabel__brand {
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
