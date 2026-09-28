@@ -268,6 +268,17 @@ function MachineRow({
       await onReload();
     }
   }
+  /** Code-barres déjà imprimé sur le produit (boîte, plaque du fabricant…) — c'est lui qui sort sur l'étiquette QL, pas le code interne. */
+  async function setBarcode(unitId: string, barcode: string) {
+    try {
+      await staffApi(`/api/admin/units/${unitId}`, { method: 'PATCH', body: { barcode: barcode || null } });
+      setMsg(`Code-barres produit → ${barcode || '—'}`);
+      await onReload();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Erreur');
+      await onReload();
+    }
+  }
   async function removeUnit(unitId: string, assetTag: string) {
     if (!confirm(`Supprimer l'exemplaire « ${assetTag} » ?`)) return;
     try {
@@ -384,6 +395,30 @@ function MachineRow({
                                 style={{ width: 130, color: u.serialNumber ? 'inherit' : 'var(--muted)' }}
                               >
                                 {u.serialNumber || '—'}
+                              </span>
+                            )}
+                            <label className="small muted" style={{ whiteSpace: 'nowrap' }}>
+                              Code-barres produit
+                            </label>
+                            {canManage ? (
+                              <input
+                                key={u.barcode ?? ''}
+                                defaultValue={u.barcode ?? ''}
+                                placeholder="scanner le produit"
+                                title="Code-barres déjà imprimé sur le produit (boîte, plaque du fabricant…) — c'est celui-ci qui sort sur l'étiquette, pas le code interne"
+                                style={{ width: 150, fontFamily: 'monospace' }}
+                                onBlur={(e) => {
+                                  if (e.target.value.trim() !== (u.barcode ?? ''))
+                                    setBarcode(u.id, e.target.value.trim());
+                                }}
+                              />
+                            ) : (
+                              <span
+                                className="small"
+                                title="Code-barres produit — modifiable uniquement par un responsable"
+                                style={{ color: u.barcode ? 'inherit' : 'var(--muted)' }}
+                              >
+                                {u.barcode || '—'}
                               </span>
                             )}
                             {canManage && (
