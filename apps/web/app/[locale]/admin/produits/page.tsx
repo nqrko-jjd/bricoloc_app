@@ -220,6 +220,24 @@ export default function AdminProduits() {
     setAttachPick('');
   }
 
+  // Reclasser une fiche existante (fiche produit ↔ accessoire ↔ consommable ↔
+  // protection). Les machines (fiches techniques, avec exemplaires O-XXXX)
+  // ne sont pas reclassables ici : trop de logique dépend de `technical` +
+  // `parentProductId`.
+  const RECLASSIFY_MODES: CreateMode[] = ['MACHINE', 'ACCESSORY', 'CONSUMABLE', 'PPE'];
+  function changeKind(newMode: CreateMode, currentMode: CreateMode) {
+    if (newMode === currentMode) return;
+    if (
+      !confirm(
+        `Faire passer « ${form.name || 'cette fiche'} » de « ${EDIT_TITLES[currentMode]} » à « ${EDIT_TITLES[newMode]} » ?\n\nLes champs propres à l'ancien type (tarifs, stock…) seront réinitialisés selon le nouveau type à l'enregistrement.`,
+      )
+    ) {
+      return;
+    }
+    setMode(newMode);
+    set('kind', newMode);
+  }
+
   function edit(p: ProductDetail) {
     const m: CreateMode = p.technical ? 'TECHNICAL' : (p.kind as CreateMode);
     setMode(m);
@@ -574,6 +592,26 @@ export default function AdminProduits() {
             </button>
           </div>
           {msg && <div className="alert alert-info">{msg}</div>}
+
+          {editingId && RECLASSIFY_MODES.includes(mode) && (
+            <div className="field" style={{ maxWidth: 320 }}>
+              <label>Type de fiche</label>
+              <select
+                value={mode}
+                onChange={(e) => changeKind(e.target.value as CreateMode, mode)}
+              >
+                {RECLASSIFY_MODES.map((m) => (
+                  <option key={m} value={m}>
+                    {EDIT_TITLES[m]}
+                  </option>
+                ))}
+              </select>
+              <span className="small muted">
+                Change la catégorie de cette fiche (elle apparaîtra dans « {FILTER_LABELS[mode]} »
+                après enregistrement).
+              </span>
+            </div>
+          )}
 
           <div className="field-2">
             <div className="field">
