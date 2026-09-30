@@ -7,7 +7,6 @@ import { AddToCartButton } from './AddToCartButton';
 import { Price } from './Price';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 import { productHref } from '@/lib/productHref';
-import { Heart } from './icons';
 
 export function ProductCard({ p }: { p: ProductSummary }) {
   const t = useTranslations('catalogue');
@@ -26,9 +25,6 @@ export function ProductCard({ p }: { p: ProductSummary }) {
           }}
         />
         {p.brand ? <span className="pcard__brand">{p.brand}</span> : null}
-        <span className="pcard__heart" aria-hidden>
-          <Heart />
-        </span>
       </Link>
 
       <div className="pcard__body">

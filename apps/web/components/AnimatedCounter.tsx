@@ -16,7 +16,7 @@ export function AnimatedCounter({
   suffix?: string;
   durationMs?: number;
 }) {
-  const [display, setDisplay] = useState(0);
+  const [display, setDisplay] = useState(value);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -37,9 +37,8 @@ export function AnimatedCounter({
   }, [value, durationMs]);
 
   return (
-    <>
-      {display}
-      {suffix}
-    </>
+    <span aria-label={`${value}${suffix}`}>
+      <span aria-hidden>{display}{suffix}</span>
+    </span>
   );
 }

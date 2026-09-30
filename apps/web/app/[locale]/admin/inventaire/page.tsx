@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { staffApi } from '@/lib/staff';
+import { Link } from '@/i18n/navigation';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -243,13 +244,15 @@ export default function AdminInventaire() {
     ? groups
     : groups.filter((g) => g.exp.some((u) => !seenSet.has(u.id)));
   const tone = flash?.tone === 'err' ? '#b3261e' : flash?.tone === 'info' ? '#3b3b9c' : '#1b7a3a';
-  const pct = expected.length ? Math.round((seenSet.size / expected.length) * 100) : 0;
   const seenExpected = expected.length - missing.length;
+  const pct = expected.length ? Math.round((seenExpected / expected.length) * 100) : 0;
 
   return (
-    <div className="stack">
+    <div className="stack inventory-workspace">
       <div className="no-print stack">
         <h1>Inventaire du parc</h1>
+        <div className="admin-context-line"><span>Pointage du parc · machines présentes et emplacements</span><Link href="/admin/exemplaires">Gérer les exemplaires →</Link></div>
+        <details className="inventory-help"><summary>Comment scanner les machines et les emplacements ?</summary>
         <p className="muted small">
           Pose ton scanner (ou tape le code) dans le champ ci-dessous :{' '}
           <strong>1) scanne la machine</strong> (étiquette QR ou code-barres),{' '}
@@ -259,10 +262,12 @@ export default function AdminInventaire() {
           « O-0160 » ou un n° de série pour retrouver une machine sans étiquette. Les machines pas
           encore pointées apparaissent en bas : ce sont celles à retrouver (ou à sortir du parc).
         </p>
+        </details>
 
-        <form className="card card-body stack" onSubmit={submit}>
+        <form className="card card-body stack inventory-scanner" onSubmit={submit}>
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
             <input
+              aria-label="Scanner un code de machine ou d’emplacement"
               ref={inputRef}
               value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -275,7 +280,7 @@ export default function AdminInventaire() {
               }
               autoFocus
               autoComplete="off"
-              style={{ flex: 1, minWidth: 260, fontSize: '1.15rem', padding: '12px 14px' }}
+              style={{ flex: 1, minWidth: 0, fontSize: '1.15rem', padding: '12px 14px' }}
             />
             <button className="btn btn-primary" type="submit">
               Valider
@@ -357,7 +362,7 @@ export default function AdminInventaire() {
             Recommencer le pointage
           </button>
         </div>
-        <div style={{ height: 8, borderRadius: 4, background: '#e3e3ea', overflow: 'hidden' }}>
+        <div className="inventory-progress" role="progressbar" aria-label="Machines pointées au dépôt" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
           <div style={{ width: `${pct}%`, height: '100%', background: '#1b7a3a' }} />
         </div>
       </div>
@@ -368,7 +373,7 @@ export default function AdminInventaire() {
         </p>
       ) : (
         <>
-          <div className="card">
+          <div className="card table-wrap">
             <table className="table">
               <thead>
                 <tr>
@@ -389,6 +394,9 @@ export default function AdminInventaire() {
                         {done}/{g.exp.length}
                       </td>
                       <td className="small">
+                        <details className="inventory-units">
+                          <summary>{g.exp.length - done} à retrouver · voir les exemplaires</summary>
+                          <div>
                         {g.exp.map((u, i) => (
                           <span
                             key={u.id}
@@ -404,6 +412,8 @@ export default function AdminInventaire() {
                             <span className="muted">{moved[u.id] ?? u.storageLocation ?? 'sans emplacement'}</span>
                           </span>
                         ))}
+                          </div>
+                        </details>
                       </td>
                     </tr>
                   );
@@ -422,7 +432,9 @@ export default function AdminInventaire() {
           </div>
 
           {missing.length > 0 && (
-            <div className="card card-body stack">
+            <details className="editor-section inventory-missing">
+              <summary><span><strong>{missing.length} exemplaire(s) à retrouver</strong><small>Voir le détail ou exporter le pointage</small></span><span className="editor-section__toggle" aria-hidden="true">+</span></summary>
+              <div className="editor-section__body stack">
               <div className="row" style={{ gap: 10 }}>
                 <strong style={{ color: '#b3261e' }}>{missing.length} machine(s) non retrouvée(s)</strong>
                 <div style={{ flex: 1 }} />
@@ -444,7 +456,8 @@ export default function AdminInventaire() {
                 ))}
                 {missing.length > 60 && <div className="muted">… et {missing.length - 60} autres (voir le CSV)</div>}
               </div>
-            </div>
+              </div>
+            </details>
           )}
 
           {unknown.length > 0 && (

@@ -4,13 +4,12 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { LOCALE_META, type Locale } from '@bricoloc/shared';
 import '../globals.css';
+import '../fonts.css';
+import '../redesign.css';
 import { Providers } from '@/lib/providers';
 import { routing } from '@/i18n/routing';
 
-/**
- * Typographie : police système (concept Bricoloc 2026) — aucun webfont chargé,
- * rendu identique aux maquettes ChatGPT. Les tokens vivent dans globals.css.
- */
+/** Locally hosted brand fonts; theme and spacing tokens live in the shared CSS. */
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.bricoloc.be';
 
 export function generateStaticParams() {

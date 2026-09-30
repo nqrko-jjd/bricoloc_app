@@ -6,6 +6,7 @@ import type { Category, GuideSummary, ProductSummary, PublicConfig } from '@/lib
 import { SearchAutocomplete } from '@/components/SearchAutocomplete';
 import { DegressivePricing } from '@/components/DegressivePricing';
 import { PopularSlider } from '@/components/PopularSlider';
+import { CategorySlider } from '@/components/CategorySlider';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { Price } from '@/components/Price';
 import {
@@ -23,6 +24,20 @@ import {
 } from '@/components/icons';
 
 export const dynamic = 'force-dynamic';
+
+// Replace only the known misaligned demo copy; keep custom CMS wording.
+const LEGACY_STEP_COPY = new Set([
+  "Une seule fois, pour toute la commande. On vérifie la disponibilité de tout le matériel en même temps.",
+  "Machines, accessoires et consommables adaptés. Retrait au dépôt ou livraison sur chantier.",
+  "En ligne ou à l'enlèvement pour un Click & Collect. Votre matériel est prêt, contrôlé et entretenu.",
+  "Slechts één keer, voor de hele bestelling. We controleren de beschikbaarheid van alle artikelen tegelijk.",
+  "Geschikte machines, toebehoren en verbruiksartikelen. Afhalen bij het magazijn of levering op de bouwplaats.",
+  "Online of afhalen via Click & Collect. Uw apparatuur staat klaar, is gecontroleerd en onderhouden.",
+  "Just once, for the whole order. We check the availability of all the items at the same time.",
+  "Suitable machinery, accessories and consumables. Collection from the depot or delivery to the site.",
+  "Online or for collection via Click & Collect. Your equipment is ready, checked and serviced.",
+  "En ligne ou à l’enlèvement pour un Click & Collect. Votre matériel est prêt, contrôlé et entretenu."
+]);
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -66,6 +81,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // dupliquer ici parmi les catégories de machines.
   const cats = categories.filter((c) => c.slug !== 'bricopack');
 
+  const stepText = (key: string) => {
+    const fallback = t(`step${key}Text` as never);
+    const configured = content.t(`home.step${key}.text`, fallback);
+    return LEGACY_STEP_COPY.has(configured) ? fallback : configured;
+  };
+
   const catLabel = (slug: string) => {
     try {
       return tg(`cat_${slug}` as never) as string;
@@ -79,7 +100,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* ─────────────── HERO ─────────────── */}
       <section className="chero">
         <div className="chero__imgwrap">
-          <img className="chero__img" src="/img/home/hero.webp" alt="" />
+          <img className="chero__img" src="/img/home/hero.webp" alt="" fetchPriority="high" width={1600} height={1067} />
         </div>
         <div className="chero__text">
           <span className="kicker">— {t('heroEyebrow')}</span>
@@ -94,6 +115,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             placeholder={t('searchPlaceholder')}
             cta={t('heroCtaCatalogue')}
           />
+          <div className="hero-shortcuts">
+            <Link href="/bricopacks"><PackageIcon /> {t('diffPackCta')} <IArrowUpRight /></Link>
+            <Link href="#explorer">{t('exploreEyebrow')} ↓</Link>
+          </div>
         </div>
         <div className="chero__stat">
           <strong><AnimatedCounter value={toolCount} suffix="+" /></strong>
@@ -118,33 +143,29 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </div>
 
       {/* ─────────────── CATÉGORIES ─────────────── */}
-      <section className="csection">
+      <section className="csection" id="explorer">
         <div className="csection__head">
           <div>
-            <span className="kicker">— {t('exploreEyebrow')}</span>
-            <h2>
-              {t('exploreTitle')} <i>{t('exploreAccent')}</i>
-            </h2>
+            <h2>{t('categoriesTitle')}</h2>
           </div>
           <Link href="/catalogue" className="csection__link">
             {t('exploreCta', { count: toolCount })} <IArrowUpRight />
           </Link>
         </div>
-        <div className="ccats">
+        <CategorySlider label={t('categoriesTitle')} previous={t('categoriesPrevious')} next={t('categoriesNext')}>
           {cats.map((c, i) => {
             const Icon = CATEGORY_ICON[c.slug] ?? Sparkles;
             return (
               <Link
                 key={c.slug}
                 href={`/catalogue?category=${c.slug}`}
-                className="reveal"
-                data-reveal-delay={Math.min(i, 6) * 55}
+                className="category-tile"
               >
-                <span className="ccats__num">{String(i + 1).padStart(2, '0')}</span>
+                <span className="ccats__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
                 <span className="ccats__go" aria-hidden>
                   →
                 </span>
-                <Icon className="ccats__icon" />
+                <Icon className="ccats__icon" aria-hidden="true" />
                 <span className="ccats__name">{c.name}</span>
                 {c.productCount ? (
                   <span className="ccats__count">
@@ -154,12 +175,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </Link>
             );
           })}
-        </div>
+        </CategorySlider>
       </section>
 
       {/* ─────────────── LE + LOUÉ ─────────────── */}
       {popular.length > 0 && (
-        <section className="csection" style={{ paddingTop: 0 }}>
+        <section className="csection home-popular" style={{ paddingTop: 0 }}>
           <div className="csection__head">
             <div>
               <span className="kicker">— {t('popularEyebrow')}</span>
@@ -175,12 +196,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* ─────────────── LES BRICOPACKS ─────────────── */}
       {packs.length > 0 && (
-        <section className="csection" style={{ paddingTop: 0 }}>
+        <section className="csection home-packs">
           <div className="csection__head">
             <div>
-              <span className="kicker">— {t('diffEyebrow')}</span>
+              <span className="kicker">— {t('packTag')}</span>
               <h2>{t('diffPackTitle')}</h2>
-              <p style={{ marginTop: 10, color: '#4a4d6b', lineHeight: 1.62, maxWidth: '52ch' }}>
+              <p style={{ marginTop: 10, color: 'var(--muted-fg)', lineHeight: 1.62, maxWidth: '52ch' }}>
                 {t('diffPackText')}
               </p>
             </div>
@@ -211,7 +232,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     <span className="bp-card__meta">
                       {t('diffFrom')} <Price amountHT={p.dailyPrice} suffix="/j" />
                     </span>
-                    <span className="bp-card__cta">Voir le contenu →</span>
+                    <span className="bp-card__cta">{t('packContent')} →</span>
                   </span>
                 </span>
               </Link>
@@ -227,7 +248,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       )}
 
       {/* ─────────────── LIVRAISON & CLICK & COLLECT ─────────────── */}
-      <section className="cdiff">
+      <section className="cdiff home-services">
         <div className="csection__head">
           <div>
             <span className="kicker">— {t('diffEyebrow')}</span>
@@ -300,7 +321,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <span className="cstep__n">0{key}</span>
               <Icon />
               <h3>{t(`step${key}Title` as never)}</h3>
-              <p>{content.t(`home.step${key}.text`, t(`step${key}Text` as never))}</p>
+              <p>{stepText(key)}</p>
             </article>
           ))}
         </div>

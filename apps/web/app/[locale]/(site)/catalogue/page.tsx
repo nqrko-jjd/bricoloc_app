@@ -22,6 +22,8 @@ function CatalogueInner() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
+  const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   const PAGE_SIZE = 24;
 
@@ -45,8 +47,8 @@ function CatalogueInner() {
   useEffect(() => {
     api<{ categories: Category[] }>(`/api/catalog/categories?locale=${locale}`).then((r) =>
       setCategories(r.categories),
-    );
-  }, [locale]);
+    ).catch(() => setError(true));
+  }, [locale, retry]);
 
   // Tout changement de filtre remet la pagination à zéro.
   useEffect(() => {
@@ -54,6 +56,7 @@ function CatalogueInner() {
   }, [q, category, kind, sort, onlyAvailable, periodStart, periodEnd, locale]);
 
   useEffect(() => {
+    setError(false);
     if (page === 1) setLoading(true);
     else setLoadingMore(true);
     const sp = new URLSearchParams();
@@ -76,6 +79,7 @@ function CatalogueInner() {
         setProducts((prev) => (page === 1 ? r.products : [...prev, ...r.products]));
         setTotal(r.total);
       })
+      .catch(() => { if (!cancelled) setError(true); })
       .finally(() => {
         if (cancelled) return;
         setLoading(false);
@@ -84,7 +88,7 @@ function CatalogueInner() {
     return () => {
       cancelled = true;
     };
-  }, [q, category, kind, sort, page, onlyAvailable, periodStart, periodEnd, locale]);
+  }, [q, category, kind, sort, page, onlyAvailable, periodStart, periodEnd, locale, retry]);
 
   function update(next: Record<string, string | null>) {
     const sp = new URLSearchParams(params.toString());
@@ -104,7 +108,7 @@ function CatalogueInner() {
         lead={cart?.period ? t('subtitleDated') : t('subtitle')}
       />
       <div className="container page-body">
-      <div className="card card-body" style={{ marginBottom: '18px' }}>
+      <div className="card card-body catalogue-toolbar" style={{ marginBottom: '18px' }}>
         <div className="filters">
           <div className="field" style={{ flex: 1, minWidth: 200 }}>
             <label>{t('search')}</label>
@@ -116,8 +120,8 @@ function CatalogueInner() {
             />
           </div>
           <div className="field">
-            <label>{t('type')}</label>
-            <select value={kind} onChange={(e) => update({ kind: e.target.value })}>
+            <label htmlFor="catalogue-kind">{t('type')}</label>
+            <select id="catalogue-kind" value={kind} onChange={(e) => update({ kind: e.target.value })}>
               <option value="ALL">{t('typeAll')}</option>
               <option value="MACHINE">{t('typeMachine')}</option>
               <option value="ACCESSORY">{t('typeAccessory')}</option>
@@ -126,8 +130,8 @@ function CatalogueInner() {
             </select>
           </div>
           <div className="field">
-            <label>{t('sort')}</label>
-            <select value={sort} onChange={(e) => update({ sort: e.target.value })}>
+            <label htmlFor="catalogue-sort">{t('sort')}</label>
+            <select id="catalogue-sort" value={sort} onChange={(e) => update({ sort: e.target.value })}>
               <option value="name">{t('sortName')}</option>
               <option value="price_asc">{t('sortPriceAsc')}</option>
               <option value="price_desc">{t('sortPriceDesc')}</option>
@@ -147,6 +151,7 @@ function CatalogueInner() {
         <div className="chips" style={{ marginTop: 14 }}>
           <button
             className={`chip${!category ? ' active' : ''}`}
+            aria-pressed={!category}
             onClick={() => update({ category: null })}
           >
             {t('allCategories')}
@@ -155,6 +160,7 @@ function CatalogueInner() {
             <button
               key={c.slug}
               className={`chip${category === c.slug ? ' active' : ''}`}
+              aria-pressed={category === c.slug}
               onClick={() => update({ category: c.slug })}
             >
               {c.name}
@@ -164,14 +170,19 @@ function CatalogueInner() {
       </div>
 
       {loading ? (
-        <p className="loading-dark">
-          <span className="spinner" /> {t('loading')}
-        </p>
+        <div role="status" aria-label={t('loading')} className="grid grid-cards">
+          {Array.from({ length: 8 }, (_, i) => <div className="catalogue-skeleton" aria-hidden key={i} />)}
+        </div>
       ) : products.length === 0 ? (
-        <div className="alert alert-info">{t('empty')}</div>
+        <div className="alert alert-info"><p>{error ? t('error') : t('empty')}</p>
+          <button className="btn btn-outline" onClick={() => error ? setRetry((n) => n + 1) : router.push('/catalogue')}>{error ? t('retry') : t('reset')}</button>
+        </div>
       ) : (
         <>
-          <p className="small muted">{t('count', { count: total })}</p>
+          {error && <div className="alert alert-err" role="alert">{t('error')} <button className="btn btn-outline" onClick={() => setRetry((n) => n + 1)}>{t('retry')}</button></div>}
+          <div className="catalogue-summary"><p className="small muted" role="status">{t('count', { count: total })}</p>
+            {(q || category || kind !== 'MACHINE' || onlyAvailable) && <button className="btn btn-ghost btn-sm" onClick={() => router.push('/catalogue')}>{t('reset')}</button>}
+          </div>
           <div className="grid grid-cards">
             {products.map((p) => (
               <ProductCard key={p.id} p={p} />

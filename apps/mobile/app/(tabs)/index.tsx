@@ -7,6 +7,7 @@ import { api, mediaUrl } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
+import { useAdaptiveLayout } from '@/lib/layout';
 import { Price } from '@/components/Price';
 import type { ProductSummary } from '@/lib/types';
 import { Logo, ProductListRow } from '@/components/ui';
@@ -37,6 +38,7 @@ const ACTIVE_STATUSES = ['CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURN_PENDI
 
 export default function HomeScreen() {
   const { user } = useStore();
+  const { contentWidth } = useAdaptiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [popular, setPopular] = useState<ProductSummary[]>([]);
   const [packs, setPacks] = useState<
@@ -82,7 +84,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.white }} edges={['top']}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ width: '100%', maxWidth: contentWidth, alignSelf: 'center', paddingBottom: 120 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         {/* Header */}

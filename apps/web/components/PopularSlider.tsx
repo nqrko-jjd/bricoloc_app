@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { Heart as IHeart, ArrowUpRight as IArrowUpRight } from './icons';
+import { ArrowUpRight as IArrowUpRight } from './icons';
 import { Price } from './Price';
 import { productHref } from '@/lib/productHref';
 import type { ProductSummary } from '@/lib/types';
@@ -58,7 +58,6 @@ export function PopularSlider({
           >
             <div className="ctool__top">
               <span className="ctool__tag">{tag ?? (i === 0 ? t('popularTag') : t('availableTag'))}</span>
-              <IHeart />
             </div>
             {showBadges && (p.isNew || p.inPack) && (
               <div className="ctool__flags">

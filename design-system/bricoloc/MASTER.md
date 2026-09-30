@@ -53,7 +53,7 @@ Base 16 px, interligne 1.62. Titres `text-wrap: balance`. Labels majuscules `let
 - Mesure de lecture ~68 caractères.
 - Rayons : `6px` (puces/inputs), `14px` (cartes), `22px` (grandes tuiles/bento), `999px` (pastilles).
 - Cartes : filet `--border` + ombre douce (`0 1px 2px / 0 12px 30px` navy à ~6 %). **Pas** de liseré d'accent.
-- Bento catégories : tuiles de tailles variées (1×1, 2×1), image en fond, voile navy au survol + label.
+- Catégories : slider horizontal sur une seule rangée, sans cartes arrondies. Pictogrammes marine, numéros rouges, séparateurs fins ; défilement tactile et flèches de navigation. Pas de photo en fond, selon la préférence de David.
 
 ## Motion (scroll)
 
@@ -83,3 +83,46 @@ Jamais d'emoji. Style outline pour la navigation, filled réservé aux états ac
 FR / NL / EN. EUR. Dates `JJ/MM/AAAA`. HTVA + TVAC. Belgique.
 Mobile : React Native — polices embarquées (`expo-font`), cibles tactiles ≥ 44 pt, safe areas.
 Borne 16" tactile : cibles ≥ 64 pt, texte ≥ 20 px, navigation courte, reset après inactivité.
+
+
+## Mise à jour du 30 septembre 2026
+
+La couche `apps/web/app/redesign.css` complète les styles historiques sans modifier les moteurs de réservation, de disponibilité ou de facturation.
+
+- Palette atelier : rouge `#CF2E24` (texte blanc lisible), marine `#142B3B`, fond chaud `#F7F6F2`, texte `#182E3B`.
+- Bricolage Grotesque et Hanken Grotesk sont hébergées localement, avec leurs licences OFL. Pas de requête Google Fonts au chargement.
+- Site : conteneur 1440 px ; hero 1600 px maximum ; catégories à icônes en slider sur toutes les tailles d’écran ; catalogue 4 colonnes sur grands écrans.
+- Admin : navigation fixe défilante sur ordinateur / tablette paysage, tiroir sous 900 px ; groupes métiers et recherche ; priorités opérationnelles avant statistiques.
+- Application native : largeur utile plafonnée à 1200 points ; catalogue et packs sur 2 à 4 colonnes sur tablette ; liste sur téléphone ; fenêtres de dates et produit plafonnées à 600 points ; barre d’onglets centrée et safe areas respectées.
+- Motion : contenu visible par défaut, éléments hors écran révélés à leur entrée dans la fenêtre, prise en charge des éléments chargés après navigation ; suppression du minuteur global de 2,5 secondes ; préférence de mouvements réduits respectée.
+- Référence de validation et limites : `docs/refonte-ui-ux-2026-09.md`.
+
+## Références visuelles hors secteur — 30 septembre 2026
+
+À la demande de David : élargir les références au voyage et à la location automobile.
+
+- Airbnb (`https://www.airbnb.fr/`) : visuels dominants, texte posé sous les images, peu de cadres, hiérarchie compacte.
+- SIXT (`https://www.sixt.fr/`) : contraste affirmé et réservation immédiatement identifiable. Conserver les dates facultatives du parcours Bricoloc, sans imposer un formulaire automobile.
+- Application à l’accueil : cartes populaires et packs sans conteneur encadré ; rayon réservé aux médias ; titres plus sobres, prix et liens lisibles. Conserver les icônes et le slider des catégories.
+- Conserver la charte Bricoloc, ne pas copier les textes, photos ou identités des références. Les photos de démonstration des produits restent provisoires.
+
+## Édition catalogue et parc
+
+- Une tâche à la fois : catalogue client ou machines internes ; masquer la liste pendant l’édition.
+- Barre d’actions sticky : nom de fiche, fermer, enregistrer, retour d’erreur ; rester accessible sur tablette.
+- Sections repliables : identité, présentation/photos, tarifs, documents, associations, approvisionnement/stock, publication. Adapter leur présence au type de fiche.
+- Options rares ou sensibles (adresse publique, changement de type, paliers JSON) dans les détails avancés.
+- Stock : recherche commune, filtre de disponibilité, catégories repliables et bouton explicite vers les exemplaires ; réserver les suppressions aux détails.
+- BricoPacks : utiliser le même modèle d’édition pleine largeur, liste et édition séparées, actions en haut, sections par tâche. La recherche et les filtres restent conservés au retour à la liste.
+- Inventaire : privilégier le scan et le pointage ; détails de série/emplacement repliables, aide accessible sans monopoliser le haut de page.
+- Catalogue client : médias arrondis, aucune bordure extérieure ni ombre de carte ; informations et actions sous l’image, alignées par rangée. Services de l’accueil sur surface ouverte, avec des séparateurs fins.
+
+## Direction révisée après validation de David
+
+Le site public revient à la version `91c1e0c` (« c’est mieux »). La direction sans cadres et surfaces ouvertes de la dernière passe est retirée ; les règles précédentes sur ces deux points ne sont plus à appliquer. Conserver tout l’admin actuel.
+
+Procéder désormais par proposition visuelle indépendante, une page à la fois, avant extension au site. Première proposition : `/apercu-fiche`, route de développement uniquement, avec le vrai visuel d’un produit Bricoloc. Titre et caractéristiques avant la galerie, panneau de réservation blanc bordé avec ombre légère, sélection active marine et bouton principal rouge. Sur tablette portrait : galerie, réservation puis détails. Aucune modification du panier réel, aucun déploiement.
+
+## Référence fiche produit préférée par David
+
+La proposition avec titre au-dessus de la galerie et panneau blanc de réservation est abandonnée. Pour l’aperçu isolé, suivre la fiche Bricoloc https://new.bricoloc.be/produits/agrafeuse-pneumatique-15-40mm : galerie encadrée à gauche, grand titre indigo à droite, palette rouge / lavande, réservation directement sur le fond de page. Réutiliser les composants existants. Ne pas étendre cette proposition avant retour de David ; ne pas modifier l’admin ni le panier réel.

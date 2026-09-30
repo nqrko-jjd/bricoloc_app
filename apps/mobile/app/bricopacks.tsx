@@ -5,6 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, mediaUrl } from '@/lib/api';
 import { C, R } from '@/lib/theme';
+import { useAdaptiveLayout } from '@/lib/layout';
 import { Price } from '@/components/Price';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -40,6 +41,7 @@ const FAM_LABEL = Object.fromEntries(FAMILIES);
 export default function BricoPacksScreen() {
   const [packs, setPacks] = useState<Pack[]>([]);
   const [fam, setFam] = useState('tous');
+  const { columns, contentWidth } = useAdaptiveLayout();
 
   const load = useCallback(() => {
     api<{ packs: Pack[] }>('/api/public/bricopacks')
@@ -80,6 +82,10 @@ export default function BricoPacksScreen() {
       </View>
 
       <FlatList
+        key={`packs-${columns}`}
+        numColumns={columns}
+        columnWrapperStyle={columns > 1 ? { gap: 16 } : undefined}
+        style={{ width: '100%', maxWidth: contentWidth, alignSelf: 'center' }}
         data={shown}
         keyExtractor={(p) => p.slug}
         contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 12 }}
@@ -122,6 +128,8 @@ export default function BricoPacksScreen() {
           <Pressable
             onPress={() => router.push(`/bricopack/${p.slug}` as any)}
             style={{
+              flex: 1,
+              maxWidth: columns > 1 ? (contentWidth - 32 - (columns - 1) * 16) / columns : undefined,
               backgroundColor: C.white,
               borderRadius: R.md,
               borderWidth: 1,

@@ -1,50 +1,46 @@
 'use client';
-
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
-/**
- * Révélations au scroll : ajoute `.is-visible` aux éléments `.reveal` quand ils
- * entrent dans le viewport (une seule fois). Respecte `prefers-reduced-motion`
- * (le CSS force alors l'état visible). Monté une fois dans le layout du site.
- */
 export function Reveal() {
   const pathname = usePathname();
-
   useEffect(() => {
-    const els = Array.from(document.querySelectorAll<HTMLElement>('.reveal:not(.is-visible)'));
-    if (els.length === 0) return;
-
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce || !('IntersectionObserver' in window)) {
-      els.forEach((el) => el.classList.add('is-visible'));
-      return;
-    }
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            const el = e.target as HTMLElement;
-            const delay = el.dataset.revealDelay;
-            if (delay) el.style.transitionDelay = `${delay}ms`;
-            el.classList.add('is-visible');
-            io.unobserve(el);
-          }
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const tracked = new Set<HTMLElement>();
+    if (!('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) {
+        const el = e.target as HTMLElement;
+        el.style.transitionDelay = `${Math.min(Number(el.dataset.revealDelay) || 0, 300)}ms`;
+        el.classList.add('is-visible');
+        io.unobserve(el);
+      }
+    }, { rootMargin: '0px 0px -32px 0px', threshold: 0.04 });
+    const discover = () => {
+      document.querySelectorAll<HTMLElement>('.reveal:not(.is-visible)').forEach((el) => {
+        if (tracked.has(el)) return;
+        tracked.add(el);
+        // Readable by default; only offscreen content opts in to motion.
+        if (preference.matches || el.getBoundingClientRect().top < window.innerHeight) {
+          el.classList.add('is-visible');
+        } else {
+          el.classList.add('motion-ready');
+          io.observe(el);
         }
-      },
-      { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
-    );
-    els.forEach((el) => io.observe(el));
-
-    // filet de sécurité si l'IO ne se déclenche pas (onglet caché au chargement…)
-    const t = window.setTimeout(() => els.forEach((el) => el.classList.add('is-visible')), 2500);
-
+      });
+    };
+    discover();
+    const mutations = new MutationObserver(discover);
+    mutations.observe(document.body, { childList: true, subtree: true });
+    const revealAll = () => {
+      if (preference.matches) tracked.forEach((el) => el.classList.add('is-visible'));
+    };
+    preference.addEventListener('change', revealAll);
     return () => {
-      io.disconnect();
-      window.clearTimeout(t);
+      io.disconnect(); mutations.disconnect();
+      preference.removeEventListener('change', revealAll);
+      tracked.forEach((el) => el.classList.remove('motion-ready'));
     };
   }, [pathname]);
-
   return null;
 }

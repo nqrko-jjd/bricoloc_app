@@ -1,11 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
+import { useDrawerFocus } from './useDrawerFocus';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Link } from '@/i18n/navigation';
 import { useCart, useSession } from '@/lib/providers';
-import { User, ShoppingCart } from './icons';
+import { User, ShoppingCart, Clock } from './icons';
 
 export function Header() {
   const { cart } = useCart();
@@ -17,17 +18,19 @@ export function Header() {
   const pathname = usePathname();
 
   useEffect(() => setOpen(false), [pathname]);
+  const close = useCallback(() => setOpen(false), []);
+  const drawerRef = useDrawerFocus(open, close);
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [open]);
+    const desktop = window.matchMedia('(min-width: 981px)');
+    const onResize = () => { if (desktop.matches) close(); };
+    desktop.addEventListener('change', onResize);
+    return () => desktop.removeEventListener('change', onResize);
+  }, [close]);
 
   const links = (
     <>
-      <Link href="/catalogue">{t('rentTool')}</Link>
-      <Link href="/bricopacks">{t('bricopacks')}</Link>
+      <Link href="/catalogue" aria-current={pathname === "/catalogue" ? "page" : undefined}>{t('rentTool')}</Link>
+      <Link href="/bricopacks" aria-current={pathname.startsWith("/bricopacks") ? "page" : undefined}>{t('bricopacks')}</Link>
       <Link href="/conseils">{t('adviceDiy')}</Link>
       <Link href="/faq">{t('faq')}</Link>
       <Link href="/contact">{t('contact')}</Link>
@@ -39,7 +42,7 @@ export function Header() {
   return (
     <>
       <div className="top">
-        <span>◷ {tt('cc')}</span>
+        <span><Clock aria-hidden /> {tt('cc')}</span>
         <span aria-hidden>·</span>
         <span>{tt('delivery')}</span>
         <b>{tt('hours')}</b>
@@ -90,7 +93,8 @@ export function Header() {
         onClick={() => setOpen(false)}
         aria-hidden
       />
-      <div className={`mobile-drawer${open ? ' is-open' : ''}`}>
+      <div ref={drawerRef} className={`mobile-drawer${open ? ' is-open' : ''}`} role="dialog" aria-modal={open || undefined} aria-label="Menu" inert={!open}>
+        <button className="drawer-close" onClick={close}>{tc('close')} ×</button>
         <nav
           className="mobile-drawer__nav"
           onClick={(e) => {

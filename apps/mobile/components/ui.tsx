@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '@/lib/theme';
+import { useAdaptiveLayout } from '@/lib/layout';
 import { mediaUrl } from '@/lib/api';
 import { sanitizePhone } from '@/lib/format';
 import { useQuickView } from '@/components/ProductQuickView';
@@ -50,18 +51,19 @@ export function Screen({
   scroll?: boolean;
   refreshing?: React.ReactElement<RefreshControlProps>;
 }) {
+  const { contentWidth, gutter } = useAdaptiveLayout();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.white }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
+          contentContainerStyle={{ width: '100%', maxWidth: contentWidth, alignSelf: 'center', padding: gutter, paddingBottom: 120 }}
           keyboardShouldPersistTaps="handled"
           refreshControl={refreshing}
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={{ flex: 1, padding: 16 }}>{children}</View>
+        <View style={{ flex: 1, width: '100%', maxWidth: contentWidth, alignSelf: 'center', padding: gutter }}>{children}</View>
       )}
     </SafeAreaView>
   );
@@ -224,6 +226,8 @@ export function ProductMiniCard({
   return (
       <Pressable
         onPress={() => qv.open(p.slug)}
+        accessibilityRole="button"
+        accessibilityLabel={p.name}
         style={({ pressed }) => ({
           width: width ?? '47%',
           backgroundColor: C.white,
@@ -268,24 +272,10 @@ export function ProductMiniCard({
               </Text>
             </View>
           ) : null}
-          <View
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: C.white,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Ionicons name="heart-outline" size={15} color={C.muted} />
-          </View>
+
         </View>
         <View style={{ padding: 12, gap: 3 }}>
-          <Text style={{ fontWeight: '800', color: C.ink, fontSize: 14 }} numberOfLines={1}>
+          <Text style={{ fontWeight: '800', color: C.ink, fontSize: 15, lineHeight: 21 }} numberOfLines={2}>
             {p.name}
           </Text>
           <Text style={{ fontWeight: '900', color: C.ink, fontSize: 15 }}>

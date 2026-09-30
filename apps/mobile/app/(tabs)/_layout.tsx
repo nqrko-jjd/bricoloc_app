@@ -1,8 +1,10 @@
 import type { ComponentProps } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { C } from '@/lib/theme';
+import { useAdaptiveLayout } from '@/lib/layout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 
@@ -62,6 +64,9 @@ function CartTabIcon() {
 }
 
 export default function TabsLayout() {
+  const { width, tablet } = useAdaptiveLayout();
+  const insets = useSafeAreaInsets();
+  const side = tablet ? Math.max(24, (width - 640) / 2) : 16;
   return (
     <Tabs
       screenOptions={{
@@ -71,9 +76,9 @@ export default function TabsLayout() {
         // Barre flottante arrondie, détachée du bord (look plus moderne).
         tabBarStyle: {
           position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: Platform.OS === 'ios' ? 26 : 16,
+          left: side,
+          right: side,
+          bottom: Math.max(insets.bottom, 16),
           height: 62,
           borderRadius: 26,
           borderTopWidth: 0,
@@ -87,7 +92,7 @@ export default function TabsLayout() {
           shadowOffset: { width: 0, height: 8 },
         },
         tabBarItemStyle: { paddingVertical: 8 },
-        tabBarLabelStyle: { fontSize: 10.5, fontWeight: '800' },
+        tabBarLabelStyle: { fontSize: tablet ? 13 : 11, fontWeight: '800' },
       }}
     >
       <Tabs.Screen

@@ -1,11 +1,14 @@
 'use client';
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { formatEUR, round2, suggestDegressivePricing } from '@bricoloc/shared';
 import { staffApi } from '@/lib/staff';
 import { usePriceDisplay } from '@/lib/usePriceDisplay';
 import { TvacPriceField } from '@/components/admin/TvacPriceField';
 import { ImageDropzone } from '@/components/admin/ImageDropzone';
 import { DocumentUploader } from '@/components/admin/DocumentUploader';
+import { EditorSection } from '@/components/admin/EditorSection';
+import { Link } from '@/i18n/navigation';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
 import type { ProductDetail, Category } from '@/lib/types';
 
@@ -34,7 +37,7 @@ const EDIT_TITLES: Record<CreateMode, string> = {
 
 type KindFilter = 'CATALOG' | 'MACHINE' | 'TECHNICAL' | 'ACCESSORY' | 'CONSUMABLE' | 'PPE';
 const FILTER_LABELS: Record<KindFilter, string> = {
-  CATALOG: 'Catalogue (tout ce qui est vendable)',
+  CATALOG: 'Catalogue client',
   MACHINE: 'Fiches produits',
   TECHNICAL: 'Machines',
   ACCESSORY: 'Accessoires',
@@ -129,6 +132,8 @@ const EMPTY_PARTNER: PartnerRow = {
 };
 
 export default function AdminProduits() {
+  const searchParams = useSearchParams();
+  const initialEditOpened = useRef(false);
   const { vatRate } = usePriceDisplay();
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -146,6 +151,7 @@ export default function AdminProduits() {
   const [convertTarget, setConvertTarget] = useState('');
   const [featuredIds, setFeaturedIds] = useState<string[]>([]);
   const [attachPick, setAttachPick] = useState('');
+  const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   async function load() {
@@ -311,9 +317,17 @@ export default function AdminProduits() {
     );
   }
 
+  useEffect(() => {
+    const id = searchParams.get('edit');
+    if (!id || initialEditOpened.current) return;
+    const product = products.find((p) => p.id === id);
+    if (product) { initialEditOpened.current = true; edit(product); }
+  }, [products, searchParams]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!mode) return;
+    if (!mode || saving) return;
+    setSaving(true);
     setMsg('');
     const isTechnical = mode === 'TECHNICAL';
     const isConsumable = mode === 'CONSUMABLE';
@@ -338,7 +352,7 @@ export default function AdminProduits() {
         weekPrice: isTechnical || isConsumable ? null : form.weekPrice ? Number(form.weekPrice) : null,
         monthPrice: isTechnical || isConsumable ? null : form.monthPrice ? Number(form.monthPrice) : null,
         tiers: isMachine && form.tiers ? JSON.parse(form.tiers) : [],
-        deposit: isTechnical ? 0 : Number(form.deposit),
+        deposit: isTechnical || isConsumable ? 0 : Number(form.deposit),
         published: isTechnical ? false : form.published,
         isNew: isTechnical ? false : form.isNew,
         audience: isTechnical ? 'TOUS' : form.audience,
@@ -403,6 +417,8 @@ export default function AdminProduits() {
       await load();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -565,16 +581,12 @@ export default function AdminProduits() {
   const competitorPrices = isMachine ? (current?.partners ?? []) : [];
 
   return (
-    <div className="stack">
+    <div className="stack product-workspace">
       <h1>Catalogue &amp; produits</h1>
+      {msg && !mode && <div className="alert alert-info" role="status">{msg}</div>}
 
-      <div className="card card-body">
-        <p className="small muted" style={{ margin: '0 0 10px' }}>
-          Choisissez ce que vous créez : une <strong>fiche produit</strong> est ce que le client voit
-          (nom générique, prix, page publique) ; une <strong>machine</strong> est l&apos;exemplaire réel
-          (marque/modèle, fournisseurs, exemplaires physiques) rattaché à une fiche produit — elle n&apos;a
-          ni prix ni page publique à elle.
-        </p>
+      <div className="catalogue-create card card-body" hidden={!!mode}>
+        <div className="admin-context-line"><span><strong>Catalogue client</strong> · fiches, présentation et tarifs</span><Link href="/admin/exemplaires">Gérer le parc et le stock →</Link></div>
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <button type="button" className="btn btn-primary btn-sm" onClick={() => startCreate('MACHINE')}>
             + Nouvelle fiche produit
@@ -595,16 +607,23 @@ export default function AdminProduits() {
       </div>
 
       {mode && (
-        <form className="card card-pad stack" onSubmit={submit} ref={formRef}>
-          <div className="spread">
-            <h3>{editingId ? `Modifier — ${EDIT_TITLES[mode]} : ${form.name || '…'}` : CREATE_TITLES[mode]}</h3>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={closeForm}>
-              Fermer
-            </button>
+        <form className="product-editor stack" onSubmit={submit} ref={formRef} key={editingId ?? mode} onInvalidCapture={(event) => {
+          let parent = (event.target as HTMLElement).parentElement;
+          while (parent && parent !== formRef.current) { if (parent instanceof HTMLDetailsElement) parent.open = true; parent = parent.parentElement; }
+        }}>
+          <div className="editor-toolbar">
+            <div><span className="editor-toolbar__type">{EDIT_TITLES[mode]}</span><h3>{form.name || CREATE_TITLES[mode]}</h3></div>
+            <div className="row">
+              <button type="button" className="btn btn-ghost" onClick={closeForm} disabled={saving}>Fermer</button>
+              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Enregistrement…' : editingId ? 'Enregistrer' : 'Créer'}</button>
+            </div>
+            {msg && <div className="alert alert-info" role="status">{msg}</div>}
           </div>
-          {msg && <div className="alert alert-info">{msg}</div>}
+
+          <EditorSection title={isTechnical ? 'Identité de la machine' : 'Informations essentielles'} hint={isTechnical ? 'Marque, modèle et fiche produit associée' : 'Nom et catégorie visibles par les clients'} open>
 
           {editingId && RECLASSIFY_MODES.includes(mode) && (
+            <details className="editor-advanced"><summary>Changer le type de fiche (avancé)</summary>
             <div className="field" style={{ maxWidth: 320 }}>
               <label>Type de fiche</label>
               <select
@@ -627,6 +646,7 @@ export default function AdminProduits() {
                 après enregistrement).
               </span>
             </div>
+            </details>
           )}
 
           <div className="field-2">
@@ -634,8 +654,9 @@ export default function AdminProduits() {
               <label>Nom {isTechnical && <span className="small muted">(usage interne, ex. « Makita 9741S »)</span>}</label>
               <input value={form.name} onChange={(e) => set('name', e.target.value)} required />
             </div>
-            <div className="field">
-              <label>Slug (URL)</label>
+            <details className="editor-advanced">
+              <summary>Adresse de la fiche (avancé)</summary>
+              <div className="field"><label>Slug (URL)</label>
               <input
                 value={form.slug}
                 onChange={(e) => set('slug', e.target.value)}
@@ -646,7 +667,8 @@ export default function AdminProduits() {
                   Change l’adresse publique de la fiche (les anciens liens/QR ne suivront pas).
                 </span>
               )}
-            </div>
+              </div>
+            </details>
           </div>
 
           {isTechnical && (
@@ -707,6 +729,8 @@ export default function AdminProduits() {
             </div>
           )}
 
+          </EditorSection>
+          <EditorSection title={isTechnical ? 'Notes internes et photos' : 'Présentation et photos'} hint={isTechnical ? 'Informations réservées à l’équipe' : 'Description, utilisations et galerie'} open={!isTechnical}>
           <div className="field">
             <label>Description courte {isTechnical && <span className="small muted">(note interne)</span>}</label>
             <input
@@ -735,6 +759,10 @@ export default function AdminProduits() {
             </div>
           )}
 
+          <div className="field"><label>Images · la première est la principale</label><ImageDropzone value={form.images} onChange={(v) => set('images', v)} /></div>
+          </EditorSection>
+
+          {!isTechnical && <EditorSection title={isConsumableMode ? 'Prix de vente' : 'Tarifs de location'} hint={isConsumableMode ? 'Prix unitaire TVAC, sans caution' : 'Tarifs TVAC et caution'} open>
           {isConsumableMode && (
             <div className="field-2">
               <div className="field">
@@ -743,15 +771,6 @@ export default function AdminProduits() {
                   htValue={Number(form.dailyPrice) || 0}
                   onHtChange={(ht) => set('dailyPrice', String(ht))}
                   vatRate={vatRate}
-                />
-              </div>
-              <div className="field">
-                <label>Caution</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.deposit}
-                  onChange={(e) => set('deposit', e.target.value)}
                 />
               </div>
             </div>
@@ -851,7 +870,7 @@ export default function AdminProduits() {
                   </>
                 )}
               </p>
-              <div className="field">
+              <details className="editor-advanced"><summary>Personnaliser les paliers dégressifs (avancé)</summary><div className="field">
                 <label>Tarifs dégressifs (JSON : [{'{'}"minDays":1,"perDay":30{'}'}, …])</label>
                 <input
                   value={form.tiers}
@@ -862,14 +881,13 @@ export default function AdminProduits() {
                       : '[{"minDays":1,"perDay":30},{"minDays":4,"perDay":24}]'
                   }
                 />
-              </div>
+              </div></details>
             </>
           )}
 
-          <div className="field">
-            <label>Images (glisser-déposer, la 1re est la principale)</label>
-            <ImageDropzone value={form.images} onChange={(v) => set('images', v)} />
-          </div>
+          </EditorSection>}
+
+          {!isTechnical && <EditorSection title="Caractéristiques et documents" hint="Notice, fiches complémentaires et données techniques">
 
           {!isTechnical && (
             <DocumentUploader
@@ -881,8 +899,10 @@ export default function AdminProduits() {
           )}
 
           {!isTechnical && <SpecsEditor value={form.specs} onChange={(v) => set('specs', v)} />}
+          </EditorSection>}
 
-          {!isTechnical && (
+          {!isTechnical && !isConsumableMode && (
+            <EditorSection title="Partenaires de secours" hint="Location externe en cas de rupture · réservé à l’équipe">
             <fieldset className="card card-body" style={{ margin: 0 }}>
               <legend className="small" style={{ fontWeight: 700 }}>
                 Partenaires de secours (jamais affiché au client)
@@ -893,9 +913,11 @@ export default function AdminProduits() {
               </p>
               <PartnerList value={form.partners} onChange={(v) => set('partners', v)} />
             </fieldset>
+            </EditorSection>
           )}
 
           {isMachine && (
+            <EditorSection title="Accessoires et produits associés" hint="Suggestions proposées avec cette location">
             <fieldset className="card card-body" style={{ margin: 0 }}>
               <legend className="small" style={{ fontWeight: 700 }}>
                 Complétez votre location — proposé sur la fiche produit, la borne et l&apos;appli
@@ -933,8 +955,10 @@ export default function AdminProduits() {
                 />
               </div>
             </fieldset>
+            </EditorSection>
           )}
 
+          {!isMachine && <EditorSection title={isTechnical ? 'Référence et fournisseurs' : 'Stock et approvisionnement'} hint={isTechnical ? 'Achats et exemplaires physiques' : 'Quantité, fournisseur et prix d’achat'} open>
           {isTechnical ? (
             <fieldset className="card card-body" style={{ margin: 0 }}>
               <legend className="small" style={{ fontWeight: 700 }}>
@@ -1034,6 +1058,7 @@ export default function AdminProduits() {
               </div>
             </fieldset>
           )}
+          </EditorSection>}
 
           {isMachine &&
             editingId &&
@@ -1047,6 +1072,7 @@ export default function AdminProduits() {
                   (!p.variants || p.variants.length === 0),
               );
               return (
+                <EditorSection title="Machines et stock" hint={`${current?.variants?.length ?? 0} machine(s) rattachée(s) · ${current?.totalStock ?? 0} exemplaire(s)`}>
                 <fieldset className="card card-body" style={{ margin: 0 }}>
                   <legend className="small" style={{ fontWeight: 700 }}>
                     Machines rattachées
@@ -1137,13 +1163,15 @@ export default function AdminProduits() {
                   {attachPick && (
                     <p className="small muted" style={{ margin: '4px 0 0' }}>
                       Choisi mais pas encore rattaché — cliquez « Rattacher » ci-dessus ou
-                      « Enregistrer » en bas du formulaire, les deux fonctionnent.
+                      « Enregistrer » dans la barre d’actions, les deux fonctionnent.
                     </p>
                   )}
                 </fieldset>
+                </EditorSection>
               );
             })()}
 
+          {!isTechnical && <EditorSection title="Publication" hint={form.published ? 'En ligne sur le site et l’application' : 'Brouillon · non visible par les clients'} open>
           {!isTechnical && (
             <label className="row" style={{ gap: 8 }}>
               <input
@@ -1177,28 +1205,31 @@ export default function AdminProduits() {
               </span>
             </label>
           )}
-          <button className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
-            {editingId ? 'Enregistrer' : 'Créer'}
-          </button>
+          </EditorSection>}
         </form>
       )}
 
-      <div className="card card-body">
-        <p className="small muted" style={{ margin: '0 0 10px' }}>
+      <div className="catalogue-list card card-body" hidden={!!mode}>
+        <div className="catalogue-scope chips">
+          <button type="button" className={`chip${kindFilter !== 'TECHNICAL' ? ' active' : ''}`} aria-pressed={kindFilter !== 'TECHNICAL'} onClick={() => setKindFilter('CATALOG')}>Catalogue client · {products.filter((p) => p.kind !== 'PACK' && !p.technical).length}</button>
+          <button type="button" className={`chip${kindFilter === 'TECHNICAL' ? ' active' : ''}`} aria-pressed={kindFilter === 'TECHNICAL'} onClick={() => setKindFilter('TECHNICAL')}>Machines du parc · {products.filter((p) => p.technical).length}</button>
+        </div>
+        <details className="editor-advanced"><summary>Comment choisir les produits mis en avant sur l’accueil ?</summary><p className="small muted" style={{ margin: '0 0 10px' }}>
           Colonne <strong>★ Accueil</strong> : cliquez l’étoile pour mettre une machine en avant dans
           « Ce que louent nos clients » sur la page d’accueil ({featuredIds.length} sélectionnée
           {featuredIds.length > 1 ? 's' : ''}, les 3 premières s’affichent). Rien de coché = repli
           automatique sur les machines les plus louées.
-        </p>
+        </p></details>
         <div className="row" style={{ gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
           <input
+            aria-label="Rechercher une fiche"
             placeholder="Filtrer par nom…"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             style={{ flex: 1, minWidth: 220 }}
           />
-          <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value as KindFilter)}>
-            {(Object.keys(FILTER_LABELS) as KindFilter[]).map((k) => (
+          <select aria-label="Type de fiche" hidden={kindFilter === 'TECHNICAL'} value={kindFilter} onChange={(e) => setKindFilter(e.target.value as KindFilter)}>
+            {(Object.keys(FILTER_LABELS) as KindFilter[]).filter((k) => k !== 'TECHNICAL').map((k) => (
               <option key={k} value={k}>
                 {FILTER_LABELS[k]}
               </option>
@@ -1215,7 +1246,7 @@ export default function AdminProduits() {
                     Nom {sortBy === 'name' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
                   </button>
                 </th>
-                <th>
+                {kindFilter === 'TECHNICAL' && <th>
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm"
@@ -1224,14 +1255,13 @@ export default function AdminProduits() {
                   >
                     Réf. interne {sortBy === 'internalRef' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
                   </button>
-                </th>
-                <th title="Mise en avant sur l'accueil (« Ce que louent nos clients »)">★ Accueil</th>
+                </th>}
+                {kindFilter !== 'TECHNICAL' && <th title="Mise en avant sur l'accueil (« Ce que louent nos clients »)">★ Accueil</th>}
                 <th>Type</th>
                 <th>Catégorie</th>
-                <th>Prix/j</th>
-                <th>Caution</th>
+                {kindFilter !== 'TECHNICAL' && <th>{kindFilter === 'CONSUMABLE' ? 'Prix/unité HTVA' : 'Prix/j HTVA'}</th>}
                 <th>Stock</th>
-                <th title="Visible sur le site">En ligne</th>
+                {kindFilter !== 'TECHNICAL' && <th title="Visible sur le site">En ligne</th>}
                 <th></th>
               </tr>
             </thead>
@@ -1282,8 +1312,8 @@ export default function AdminProduits() {
                         </span>
                       )}
                     </td>
-                    <td>{refOf(p) || '—'}</td>
-                    <td style={{ textAlign: 'center' }}>
+                    {kindFilter === 'TECHNICAL' && <td>{refOf(p) || '—'}</td>}
+                    {kindFilter !== 'TECHNICAL' && <td style={{ textAlign: 'center' }}>
                       {p.kind === 'MACHINE' && !p.technical ? (
                         <button
                           type="button"
@@ -1308,7 +1338,7 @@ export default function AdminProduits() {
                       ) : (
                         <span className="small muted">—</span>
                       )}
-                    </td>
+                    </td>}
                     <td>
                       <span className="badge">
                         {p.technical
@@ -1316,16 +1346,13 @@ export default function AdminProduits() {
                             (p.partners?.length
                               ? ` · +${p.partners.length} partenaire${p.partners.length > 1 ? 's' : ''}`
                               : '')
-                          : p.kind === 'MACHINE'
-                            ? 'FICHE PRODUIT'
-                            : p.kind}
+                          : EDIT_TITLES[p.kind as CreateMode] ?? p.kind}
                       </span>
                     </td>
                     <td>{p.category?.name ?? '—'}</td>
-                    <td>{p.technical ? '—' : formatEUR(p.dailyPrice)}</td>
-                    <td>{p.technical ? '—' : formatEUR(p.deposit)}</td>
+                    {kindFilter !== 'TECHNICAL' && <td>{formatEUR(p.dailyPrice)}</td>}
                     <td>{p.totalStock}</td>
-                    <td style={{ textAlign: 'center' }}>
+                    {kindFilter !== 'TECHNICAL' && <td style={{ textAlign: 'center' }}>
                       {p.technical ? (
                         <span className="small muted">—</span>
                       ) : (
@@ -1336,7 +1363,7 @@ export default function AdminProduits() {
                           title={p.published ?? true ? 'En ligne — cliquer pour dépublier' : 'Brouillon — cliquer pour publier'}
                         />
                       )}
-                    </td>
+                    </td>}
                     <td>
                       <RowMenu
                         items={[
@@ -1379,7 +1406,7 @@ export default function AdminProduits() {
                   </tr>
                   {convertingSlug === p.slug && (
                     <tr>
-                      <td colSpan={11}>
+                      <td colSpan={kindFilter === 'TECHNICAL' ? 7 : 9}>
                         <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
                           <span className="small">
                             {p.technical ? `Rattacher « ${p.name} » à :` : `Transformer « ${p.name} » en machine de :`}
@@ -1414,7 +1441,7 @@ export default function AdminProduits() {
                   )}
                   {mergingSlug === p.slug && (
                     <tr>
-                      <td colSpan={11}>
+                      <td colSpan={kindFilter === 'TECHNICAL' ? 7 : 9}>
                         <div className="row" style={{ gap: 8, alignItems: 'center', padding: '6px 0' }}>
                           <span className="small">Fusionner « {p.name} » dans :</span>
                           <select value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)}>

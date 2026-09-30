@@ -1,3 +1,4 @@
+import '@/app/product-reference.css';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { redirect } from '@/i18n/navigation';

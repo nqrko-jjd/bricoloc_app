@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { C, R } from '@/lib/theme';
+import { useAdaptiveLayout } from '@/lib/layout';
 
 export function StaffHeader({ title, onBack }: { title: string; onBack?: () => void }) {
   return (
@@ -38,19 +39,20 @@ export function StaffScreen({
   children: ReactNode;
   scroll?: boolean;
 }) {
+  const { contentWidth, gutter } = useAdaptiveLayout();
   const back = onBack ?? (router.canGoBack() ? () => router.back() : undefined);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
       <StaffHeader title={title} onBack={back} />
       {scroll ? (
         <ScrollView
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+          contentContainerStyle={{ width: '100%', maxWidth: contentWidth, alignSelf: 'center', padding: gutter, gap: 16, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={{ flex: 1, padding: 16, gap: 12 }}>{children}</View>
+        <View style={{ flex: 1, width: '100%', maxWidth: contentWidth, alignSelf: 'center', padding: gutter, gap: 16 }}>{children}</View>
       )}
     </SafeAreaView>
   );

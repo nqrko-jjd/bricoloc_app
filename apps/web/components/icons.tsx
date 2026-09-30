@@ -228,12 +228,38 @@ export const ChevronLeft = (p: SVGProps<SVGSVGElement>) => (
 );
 
 /** Table de correspondance slug de catégorie → icône. */
+export const Saw = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}><path d="m8 6 13 12-3 3-2-2-2 1-2-3-2 1-2-3-2 1-2-3" /><path d="M3 3h4l3 3-6 6-2-2V5a2 2 0 0 1 1-2Z" /><path d="m5 6 2 2" /></Svg>
+);
+export const Sander = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}><path d="M3 16h18v4H3zM5 16V9h14v7M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3M19 11h3" /><path d="M7 20v2m5-2v2m5-2v2" /></Svg>
+);
+export const Shovel = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}><path d="M8 2h8v3a4 4 0 0 1-8 0ZM12 9v6M6 15h12v3a6 6 0 0 1-12 0Z" /></Svg>
+);
+export const Bolt = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}><path d="m13 2-9 12h7l-1 8 10-13h-7z" /></Svg>
+);
+export const Lifting = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}><path d="M2 21h20M5 21V3h15M5 8l5-5M17 3v7a3 3 0 1 1-3 3M10 21v-4h10v4" /></Svg>
+);
+export const HardHat = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}><path d="M3 17v-3a9 9 0 0 1 6-8M15 6a9 9 0 0 1 6 8v3M9 12V4h6v8M2 17h20v4H2zM5 13v4m14-4v4" /></Svg>
+);
+
 export const CATEGORY_ICON: Record<string, (p: SVGProps<SVGSVGElement>) => React.JSX.Element> = {
   'forer-casser': Drill,
   'percage-demolition': Drill,
   'beton-pierre': Hammer,
   'travail-du-beton-de-la-pierre': Hammer,
-  'travail-du-bois': Trees,
+  'travail-du-bois': Saw,
+  'sciage-decoupe': Saw,
+  'poncage': Sander,
+  'terrassement': Shovel,
+  'carrelage': Grid,
+  'electricite': Bolt,
+  'levage-manutention': Lifting,
+  'equipement-chantier': HardHat,
   'peintures-finitions': PaintRoller,
   'peinture': PaintRoller,
   'chauffage-deshumidification': Flame,

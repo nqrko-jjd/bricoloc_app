@@ -1,0 +1,21 @@
+/* Preferred Bricoloc product layout; scoped to real product pages. */
+.pdetail-page {
+ --primary:#ee2c24; --primary-strong:#cf1f18; --on-primary:#fff;
+ --navy:#08065d; --navy-deep:#050444; --navy-soft:#2b2978;
+ --ink:#14123f; --muted-fg:#5b5f7a; --ground:#f7f7fb;
+ --surface:#fff; --surface-2:#eeeef7; --border:#e2e2ee;
+ --red-tint:#ffe5e3; --red-tint-2:#fff0ef; --lavender:#e9e9f5;
+ --font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+ --font-display:var(--font-sans); --r-xs:10px; --r-md:20px; --r-lg:32px;
+ --shadow-md:0 10px 28px rgba(8,6,93,.08);
+ max-width:1340px; margin:0 auto; padding:24px 40px 80px; color:var(--ink); background:var(--ground); font-family:var(--font-sans);
+}
+
+.pdetail-page h1,.pdetail-page h2,.pdetail-page h3 { font-family:var(--font-display); font-weight:900; color:var(--navy-deep); letter-spacing:-.055em; text-wrap:balance; }
+.pdetail-page h1 { font-size:clamp(2.6rem,1.2rem + 5.4vw,4.6rem); line-height:.89; margin:.15em 0 .3em; }
+.pdetail-page h2 { font-size:clamp(2rem,1.1rem + 4vw,3.4rem); line-height:.9; }
+.pdetail-page h3 { font-size:clamp(1.3rem,1rem + 1vw,1.5rem); letter-spacing:-.03em; }
+.pdetail-page button { font-family:var(--font-sans); }
+.pdetail-page .qty button { min-width:44px; min-height:44px; }
+@media(max-width:940px) { .pdetail-page { padding-inline:24px; } .pdetail-page .pgallery { max-width:660px; margin-inline:auto; } }
+@media(max-width:480px) { .pdetail-page { padding-inline:20px; } .pdetail-page .pgallery { padding:16px; } .pdetail-page .pgallery__main img { padding:16px; } }

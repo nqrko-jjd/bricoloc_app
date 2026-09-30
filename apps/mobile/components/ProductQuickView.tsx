@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, mediaUrl } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
+import { useAdaptiveLayout } from '@/lib/layout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t as ti } from '@/lib/i18n';
 import { formatEUR } from '@/lib/format';
 import { Price } from '@/components/Price';
@@ -21,6 +23,8 @@ const QuickViewContext = createContext<Ctx | null>(null);
  */
 export function ProductQuickViewProvider({ children }: { children: React.ReactNode }) {
   const { cart, addItem } = useStore();
+  const { width, tablet } = useAdaptiveLayout();
+  const insets = useSafeAreaInsets();
   const [slug, setSlug] = useState<string | null>(null);
   const [p, setP] = useState<ProductDetail | null>(null);
   const [qty, setQty] = useState(1);
@@ -75,14 +79,14 @@ export function ProductQuickViewProvider({ children }: { children: React.ReactNo
         <View
           style={{
             position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
+            left: tablet ? (width - Math.min(600, width - 48)) / 2 : 0,
+            right: tablet ? (width - Math.min(600, width - 48)) / 2 : 0,
+            bottom: tablet ? 24 : 0,
             maxHeight: '88%',
             backgroundColor: C.white,
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
-            paddingBottom: 30,
+            paddingBottom: Math.max(insets.bottom, 20),
           }}
         >
           <View style={{ alignItems: 'center', paddingTop: 10 }}>

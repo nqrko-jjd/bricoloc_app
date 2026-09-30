@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { C, R } from '@/lib/theme';
+import { useAdaptiveLayout } from '@/lib/layout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const MONTHS = [
@@ -43,6 +45,8 @@ export interface DateRangePickerProps {
  */
 export function DateRangePicker({ visible, initialStart, initialEnd, onClose, onConfirm }: DateRangePickerProps) {
   const today = useMemo(() => startOfDay(new Date()), []);
+  const { width, tablet } = useAdaptiveLayout();
+  const insets = useSafeAreaInsets();
   const [rangeStart, setRangeStart] = useState<Date | null>(initialStart ? startOfDay(new Date(initialStart)) : null);
   const [rangeEnd, setRangeEnd] = useState<Date | null>(initialEnd ? startOfDay(new Date(initialEnd)) : null);
   const [viewMonth, setViewMonth] = useState<Date>(() => {
@@ -96,14 +100,14 @@ export function DateRangePicker({ visible, initialStart, initialEnd, onClose, on
       <View
         style={{
           position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
+          left: tablet ? (width - Math.min(600, width - 48)) / 2 : 0,
+          right: tablet ? (width - Math.min(600, width - 48)) / 2 : 0,
+          bottom: tablet ? 24 : 0,
           maxHeight: '86%',
           backgroundColor: C.white,
           borderTopLeftRadius: 28,
           borderTopRightRadius: 28,
-          paddingBottom: 26,
+          paddingBottom: Math.max(insets.bottom, 20),
         }}
       >
         <View style={{ alignItems: 'center', paddingTop: 10 }}>

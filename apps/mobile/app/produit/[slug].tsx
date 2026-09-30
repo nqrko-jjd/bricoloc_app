@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, mediaUrl } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { C, R } from '@/lib/theme';
+import { useAdaptiveLayout } from '@/lib/layout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t as ti } from '@/lib/i18n';
 import { Price } from '@/components/Price';
 import { H2, P, Card, Button, ProductMiniCard } from '@/components/ui';
@@ -14,6 +16,8 @@ import type { ProductDetail, ProductSummary } from '@/lib/types';
 export default function ProductScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { cart, addItem } = useStore();
+  const { width, contentWidth, tablet } = useAdaptiveLayout();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [p, setP] = useState<ProductDetail | null>(null);
   const [similar, setSimilar] = useState<ProductSummary[]>([]);
@@ -74,15 +78,13 @@ export default function ProductScreen() {
           paddingVertical: 8,
         }}
       >
-        <Pressable onPress={() => router.back()} hitSlop={10}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Retour" style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}>
           <Ionicons name="chevron-back" size={26} color={C.ink} />
         </Pressable>
-        <Pressable hitSlop={10}>
-          <Ionicons name="heart-outline" size={24} color={C.ink} />
-        </Pressable>
+
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView contentContainerStyle={{ width: '100%', maxWidth: contentWidth, alignSelf: 'center', paddingBottom: 120 + insets.bottom }}>
         <Image
           source={{
             uri: mediaUrl(p.image) ?? 'https://placehold.co/600x400/eeeef7/08065d/png?text=BRICOLOC',
@@ -254,15 +256,15 @@ export default function ProductScreen() {
       <View
         style={{
           position: 'absolute',
-          left: 0,
-          right: 0,
+          left: tablet ? (width - Math.min(contentWidth, 900)) / 2 : 0,
+          right: tablet ? (width - Math.min(contentWidth, 900)) / 2 : 0,
           bottom: 0,
           backgroundColor: C.white,
           borderTopWidth: 1,
           borderTopColor: C.border,
           paddingHorizontal: 20,
           paddingTop: 12,
-          paddingBottom: 26,
+          paddingBottom: Math.max(insets.bottom, 16),
           flexDirection: 'row',
           alignItems: 'center',
           gap: 12,
@@ -283,11 +285,11 @@ export default function ProductScreen() {
             borderRadius: R.pill,
           }}
         >
-          <Pressable onPress={() => setQty((q) => Math.max(1, q - 1))} style={{ padding: 10 }}>
+          <Pressable onPress={() => setQty((q) => Math.max(1, q - 1))} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="remove" size={16} color={C.ink} />
           </Pressable>
           <Text style={{ fontWeight: '800', minWidth: 18, textAlign: 'center' }}>{qty}</Text>
-          <Pressable onPress={() => setQty((q) => q + 1)} style={{ padding: 10 }}>
+          <Pressable onPress={() => setQty((q) => q + 1)} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="add" size={16} color={C.ink} />
           </Pressable>
         </View>

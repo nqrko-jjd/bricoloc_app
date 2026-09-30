@@ -6,6 +6,8 @@ import { TvacPriceField, useTvacPriceField } from '@/components/admin/TvacPriceF
 import { formatEUR } from '@bricoloc/shared';
 import { API_URL } from '@/lib/api';
 import { ImageDropzone } from '@/components/admin/ImageDropzone';
+import { EditorSection } from '@/components/admin/EditorSection';
+import { Link } from '@/i18n/navigation';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -90,6 +92,12 @@ export default function AdminBricoPacks() {
   const [pack, setPack] = useState<PackDetail | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [query, setQuery] = useState('');
+  const [publication, setPublication] = useState('ALL');
+  const filteredRows = rows.filter((r) =>
+    `${r.name} ${r.family}`.toLocaleLowerCase('fr').includes(query.trim().toLocaleLowerCase('fr')) &&
+    (publication === 'ALL' || (publication === 'PUBLISHED' ? r.published : !r.published)),
+  );
 
   const loadList = useCallback(
     () => staffApi<{ packs: PackRow[] }>('/api/admin/bricopacks').then((r) => setRows(r.packs)),
@@ -140,7 +148,7 @@ export default function AdminBricoPacks() {
     : 0;
 
   async function save() {
-    if (!pack) return;
+    if (!pack || busy) return;
     setBusy(true);
     setMsg('');
     try {
@@ -187,10 +195,10 @@ export default function AdminBricoPacks() {
   }
 
   return (
-    <div className="stack">
+    <div className="stack pack-workspace">
       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>BricoPacks</h1>
-        <button className="btn btn-primary" onClick={createPack}>
+        <button className="btn btn-primary" onClick={createPack} hidden={!!pack}>
           + Nouveau pack
         </button>
       </div>
@@ -200,21 +208,25 @@ export default function AdminBricoPacks() {
         calculées d’après les machines choisies.
       </p>
 
-      <BulkCovers rows={rows} onDone={loadList} />
+      {!pack && <BulkCovers rows={rows} onDone={loadList} />}
 
       <div className="bp-admin">
-        <div className="card card-body bp-admin__list">
+        <div className="card card-body bp-admin__list" hidden={!!pack}>
+          <div className="stock-toolbar">
+            <label className="field">Rechercher un pack<input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nom ou famille…" /></label>
+            <label className="field">Publication<select value={publication} onChange={(e) => setPublication(e.target.value)}><option value="ALL">Tous les packs</option><option value="PUBLISHED">En ligne</option><option value="DRAFT">Brouillons</option></select></label>
+          </div>
           <table className="table table--tight">
             <thead>
               <tr>
                 <th>Pack</th>
                 <th className="num">Outils</th>
-                <th className="num">Prix/j</th>
-                <th></th>
+                <th className="num">Prix/j HTVA</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {filteredRows.map((r) => (
                 <tr
                   key={r.id}
                   onClick={() => loadPack(r.id)}
@@ -231,19 +243,16 @@ export default function AdminBricoPacks() {
                   </td>
                   <td className="num">{r.itemCount}</td>
                   <td className="num">{formatEUR(r.dailyPrice)}</td>
-                  <td className="num">›</td>
+                  <td className="num"><button className="btn btn-outline btn-sm" aria-label={`Modifier ${r.name}`} onClick={(e) => { e.stopPropagation(); void loadPack(r.id); }}>Modifier</button></td>
                 </tr>
               ))}
+              {filteredRows.length === 0 && <tr><td colSpan={4} className="muted">Aucun pack ne correspond à ces filtres.</td></tr>}
             </tbody>
           </table>
         </div>
 
         <div className="bp-admin__editor">
-          {!pack ? (
-            <div className="card card-body">
-              <p className="muted">Sélectionne un pack pour l’éditer, ou crée-en un nouveau.</p>
-            </div>
-          ) : (
+          {pack && (
             <PackEditor
               key={pack.id}
               pack={pack}
@@ -254,6 +263,7 @@ export default function AdminBricoPacks() {
               liveSeparate={liveSeparate}
               livePriceSuggestion={livePriceSuggestion}
               liveDepositSuggestion={liveDepositSuggestion}
+              onClose={() => { setPack(null); setSelId(null); setMsg(''); }}
               onSave={save}
               onUnpublish={unpublish}
             />
@@ -429,6 +439,7 @@ function PackEditor({
   livePriceSuggestion,
   liveDepositSuggestion,
   onSave,
+  onClose,
   onUnpublish,
 }: {
   pack: PackDetail;
@@ -440,6 +451,7 @@ function PackEditor({
   livePriceSuggestion: number;
   liveDepositSuggestion: number;
   onSave: () => void;
+  onClose: () => void;
   onUnpublish: () => void;
 }) {
   const { vatRate } = usePriceDisplay();
@@ -517,12 +529,14 @@ function PackEditor({
   }
 
   return (
-    <div className="stack">
-      {msg && (
-        <div className={`alert ${msg.startsWith('✓') ? 'alert-ok' : 'alert-err'}`}>{msg}</div>
-      )}
-
-      <div className="card card-body stack">
+    <div className="stack product-editor">
+      <div className="editor-toolbar">
+        <div><span className="editor-toolbar__type">BricoPack · {pack.components.length} outil(s)</span><h3>{pack.name}</h3></div>
+        <div className="row"><button className="btn btn-outline" disabled={busy} onClick={onClose}>Fermer</button><button className="btn btn-primary" disabled={busy} onClick={onSave}>{busy ? 'Enregistrement…' : 'Enregistrer'}</button></div>
+        {msg && <div role="status" className={`alert ${msg.startsWith('✓') ? 'alert-ok' : 'alert-err'}`}>{msg}</div>}
+      </div>
+      <EditorSection title="Présentation du pack" hint="Nom, accroche et visibilité sur le catalogue" open>
+      <div className="stack">
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <label className="row" style={{ gap: 8 }}>
             <input
@@ -543,12 +557,13 @@ function PackEditor({
         </div>
 
         <div className="field">
-          <label>Nom</label>
-          <input value={pack.name} onChange={(e) => patch({ name: e.target.value })} />
+          <label htmlFor="pack-name">Nom</label>
+          <input id="pack-name" value={pack.name} onChange={(e) => patch({ name: e.target.value })} />
         </div>
         <div className="field">
-          <label>Accroche</label>
+          <label htmlFor="pack-intro">Accroche</label>
           <textarea
+            id="pack-intro"
             rows={2}
             value={pack.intro}
             onChange={(e) => patch({ intro: e.target.value })}
@@ -556,16 +571,17 @@ function PackEditor({
         </div>
         <div className="field-2">
           <div className="field">
-            <label>Famille</label>
-            <select value={pack.family} onChange={(e) => patch({ family: e.target.value })}>
+            <label htmlFor="pack-family">Famille</label>
+            <select id="pack-family" value={pack.family} onChange={(e) => patch({ family: e.target.value })}>
               {FAMILIES.map((f) => (
                 <option key={f} value={f}>{f}</option>
               ))}
             </select>
           </div>
           <div className="field">
-            <label>Niveau</label>
+            <label htmlFor="pack-level">Niveau</label>
             <select
+              id="pack-level"
               value={pack.level ?? ''}
               onChange={(e) => patch({ level: e.target.value || null })}
             >
@@ -577,25 +593,30 @@ function PackEditor({
           </div>
         </div>
         <div className="field">
-          <label>Équipe (ex. « 1–2 pers. »)</label>
+          <label htmlFor="pack-team">Équipe (ex. « 1–2 pers. »)</label>
           <input
+            id="pack-team"
             value={pack.teamSize ?? ''}
             onChange={(e) => patch({ teamSize: e.target.value || null })}
           />
         </div>
       </div>
+      </EditorSection>
 
       {/* ----------------------- Visuel ----------------------- */}
-      <div className="card card-body stack">
+      <EditorSection title="Image de garde" hint="Couverture et galerie du pack" open>
+      <div className="stack">
         <h3 style={{ margin: 0 }}>Image de garde</h3>
         <p className="small muted">
           La 1re image est la couverture du pack (accueil, page BricoPacks, borne).
         </p>
         <ImageDropzone value={pack.images} onChange={(images) => patch({ images })} max={6} />
       </div>
+      </EditorSection>
 
       {/* ----------------------- Composition ----------------------- */}
-      <div className="card card-body stack">
+      <EditorSection title="Machines du pack" hint="Outils réservés ensemble · quantités et rôles" open>
+      <div className="stack">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0 }}>Machines du pack</h3>
           <button className="btn btn-outline btn-sm" onClick={() => setPickOpen((v) => !v)}>
@@ -689,9 +710,11 @@ function PackEditor({
           </div>
         )}
       </div>
+      </EditorSection>
 
       {/* ----------------------- Prix ----------------------- */}
-      <div className="card card-body stack">
+      <EditorSection title="Prix et caution" hint="Prix du pack et suggestions calculées depuis sa composition" open>
+      <div className="stack">
         <h3 style={{ margin: 0 }}>Prix &amp; caution</h3>
         <p className="small muted">
           Location des machines à l’unité : <strong>{formatEUR(liveSeparate)}/j</strong>. Avec une
@@ -770,9 +793,11 @@ function PackEditor({
           </div>
         </div>
       </div>
+      </EditorSection>
 
       {/* ----------------------- Consommables ----------------------- */}
-      <div className="card card-body stack">
+      <EditorSection title="Consommables suggérés" hint="Suggestions complémentaires sur la fiche client">
+      <div className="stack">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0 }}>Consommables suggérés</h3>
           <div className="row" style={{ gap: 8 }}>
@@ -874,19 +899,19 @@ function PackEditor({
         ))}
       </div>
 
+      </EditorSection>
+      <details className="editor-advanced"><summary>Voir la fiche et gérer sa publication</summary>
       <div className="row" style={{ gap: 12, position: 'sticky', bottom: 0, background: 'var(--surface, #fff)', padding: '12px 0' }}>
-        <button className="btn btn-primary btn-lg" disabled={busy} onClick={onSave}>
-          {busy ? '…' : 'Enregistrer'}
-        </button>
-        <a className="btn btn-ghost" href={`/bricopacks/${pack.slug}`} target="_blank" rel="noreferrer">
+        <Link className="btn btn-outline" href={`/bricopacks/${pack.slug}`} target="_blank" rel="noreferrer">
           Voir la fiche ↗
-        </a>
+        </Link>
         {pack.published && (
           <button className="btn btn-ghost" onClick={onUnpublish} style={{ marginLeft: 'auto' }}>
             Dépublier
           </button>
         )}
       </div>
+      </details>
     </div>
   );
 }

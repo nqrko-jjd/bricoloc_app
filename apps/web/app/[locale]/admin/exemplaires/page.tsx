@@ -5,6 +5,7 @@ import { formatDateBE } from '@bricoloc/shared';
 import { staffApi, useStaff } from '@/lib/staff';
 import { ScanField } from '@/components/admin/ScanField';
 import { PLACEHOLDER_IMG } from '@/lib/placeholder';
+import { Link } from '@/i18n/navigation';
 
 interface StockRow {
   id: string;
@@ -57,6 +58,7 @@ interface Unit {
 }
 
 const STATES = ['AVAILABLE', 'RENTED', 'MAINTENANCE', 'DAMAGED', 'RETIRED'];
+const STATE_LABELS: Record<string, string> = { AVAILABLE: 'Disponible', RENTED: 'En location', MAINTENANCE: 'En entretien', DAMAGED: 'Endommagé', RETIRED: 'Retiré du parc' };
 
 function MaintenanceForm({
   unitId,
@@ -342,30 +344,34 @@ function MachineRow({
         </td>
         <td>
           <button
-            className="btn btn-ghost btn-sm"
+            className="btn btn-outline btn-sm"
+            aria-expanded={open}
+            aria-label={`${open ? 'Fermer' : 'Voir'} les exemplaires de ${r.name}`}
             onClick={(e) => {
               e.stopPropagation();
-              removeMachine();
+              setOpen((v) => !v);
             }}
           >
-            Supprimer
+            {open ? 'Fermer' : `${r.total} exemplaire${r.total > 1 ? 's' : ''}`}
           </button>
         </td>
       </tr>
       {open && (
         <tr className="stock-detail">
           <td colSpan={6}>
+            <div className="stock-detail__heading"><div><strong>{r.brand && r.model ? `${r.brand} ${r.model}` : r.name}</strong><p className="small muted">Les changements de série, code-barres et emplacement sont enregistrés en quittant le champ.</p></div><Link className="btn btn-outline btn-sm" href={`/admin/produits?edit=${r.id}`}>Modifier la machine →</Link></div>
             {r.total === 0 && (
               <p className="small muted">Aucun exemplaire. Ajoutez-en ci-dessous.</p>
             )}
             {mine.length > 0 && (
-              <table className="table table--tight">
+              <div className="unit-table-wrap"><table className="table table--tight">
+                <thead><tr><th>Identification</th><th>Emplacement</th><th>État</th><th>Suivi</th><th>Actions</th></tr></thead>
                 <tbody>
                   {mine.map((u, idx) => (
                     <Fragment key={u.id}>
                       <tr>
                         <td>
-                          <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                          <div className="unit-identity-fields">
                             <span
                               className="badge"
                               title="Étiquette collée sur la machine : le O- est celui de la machine (le même pour tous les exemplaires identiques), le n° de série distingue chaque exemplaire."
@@ -406,7 +412,7 @@ function MachineRow({
                                 defaultValue={u.barcode ?? ''}
                                 placeholder="scanner le produit"
                                 title="Code-barres déjà imprimé sur le produit (boîte, plaque du fabricant…) — c'est celui-ci qui sort sur l'étiquette, pas le code interne"
-                                style={{ width: 150, fontFamily: 'monospace' }}
+                                style={{ width: 150 }}
                                 onBlur={(e) => {
                                   if (e.target.value.trim() !== (u.barcode ?? ''))
                                     setBarcode(u.id, e.target.value.trim());
@@ -480,12 +486,12 @@ function MachineRow({
                                 method: 'PATCH',
                                 body: { state: e.target.value },
                               });
-                              setMsg(`${u.assetTag} → ${e.target.value}`);
+                              setMsg(`${u.assetTag} → ${STATE_LABELS[e.target.value] ?? e.target.value}`);
                               await onReload();
                             }}
                           >
                             {STATES.map((s) => (
-                              <option key={s}>{s}</option>
+                              <option key={s} value={s}>{STATE_LABELS[s]}</option>
                             ))}
                           </select>
                         </td>
@@ -496,7 +502,7 @@ function MachineRow({
                               ? `entretien prévu ${formatDateBE(u.nextMaintenanceAt)}`
                               : '—'}
                         </td>
-                        <td style={{ whiteSpace: 'nowrap' }}>
+                        <td className="unit-actions">
                           <button
                             className="btn btn-ghost btn-sm"
                             onClick={() => setMaintFor(maintFor === u.id ? null : u.id)}
@@ -528,7 +534,7 @@ function MachineRow({
                     </Fragment>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
             {mine.length > 0 && (
               <div className="row" style={{ marginTop: 8, gap: 8, alignItems: 'center' }}>
@@ -542,6 +548,9 @@ function MachineRow({
                 />
                 <span className="small muted">(Entrée pour appliquer)</span>
               </div>
+            )}
+            {canManage && (
+            <details className="editor-advanced"><summary>Supprimer cette machine et ses exemplaires</summary><button type="button" className="btn btn-ghost" onClick={removeMachine}>Supprimer définitivement</button></details>
             )}
             {canManage && (
             <div className="row" style={{ marginTop: 10, gap: 8, alignItems: 'center' }}>
@@ -597,6 +606,7 @@ export default function AdminExemplaires() {
   });
   const [units, setUnits] = useState<Unit[]>([]);
   const [filter, setFilter] = useState(initialQuery);
+  const [stockFilter, setStockFilter] = useState('ALL');
   const [msg, setMsg] = useState('');
 
   async function load() {
@@ -613,13 +623,14 @@ export default function AdminExemplaires() {
 
   const machines = stock.machines
     .filter((m) => (tab === 'accessories' ? m.kind !== 'MACHINE' : m.kind === 'MACHINE'))
+    .filter((m) => stockFilter === 'ALL' || (stockFilter === 'AVAILABLE' && m.availableNow > 0) || (stockFilter === 'UNAVAILABLE' && m.availableNow === 0) || (stockFilter === 'ATTENTION' && m.maintenance + m.damaged > 0))
     .filter((m) => {
       const q = filter.trim().toLowerCase();
       if (!q) return true;
       // Recherche par O-, marque/modèle, fiche produit… ou n° de série d'un exemplaire.
       return (
         [m.name, m.ref, m.brand, m.model, m.parentName].some((s) => s?.toLowerCase().includes(q)) ||
-        units.some((u) => u.product.id === m.id && u.serialNumber?.toLowerCase().includes(q))
+        units.some((u) => u.product.id === m.id && [u.serialNumber, u.assetTag, u.barcode, u.storageLocation].some((value) => value?.toLowerCase().includes(q)))
       );
     });
   const byCat = new Map<string, StockRow[]>();
@@ -642,14 +653,16 @@ export default function AdminExemplaires() {
 
   const totAvail = machines.reduce((a, m) => a + m.availableNow, 0);
   const totUnits = machines.reduce((a, m) => a + m.total, 0);
+  const consumables = stock.consumables.filter((c) => [c.name, c.partSupplier].some((value) => value?.toLowerCase().includes(filter.trim().toLowerCase())));
   // Zones déjà utilisées, tous produits confondus — autocomplétion partagée
   // par tous les champs "emplacement" pour éviter les zones fantômes créées
   // par une faute de frappe (O au lieu de 0, zéro manquant…).
   const allStorageLocations = [...new Set(units.map((u) => u.storageLocation).filter(Boolean))] as string[];
 
   return (
-    <div className="stack">
+    <div className="stack stock-workspace">
       <h1>Stock &amp; exemplaires</h1>
+      <div className="admin-context-line"><span><strong>Parc physique</strong> · disponibilités, emplacements et entretien</span><Link href="/admin/produits">Gérer les fiches du catalogue →</Link></div>
       {msg && <div className="alert alert-info">{msg}</div>}
       <datalist id="storage-locations">
         {allStorageLocations.map((loc) => (
@@ -660,23 +673,27 @@ export default function AdminExemplaires() {
       <div className="chips">
         <button
           className={`chip${tab === 'machines' ? ' active' : ''}`}
+          aria-pressed={tab === 'machines'}
           onClick={() => setTab('machines')}
         >
           Machines
         </button>
         <button
           className={`chip${tab === 'accessories' ? ' active' : ''}`}
+          aria-pressed={tab === 'accessories'}
           onClick={() => setTab('accessories')}
         >
           Accessoires &amp; EPI
         </button>
         <button
           className={`chip${tab === 'consumables' ? ' active' : ''}`}
+          aria-pressed={tab === 'consumables'}
           onClick={() => setTab('consumables')}
         >
           Consommables
         </button>
       </div>
+      <div className="stock-toolbar"><div className="field"><label htmlFor="stock-search">Rechercher dans le stock</label><input id="stock-search" placeholder="Nom, référence, série, code-barres, emplacement…" value={filter} onChange={(e) => setFilter(e.target.value)} /></div>{tab !== 'consumables' && <div className="field"><label htmlFor="stock-status">Disponibilité</label><select id="stock-status" value={stockFilter} onChange={(e) => setStockFilter(e.target.value)}><option value="ALL">Tout le parc</option><option value="AVAILABLE">Disponible aujourd’hui</option><option value="UNAVAILABLE">Aucun exemplaire disponible</option><option value="ATTENTION">Entretien ou dommage</option></select></div>}</div>
 
       {(tab === 'machines' || tab === 'accessories') && (
         <>
@@ -690,19 +707,10 @@ export default function AdminExemplaires() {
             <span className="stockbar__key is-maint">entretien</span>
             <span className="stockbar__key is-hs">HS / retiré</span>
           </div>
-          <input
-            placeholder={
-              tab === 'machines'
-                ? 'Filtrer : O-, marque, fiche produit, n° de série…'
-                : 'Filtrer : réf., nom, n° de série…'
-            }
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            style={{ maxWidth: 380 }}
-          />
+          {machines.length === 0 && <div className="card card-body">Aucune machine ne correspond à ces filtres.</div>}
           {[...byCat.entries()].map(([cat, rows]) => (
-            <div key={cat} className="card card-body table-wrap">
-              <h3 style={{ margin: '0 0 8px' }}>{cat}</h3>
+            <details key={cat} className="stock-category" open>
+              <summary><strong>{cat}</strong><span>{rows.length} référence(s) · {rows.reduce((sum, r) => sum + r.availableNow, 0)} / {rows.reduce((sum, r) => sum + r.total, 0)} disponibles</span></summary><div className="table-wrap">
               <table className="table table--pin-first">
                 <thead>
                   <tr>
@@ -747,7 +755,7 @@ export default function AdminExemplaires() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </div></details>
           ))}
         </>
       )}
@@ -766,9 +774,10 @@ export default function AdminExemplaires() {
               </tr>
             </thead>
             <tbody>
-              {stock.consumables.map((c) => (
+              {consumables.map((c) => (
                 <ConsumableStockRow key={c.id} c={c} setMsg={setMsg} onReload={load} />
               ))}
+              {consumables.length === 0 && <tr><td colSpan={6}>Aucun consommable ne correspond à la recherche.</td></tr>}
             </tbody>
           </table>
         </div>

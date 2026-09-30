@@ -96,7 +96,24 @@ export default function AdminDashboard() {
 
   return (
     <div className="stack">
-      <h1>Tableau de bord</h1>
+      <div className="dashboard-heading">
+        <div><span className="kicker">VOTRE ATELIER, EN DIRECT</span><h1>La journée en un regard.</h1><p className="muted">Les priorités de l’équipe, puis les chiffres qui comptent.</p></div>
+        <div className="dashboard-actions"><Link href="/admin/planning" className="btn btn-outline">Voir le planning</Link><Link href="/admin/reservations" className="btn btn-primary">Les réservations →</Link></div>
+      </div>
+      <section className="dashboard-today">
+        <div><h2>Aujourd’hui</h2><p>{d.queue.pickupsToday.length} retraits · {d.queue.returnsToday.length} retours · {d.alerts.toPrepareSoon} préparations à venir</p></div>
+        <Link href="/admin/comptoir" className="btn">Passer au comptoir →</Link>
+      </section>
+
+      {/* File du jour */}
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))' }}>
+        <QueueList title="À retirer aujourd’hui" rows={d.queue.pickupsToday} empty="Aucun retrait prévu." />
+        <QueueList title="Retours attendus aujourd’hui" rows={d.queue.returnsToday} empty="Aucun retour prévu." />
+        {d.queue.overdue.length > 0 && (
+          <QueueList title="En retard" rows={d.queue.overdue} empty="" />
+        )}
+      </div>
+
 
       {/* KPI */}
       <div className="kpi-grid">
@@ -137,7 +154,7 @@ export default function AdminDashboard() {
       {/* Alertes */}
       {alertItems.length > 0 && (
         <div className="card card-body">
-          <h3>Alertes</h3>
+          <h3>À traiter en priorité</h3>
           <div className="dash-alerts">
             {alertItems.map(([label, n, href, tone]) => (
               <Link key={label as string} href={href as string} className={`dash-alert dash-alert--${tone}`}>
@@ -149,22 +166,13 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* File du jour */}
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))' }}>
-        <QueueList title="À retirer aujourd’hui" rows={d.queue.pickupsToday} empty="Aucun retrait prévu." />
-        <QueueList title="Retours attendus aujourd’hui" rows={d.queue.returnsToday} empty="Aucun retour prévu." />
-        {d.queue.overdue.length > 0 && (
-          <QueueList title="En retard" rows={d.queue.overdue} empty="" />
-        )}
-      </div>
-
       {/* Statuts */}
       <div className="card card-body">
         <h3>Réservations par statut</h3>
         <div className="pill-row">
           {d.reservationsByStatus.map((s) => (
             <Link key={s.status} href={`/admin/reservations?status=${s.status}`} className="badge">
-              {s.status} : {s._count}
+              <StatusBadge status={s.status} /> <span>{s._count}</span>
             </Link>
           ))}
         </div>
