@@ -220,22 +220,33 @@ export default function AdminProduits() {
     setAttachPick('');
   }
 
-  // Reclasser une fiche existante (fiche produit ↔ accessoire ↔ consommable ↔
-  // protection). Les machines (fiches techniques, avec exemplaires O-XXXX)
-  // ne sont pas reclassables ici : trop de logique dépend de `technical` +
-  // `parentProductId`.
-  const RECLASSIFY_MODES: CreateMode[] = ['MACHINE', 'ACCESSORY', 'CONSUMABLE', 'PPE'];
+  // Reclasser une fiche existante (fiche produit ↔ machine ↔ accessoire ↔
+  // consommable ↔ protection). Les exemplaires (ProductUnit) restent
+  // attachés au même produit quel que soit le type — seuls les champs
+  // propres au type (prix, marque/modèle, rattachement…) changent.
+  const RECLASSIFY_MODES: CreateMode[] = ['MACHINE', 'TECHNICAL', 'ACCESSORY', 'CONSUMABLE', 'PPE'];
   function changeKind(newMode: CreateMode, currentMode: CreateMode) {
     if (newMode === currentMode) return;
-    if (
-      !confirm(
-        `Faire passer « ${form.name || 'cette fiche'} » de « ${EDIT_TITLES[currentMode]} » à « ${EDIT_TITLES[newMode]} » ?\n\nLes champs propres à l'ancien type (tarifs, stock…) seront réinitialisés selon le nouveau type à l'enregistrement.`,
-      )
-    ) {
-      return;
+    const notes: string[] = [];
+    if (newMode === 'CONSUMABLE' && currentMode !== 'CONSUMABLE') {
+      notes.push(
+        "Les consommables n'ont pas d'exemplaires individuels : si cette fiche a des exemplaires (n° de série, code-barres…), ils resteront en base mais n'apparaîtront plus dans « Stock & exemplaires » ni sur les étiquettes tant qu'elle sera un consommable.",
+      );
     }
+    if (newMode === 'TECHNICAL') {
+      notes.push(
+        'Elle deviendra une machine technique (marque/modèle, prix à 0, non publiée) — vous pourrez la rattacher à une fiche produit ensuite, ou la laisser libre.',
+      );
+    } else if (currentMode === 'TECHNICAL') {
+      notes.push('Le prix et la publication seront à compléter : une machine technique est toujours à 0 € et non publiée.');
+    }
+    const msg =
+      `Faire passer « ${form.name || 'cette fiche'} » de « ${EDIT_TITLES[currentMode]} » à « ${EDIT_TITLES[newMode]} » ?` +
+      (notes.length ? `\n\n${notes.join('\n\n')}` : '') +
+      "\n\nLes autres champs propres à l'ancien type (tarifs, stock…) seront réinitialisés selon le nouveau type à l'enregistrement.";
+    if (!confirm(msg)) return;
     setMode(newMode);
-    set('kind', newMode);
+    set('kind', newMode === 'TECHNICAL' ? 'MACHINE' : newMode);
   }
 
   function edit(p: ProductDetail) {
@@ -600,11 +611,16 @@ export default function AdminProduits() {
                 value={mode}
                 onChange={(e) => changeKind(e.target.value as CreateMode, mode)}
               >
-                {RECLASSIFY_MODES.map((m) => (
-                  <option key={m} value={m}>
-                    {EDIT_TITLES[m]}
-                  </option>
-                ))}
+                {RECLASSIFY_MODES.map((m) => {
+                  const hasChildren = mode === 'MACHINE' && (current?.variants?.length ?? 0) > 0;
+                  const disabled = m === 'TECHNICAL' && m !== mode && hasChildren;
+                  return (
+                    <option key={m} value={m} disabled={disabled}>
+                      {EDIT_TITLES[m]}
+                      {disabled ? ' (impossible : des machines y sont déjà rattachées)' : ''}
+                    </option>
+                  );
+                })}
               </select>
               <span className="small muted">
                 Change la catégorie de cette fiche (elle apparaîtra dans « {FILTER_LABELS[mode]} »
