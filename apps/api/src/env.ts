@@ -45,6 +45,11 @@ export const env = {
   /** Clé d'accès à l'API partenaire (parc partagé JJD). Vide = API partenaire désactivée. */
   partnerApiKey: process.env.PARTNER_API_KEY?.trim() ?? '',
 
+  /** Connexion sociale : identifiants client publics (vide = bouton masqué). */
+  googleClientId: process.env.GOOGLE_CLIENT_ID?.trim() ?? '',
+  /** Apple : « Services ID » créé sur developer.apple.com. */
+  appleClientId: process.env.APPLE_CLIENT_ID?.trim() ?? '',
+
   /** Paiement Mollie (vide = paiement mock). URL du webhook = configurable ou dérivée. */
   mollieApiKey: process.env.MOLLIE_API_KEY?.trim() ?? '',
   mollieWebhookUrl:

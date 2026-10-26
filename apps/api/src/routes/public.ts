@@ -7,6 +7,8 @@ import { getSettings } from '../lib/settings.js';
 import { quoteDelivery, quoteTimeDistanceDelivery } from '../lib/delivery.js';
 import { serializeProductSummary, productInclude } from '../lib/serialize.js';
 import { mollieEnabled, mollieTestMode } from '../lib/mollie.js';
+import { appleEnabled, googleEnabled } from '../lib/social.js';
+import { env } from '../env.js';
 
 export const publicRouter = Router();
 
@@ -75,6 +77,10 @@ publicRouter.get(
           transferHours: Number(p.transferHours ?? 0),
         })),
       demo: true,
+      socialLogin: {
+        google: googleEnabled() ? env.googleClientId : null,
+        apple: appleEnabled() ? env.appleClientId : null,
+      },
       paymentProvider: mollieEnabled() ? 'mollie' : 'mock',
       paymentTestMode: mollieEnabled() ? mollieTestMode() : true,
       composedPack: (() => {

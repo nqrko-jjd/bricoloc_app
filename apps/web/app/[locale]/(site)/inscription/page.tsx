@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/providers';
 import { PhoneInput } from '@/components/PhoneInput';
+import { SocialLogin } from '@/components/SocialLogin';
 
 export default function InscriptionPage() {
   const { register } = useSession();
@@ -39,6 +40,7 @@ export default function InscriptionPage() {
     <div className="section container" style={{ maxWidth: 520 }}>
       <h1>Créer un compte</h1>
       <form className="card card-pad stack" onSubmit={submit}>
+        <SocialLogin />
         {err && <div className="alert alert-err">{err}</div>}
         <div className="pill-row">
           {['PARTICULIER', 'PRO'].map((t) => (

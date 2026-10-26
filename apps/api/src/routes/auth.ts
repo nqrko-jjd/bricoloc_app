@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { loginSchema, registerSchema } from '@bricoloc/shared';
 import { prisma } from '../db.js';
 import { badRequest, conflict, h, unauthorized } from '../lib/http.js';
+import { randomBytes } from 'node:crypto';
+import { verifyApple, verifyGoogle, type SocialProfile } from '../lib/social.js';
 import {
   attachPrincipal,
   hashPassword,
@@ -78,6 +80,51 @@ authRouter.post(
     }
     const token = signToken({ kind: 'user', id: user.id, email: user.email });
     res.json({ token, user: publicUser(user) });
+  }),
+);
+
+/**
+ * Connexion / création de compte via un fournisseur (Google, Apple). Le compte
+ * est identifié par l'e-mail vérifié par le fournisseur. À la création, le mot
+ * de passe est aléatoire (inutilisable : le client passe toujours par le
+ * fournisseur ou par « mot de passe oublié ») et le téléphone reste vide : il
+ * est demandé à la commande.
+ */
+async function socialSignIn(profile: SocialProfile) {
+  const email = profile.email.toLowerCase();
+  let user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await hashPassword(randomBytes(32).toString('hex')),
+        firstName: profile.firstName || email.split('@')[0]!,
+        lastName: profile.lastName,
+        phone: '',
+        customerType: 'PARTICULIER',
+      },
+    });
+  }
+  const token = signToken({ kind: 'user', id: user.id, email: user.email });
+  return { token, user: publicUser(user) };
+}
+
+authRouter.post(
+  '/social/google',
+  h(async (req, res) => {
+    const credential = String(req.body?.credential ?? '');
+    if (!credential) throw badRequest('Jeton Google manquant');
+    res.json(await socialSignIn(await verifyGoogle(credential)));
+  }),
+);
+
+authRouter.post(
+  '/social/apple',
+  h(async (req, res) => {
+    const idToken = String(req.body?.idToken ?? '');
+    if (!idToken) throw badRequest('Jeton Apple manquant');
+    const name = req.body?.name as { firstName?: string; lastName?: string } | undefined;
+    res.json(await socialSignIn(await verifyApple(idToken, name)));
   }),
 );
 

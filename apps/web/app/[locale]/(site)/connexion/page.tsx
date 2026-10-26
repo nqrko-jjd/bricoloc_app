@@ -3,6 +3,7 @@ import { Link } from '@/i18n/navigation';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/providers';
+import { SocialLogin } from '@/components/SocialLogin';
 
 export default function ConnexionPage() {
   const { login } = useSession();
@@ -30,6 +31,7 @@ export default function ConnexionPage() {
     <div className="section container" style={{ maxWidth: 440 }}>
       <h1>Connexion</h1>
       <form className="card card-pad stack" onSubmit={submit}>
+        <SocialLogin />
         {err && <div className="alert alert-err">{err}</div>}
         <div className="field">
           <label>E-mail</label>
